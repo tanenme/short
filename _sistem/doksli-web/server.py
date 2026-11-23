@@ -14,6 +14,10 @@ if str(SISTEM_DIR) not in sys.path:
 
 from core.config import get_config
 from core.validator import audit_episode_folder
+from sourcing.licensing import generate_credits_markdown
+from sourcing.preflight import run_preflight_gate
+from sourcing.providers import download_to_episode, search_unified
+from sourcing.qc_video import run_episode_autoqc
 
 CFG = get_config()
 
@@ -516,6 +520,87 @@ def audit_package(package_name: str, channel_id: Optional[str] = None):
             "word_count": manifest.script.word_count,
             "clips_count": len(manifest.clips),
         }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+class UnifiedSearchRequest(BaseModel):
+    query: str
+    providers: Optional[List[str]] = None
+    limit: int = 12
+    cc_only: bool = False
+    raw_mode: bool = True
+    api_key: Optional[str] = None
+
+
+class DownloadClipRequest(BaseModel):
+    url: str
+    package_name: str
+    channel_id: Optional[str] = None
+    title: str = ""
+    platform: str = ""
+    creator: str = ""
+    license: str = ""
+    license_url: str = ""
+    page_url: str = ""
+
+
+@app.post("/api/sourcing/unified-search")
+def api_unified_search(req: UnifiedSearchRequest):
+    hits = search_unified(
+        query=req.query,
+        providers=req.providers,
+        limit=req.limit,
+        cc_only=req.cc_only,
+        raw_mode=req.raw_mode,
+        api_key=req.api_key,
+        config=CFG,
+    )
+    return {"success": True, "count": len(hits), "results": [h.model_dump() for h in hits]}
+
+
+@app.post("/api/sourcing/download")
+def api_download_clip(req: DownloadClipRequest):
+    try:
+        return download_to_episode(
+            url=req.url,
+            episode_id=req.package_name,
+            channel_id=req.channel_id,
+            title=req.title,
+            platform=req.platform,
+            creator=req.creator,
+            license_str=req.license,
+            license_url=req.license_url,
+            page_url=req.page_url,
+            config=CFG,
+        )
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.get("/api/preflight/{package_name}")
+def api_preflight(package_name: str, channel_id: Optional[str] = None, run_autoqc: bool = False):
+    try:
+        rep = run_preflight_gate(package_name, channel_id, run_autoqc=run_autoqc, config=CFG, write_report=True)
+        return {"success": True, "preflight": rep.model_dump()}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/autoqc/{package_name}")
+def api_autoqc(package_name: str, channel_id: Optional[str] = None):
+    try:
+        res = run_episode_autoqc(package_name, channel_id, CFG, write_report=True)
+        return {"success": True, "autoqc": res.model_dump()}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/credits/{package_name}")
+def api_credits(package_name: str, channel_id: Optional[str] = None):
+    try:
+        md, out_path = generate_credits_markdown(package_name, channel_id, CFG, write_file=True)
+        return {"success": True, "credits_file": str(out_path), "markdown": md}
     except Exception as e:
         return {"success": False, "error": str(e)}
 

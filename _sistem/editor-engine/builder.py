@@ -675,7 +675,16 @@ def render_ffmpeg_direct(
     enable_transitions: bool = True,
     enable_cta_overlay: bool = True,
     make_qc_sheet: bool = True,
+    enforce_preflight: bool = False,
 ) -> str:
+    if enforce_preflight:
+        from sourcing.preflight import run_preflight_gate
+
+        pf = run_preflight_gate(package_name, channel_id, run_autoqc=False, config=CFG, write_report=True)
+        if not pf.can_render:
+            fails = [f"{c.code}: {c.message}" for c in pf.checks if c.severity == "FAIL"]
+            raise RuntimeError("YPP Pre-Flight Gate BLOCKED render:\n- " + "\n- ".join(fails))
+
     ctx = _load_episode_context(package_name, channel_id)
     profile: ChannelProfile = ctx["profile"]
     pkg_dir: Path = ctx["pkg_dir"]

@@ -218,8 +218,77 @@ def cmd_render(args: argparse.Namespace) -> int:
             enable_transitions=not args.no_transitions,
             enable_cta_overlay=not args.no_cta_overlay,
             make_qc_sheet=True,
+            enforce_preflight=args.strict_gate,
         )
         print(f"[+] Render MP4 v3 selesai: {mp4}")
+    return 0
+
+
+def cmd_preflight(args: argparse.Namespace) -> int:
+    from sourcing.preflight import run_preflight_gate
+
+    cfg = get_config()
+    prof = cfg.get_channel(args.channel)
+    ch_dir = cfg.channel_dir(prof.channel_id)
+    targets = [args.episode] if args.episode else _list_episodes(ch_dir)
+
+    print(f"=== YPP PRE-FLIGHT GATE: {prof.channel_id} ({len(targets)} episode) ===")
+    print(f"{'EPISODE':<28} {'VERDICT':<17} {'SKOR':>5} {'CREATORS':>8}  RINGKASAN")
+    print("-" * 108)
+
+    for ep in targets:
+        rep = run_preflight_gate(ep, prof.channel_id, run_autoqc=args.autoqc, config=cfg, write_report=args.write_report)
+        issues = [c for c in rep.checks if c.severity in ("FAIL", "WARN")]
+        summary = "; ".join(f"[{c.severity}] {c.code}" for c in issues[:3]) or "ALL CLEAR"
+        u_cre = rep.creator_rotation.get("unique_creators", 0)
+        print(f"{ep:<28} {rep.stage_verdict:<17} {rep.score:>5} {u_cre:>8}  {summary}")
+        if args.episode:
+            print()
+            for c in rep.checks:
+                print(f"  [{c.severity:<4}] ({c.category:<9}) {c.code}: {c.message}")
+    return 0
+
+
+def cmd_autoqc(args: argparse.Namespace) -> int:
+    from sourcing.qc_video import run_episode_autoqc
+
+    cfg = get_config()
+    res = run_episode_autoqc(args.episode, args.channel, cfg, write_report=True)
+    print(f"=== TECHNICAL AUTOQC: {res.channel_id}/{res.episode_id} ({res.total_clips} klip) ===")
+    print(f"{'FILE':<44} {'DUR':>5} {'RESO':<11} {'BLUR':>5} {'YAVG':>6} {'YDIF':>6} {'VERDICT':<7} CATATAN")
+    print("-" * 116)
+    for it in res.items:
+        notes = ", ".join(it.flags + it.warnings) or "OK"
+        b_str = f"{it.blur_mean:.1f}" if it.blur_mean is not None else "-"
+        print(
+            f"{it.filename[:43]:<44} {it.duration_s:>4.1f}s {f'{it.width}x{it.height}':<11} "
+            f"{b_str:>5} {it.yavg:>6.1f} {it.ydif:>6.2f} {it.verdict:<7} {notes}"
+        )
+    print(f"\nRingkasan: {res.ok_count} OK | {res.warn_count} WARN | {res.fail_count} FAIL")
+    return 0
+
+
+def cmd_credits(args: argparse.Namespace) -> int:
+    from sourcing.licensing import generate_credits_markdown
+
+    cfg = get_config()
+    _, path = generate_credits_markdown(args.episode, args.channel, cfg, write_file=True)
+    print(f"[+] CREDITS.md diperbarui: {path}")
+    return 0
+
+
+def cmd_source_search(args: argparse.Namespace) -> int:
+    from sourcing.providers import search_unified
+
+    cfg = get_config()
+    provs = [p.strip() for p in args.providers.split(",") if p.strip()] if args.providers else None
+    hits = search_unified(args.query, providers=provs, limit=args.limit, cc_only=args.cc_only, config=cfg)
+    print(f"=== UNIFIED SOURCE SEARCH: '{args.query}' ({len(hits)} hasil) ===")
+    print(f"{'#':>2} {'SKOR':>5} {'PLAT':<12} {'RISIKO':<8} {'LISENSI':<20} JUDUL")
+    print("-" * 105)
+    for i, c in enumerate(hits, 1):
+        print(f"{i:>2} {c.score:>5.0f} {c.platform:<12} {c.risk_level:<8} {c.license[:19]:<20} {c.title[:48]}")
+        print(f"   {c.url}")
     return 0
 
 
@@ -253,7 +322,32 @@ def build_parser() -> argparse.ArgumentParser:
     p_ren.add_argument("--mode", default="render", choices=["render", "capcut", "both"])
     p_ren.add_argument("--no-transitions", action="store_true", help="Matikan xfade antar klip")
     p_ren.add_argument("--no-cta-overlay", action="store_true", help="Matikan green-screen CTA overlay")
+    p_ren.add_argument("--strict-gate", action="store_true", help="Blokir render jika gagal YPP Pre-Flight Gate")
     p_ren.set_defaults(func=cmd_render)
+
+    p_pf = sub.add_parser("preflight", help="Jalankan YPP Pre-Flight Safety Gate (script + lisensi + rotasi + render)")
+    p_pf.add_argument("channel", nargs="?", default="C1-fakta")
+    p_pf.add_argument("--episode", default="", help="Cek 1 episode spesifik dengan detail")
+    p_pf.add_argument("--autoqc", action="store_true", help="Sekalian jalankan FFmpeg AutoQC pada klip")
+    p_pf.add_argument("--write-report", action="store_true", help="Simpan preflight_report.json ke folder episode")
+    p_pf.set_defaults(func=cmd_preflight)
+
+    p_aq = sub.add_parser("autoqc", help="Jalankan FFmpeg Technical AutoQC (blur, gelap, freeze, resolusi)")
+    p_aq.add_argument("channel", help="ID channel (mis. C1-fakta)")
+    p_aq.add_argument("episode", help="Slug episode (mis. 009-kucing-ek-cicak)")
+    p_aq.set_defaults(func=cmd_autoqc)
+
+    p_cr = sub.add_parser("credits", help="Generate/perbarui CREDITS.md atribusi YouTube dari metadata aset")
+    p_cr.add_argument("channel", help="ID channel")
+    p_cr.add_argument("episode", help="Slug episode")
+    p_cr.set_defaults(func=cmd_credits)
+
+    p_ss = sub.add_parser("source-search", help="Cari klip terpadu (Wikimedia CC, iNaturalist, Pexels, YT, TikTok, Reddit)")
+    p_ss.add_argument("query", help="Kata kunci pencarian (disarankan Inggris)")
+    p_ss.add_argument("--providers", default="", help="Daftar provider dipisah koma")
+    p_ss.add_argument("--limit", type=int, default=10)
+    p_ss.add_argument("--cc-only", action="store_true", help="Hanya tampilkan materi CC/monetization-safe")
+    p_ss.set_defaults(func=cmd_source_search)
 
     return ap
 
