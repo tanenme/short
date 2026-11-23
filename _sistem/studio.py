@@ -292,6 +292,66 @@ def cmd_source_search(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_sync(args: argparse.Namespace) -> int:
+    from core.db import StudioDB
+
+    cfg = get_config()
+    db = StudioDB(config=cfg)
+    targets = [args.channel] if args.channel != "all" else list(cfg.channels.keys())
+    for cid in targets:
+        eps = db.sync_channel(cid)
+        pub = sum(1 for e in eps if e["preflight_verdict"] == "READY_TO_PUBLISH")
+        ren = sum(1 for e in eps if e["preflight_verdict"] == "READY_TO_RENDER")
+        blk = sum(1 for e in eps if e["preflight_verdict"] == "BLOCKED")
+        print(f"[+] Synced {cid:<10} -> {len(eps)} episode (PUBLISH={pub}, RENDER={ren}, BLOCKED={blk}) -> {db.db_path}")
+    return 0
+
+
+def cmd_jobs(args: argparse.Namespace) -> int:
+    from core.db import StudioDB
+
+    db = StudioDB(config=get_config())
+    jobs = db.list_jobs(limit=args.limit)
+    if not jobs:
+        print("Belum ada riwayat job di studio.db.")
+        return 0
+    print(f"{'JOB ID':<16} {'TYPE':<8} {'STATUS':<10} {'CHANNEL/EPISODE':<36} CATATAN")
+    print("-" * 105)
+    for j in jobs:
+        target = f"{j['channel_id']}/{j['episode_id']}"
+        note = j.get("error") or j.get("progress_msg") or ""
+        print(f"{j['job_id']:<16} {j['job_type']:<8} {j['status']:<10} {target[:35]:<36} {note[:45]}")
+    return 0
+
+
+def cmd_tts(args: argparse.Namespace) -> int:
+    from core.tts import generate_episode_voiceover, list_elevenlabs_voices
+
+    cfg = get_config()
+    if args.list_voices:
+        voices = list_elevenlabs_voices(config=cfg)
+        for v in voices:
+            print(f"{v['voice_id']}  |  {v['name']} ({v.get('category', '-')})")
+        return 0
+    if not args.episode:
+        print("Error: --episode wajib diisi kecuali menggunakan --list-voices.")
+        return 1
+    res = generate_episode_voiceover(args.episode, args.channel, voice_id_override=args.voice_id, config=cfg)
+    print(f"[+] VO ElevenLabs siap: {res['mp3_path']} ({res['words_count']} kata ter-align)")
+    return 0
+
+
+def cmd_serve(args: argparse.Namespace) -> int:
+    web_dir = SISTEM_DIR / "doksli-web"
+    if str(web_dir) not in sys.path:
+        sys.path.insert(0, str(web_dir))
+    import uvicorn
+
+    print(f"Menjalankan Enterprise Shorts Studio v3 di http://{args.host}:{args.port}")
+    uvicorn.run("server:app", host=args.host, port=args.port, reload=args.reload, app_dir=str(web_dir))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description="Enterprise YouTube Shorts Content Studio CLI")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -348,6 +408,27 @@ def build_parser() -> argparse.ArgumentParser:
     p_ss.add_argument("--limit", type=int, default=10)
     p_ss.add_argument("--cc-only", action="store_true", help="Hanya tampilkan materi CC/monetization-safe")
     p_ss.set_defaults(func=cmd_source_search)
+
+    p_sy = sub.add_parser("sync", help="Sinkronkan seluruh episode disk ke database SQLite (_sistem/state/studio.db)")
+    p_sy.add_argument("channel", nargs="?", default="all", help="ID channel atau 'all' (default: all)")
+    p_sy.set_defaults(func=cmd_sync)
+
+    p_jb = sub.add_parser("jobs", help="Lihat riwayat & status antrean background job di studio.db")
+    p_jb.add_argument("--limit", type=int, default=20)
+    p_jb.set_defaults(func=cmd_jobs)
+
+    p_tts = sub.add_parser("tts", help="Generate VO ElevenLabs v4 + words_alignment.json otomatis")
+    p_tts.add_argument("channel", nargs="?", default="C1-fakta")
+    p_tts.add_argument("--episode", default="", help="Slug episode target")
+    p_tts.add_argument("--voice-id", default="", help="Override Voice ID ElevenLabs")
+    p_tts.add_argument("--list-voices", action="store_true", help="Tampilkan daftar voice akun ElevenLabs")
+    p_tts.set_defaults(func=cmd_tts)
+
+    p_sv = sub.add_parser("serve", help="Jalankan Enterprise Production Studio Dashboard (FastAPI + Web UI)")
+    p_sv.add_argument("--host", default="127.0.0.1")
+    p_sv.add_argument("--port", type=int, default=8000)
+    p_sv.add_argument("--reload", action="store_true")
+    p_sv.set_defaults(func=cmd_serve)
 
     return ap
 

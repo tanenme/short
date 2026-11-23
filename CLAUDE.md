@@ -15,7 +15,9 @@ E:\YT\short\
 │   ├── core\
 │   │   ├── config.py             # Konfigurasi terpusat, .env loader, auto-discover ffmpeg/yt-dlp
 │   │   ├── models.py             # Kontrak data Pydantic v2 (ChannelProfile, EpisodeManifest)
-│   │   └── validator.py          # Automated Creative DNA & YPP Safety Gate
+│   │   ├── validator.py          # Automated Creative DNA & YPP Safety Gate
+│   │   ├── db.py                 # SQLite state store (_sistem/state/studio.db): episodes, jobs, metrics
+│   │   └── tts.py                # ElevenLabs v4 API + native character-to-word alignment
 │   ├── channels\
 │   │   ├── C1-fakta.toml         # Profil validasi utama (Fakta Hewan ID)
 │   │   ├── C2-momen.toml         # Profil clone (Momen Hewan Terekam Kamera)
@@ -63,6 +65,16 @@ python _sistem/studio.py source-search "cat chattering" --cc-only --limit 8
 
 # Render video Shorts v3 (FFmpeg cinematic + QC contact sheet / CapCut Draft)
 python _sistem/studio.py render C1-fakta 009-kucing-ek-cicak --mode render --strict-gate
+
+# Jalankan Enterprise Production Studio Dashboard (http://127.0.0.1:8000)
+python _sistem/studio.py serve
+
+# Sinkronkan seluruh channel ke SQLite state DB & cek antrean job
+python _sistem/studio.py sync
+python _sistem/studio.py jobs
+
+# Generate VO ElevenLabs v4 + words_alignment.json otomatis
+python _sistem/studio.py tts C1-fakta --episode 012-ayam-kepala-stabil
 
 # Jalankan unit test fondasi & editor
 python -m unittest discover -s _sistem/tests -v
