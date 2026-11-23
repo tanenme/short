@@ -1,0 +1,37 @@
+Input #0, matroska,webm, from 'pintarinaja/cAaTmr7QMFw - Squishy Minecraft Ini Ada Hadiahnya ？？ #shortvideo.webm':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    ENCODER         : Lavf63.1.101
+  Duration: 00:00:19.42, start: 0.000000, bitrate: 1352 kb/s
+  Stream #0:0: Video: av1 (libdav1d) (Main), yuv420p(tv, bt709), 720x1280 [SAR 1:1 DAR 9:16], 30 fps, 30 tbr, 1k tbn (default)
+    Metadata:
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:19.366000000
+  Stream #0:1(eng): Audio: opus, 48000 Hz, stereo, fltp (default)
+    Metadata:
+      DURATION        : 00:00:19.421000000
+Stream mapping:
+  Stream #0:0 -> #0:0 (av1 (libdav1d) -> wrapped_avframe (native))
+  Stream #0:1 -> #0:1 (opus (native) -> pcm_s16le (native))
+Press [q] to stop, [?] for help
+[Parsed_metadata_1 @ 000002052bff6600] frame:0    pts:15367   pts_time:15.367
+[Parsed_metadata_1 @ 000002052bff6600] lavfi.scene_score=0.418980
+Output #0, null, to 'pipe:':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    encoder         : Lavf63.1.101
+  Stream #0:0: Video: wrapped_avframe, yuv420p(tv, bt709, progressive), 720x1280 [SAR 1:1 DAR 9:16], q=2-31, 200 kb/s, 30 fps, 30 tbn (default)
+    Metadata:
+      encoder         : Lavc63.1.101 wrapped_avframe
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:19.366000000
+  Stream #0:1(eng): Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s (default)
+    Metadata:
+      encoder         : Lavc63.1.101 pcm_s16le
+      DURATION        : 00:00:19.421000000
+[out#0/null @ 0000020528250a00] video:0KiB audio:3640KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown
+frame=    1 fps=0.0 q=-0.0 Lsize=N/A time=00:00:19.41 bitrate=N/A speed=40.7x elapsed=0:00:00.47    

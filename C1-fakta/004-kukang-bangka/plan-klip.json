@@ -1,0 +1,82 @@
+[
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\004-kukang-bangka\\assets\\02-bangka-slow-loris-may-be-extinct.mp4",
+    "start": 2.0,
+    "dur": 2.4,
+    "name": "01-hook-muka-kukang",
+    "shot": "hook",
+    "zoom": 1.14
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\004-kukang-bangka\\assets\\02-bangka-slow-loris-may-be-extinct.mp4",
+    "start": 6.0,
+    "dur": 2.4,
+    "name": "02-detail-ekspresi",
+    "shot": "detail",
+    "zoom": 1.08
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\004-kukang-bangka\\assets\\02-bangka-slow-loris-may-be-extinct.mp4",
+    "start": 14.0,
+    "dur": 2.4,
+    "name": "03-detail-muka-kedip",
+    "shot": "detail",
+    "zoom": 1.16
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\004-kukang-bangka\\assets\\01-an-endangered-sumatran-slow-loris-nyctic.mp4",
+    "start": 4.0,
+    "dur": 2.4,
+    "name": "04-detail-badan",
+    "shot": "detail",
+    "zoom": 1.12
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\004-kukang-bangka\\assets\\04-amazing-pygmy-slow-loris-facts-you-didn.mp4",
+    "start": 48.0,
+    "dur": 2.4,
+    "name": "05-detail-wajah-besar",
+    "shot": "detail",
+    "zoom": 1.13
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\004-kukang-bangka\\assets\\04-amazing-pygmy-slow-loris-facts-you-didn.mp4",
+    "start": 78.0,
+    "dur": 2.4,
+    "name": "06-action-memanjat",
+    "shot": "action",
+    "zoom": 1.1
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\004-kukang-bangka\\assets\\03-rescuers-release-20-javan-slow-lorises-b.mp4",
+    "start": 22.0,
+    "dur": 2.4,
+    "name": "07-action-di-batang",
+    "shot": "action",
+    "zoom": 1.08
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\004-kukang-bangka\\assets\\03-rescuers-release-20-javan-slow-lorises-b.mp4",
+    "start": 114.0,
+    "dur": 2.4,
+    "name": "08-action-wajah-dipegang",
+    "shot": "action",
+    "zoom": 1.11
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\004-kukang-bangka\\assets\\04-amazing-pygmy-slow-loris-facts-you-didn.mp4",
+    "start": 90.0,
+    "dur": 2.4,
+    "name": "09-detail-closeup",
+    "shot": "detail",
+    "zoom": 1.15
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\004-kukang-bangka\\assets\\03-rescuers-release-20-javan-slow-lorises-b.mp4",
+    "start": 118.0,
+    "dur": 2.4,
+    "name": "10-action-wajah-besar",
+    "shot": "action",
+    "zoom": 1.09
+  }
+]

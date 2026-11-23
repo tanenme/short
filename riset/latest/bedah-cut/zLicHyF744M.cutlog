@@ -1,0 +1,47 @@
+Input #0, matroska,webm, from 'brightsbrain/zLicHyF744M - Kalau Punya Slime Kamu Wajib Punya Mainan Ini !!! #slime.webm':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    ENCODER         : Lavf63.1.101
+  Duration: 00:00:27.60, start: 0.000000, bitrate: 1304 kb/s
+  Stream #0:0: Video: av1 (libdav1d) (Main), yuv420p(tv, bt709), 720x1280 [SAR 1:1 DAR 9:16], 30 fps, 30 tbr, 1k tbn (default)
+    Metadata:
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:27.566000000
+  Stream #0:1(eng): Audio: opus, 48000 Hz, stereo, fltp (default)
+    Metadata:
+      DURATION        : 00:00:27.601000000
+Stream mapping:
+  Stream #0:0 -> #0:0 (av1 (libdav1d) -> wrapped_avframe (native))
+  Stream #0:1 -> #0:1 (opus (native) -> pcm_s16le (native))
+Press [q] to stop, [?] for help
+[Parsed_metadata_1 @ 0000020c699b9e40] frame:0    pts:1400    pts_time:1.4
+[Parsed_metadata_1 @ 0000020c699b9e40] lavfi.scene_score=0.575841
+Output #0, null, to 'pipe:':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    encoder         : Lavf63.1.101
+  Stream #0:0: Video: wrapped_avframe, yuv420p(tv, bt709, progressive), 720x1280 [SAR 1:1 DAR 9:16], q=2-31, 200 kb/s, 30 fps, 30 tbn (default)
+    Metadata:
+      encoder         : Lavc63.1.101 wrapped_avframe
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:27.566000000
+  Stream #0:1(eng): Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s (default)
+    Metadata:
+      encoder         : Lavc63.1.101 pcm_s16le
+      DURATION        : 00:00:27.601000000
+[Parsed_metadata_1 @ 0000020c699b9e40] frame:1    pts:8400    pts_time:8.4
+[Parsed_metadata_1 @ 0000020c699b9e40] lavfi.scene_score=0.421182
+[Parsed_metadata_1 @ 0000020c699b9e40] frame:2    pts:9133    pts_time:9.133
+[Parsed_metadata_1 @ 0000020c699b9e40] lavfi.scene_score=0.529317
+[Parsed_metadata_1 @ 0000020c699b9e40] frame:3    pts:17433   pts_time:17.433
+[Parsed_metadata_1 @ 0000020c699b9e40] lavfi.scene_score=0.416300
+frame=    4 fps=0.0 q=-0.0 size=N/A time=00:00:21.25 bitrate=N/A speed=41.8x elapsed=0:00:00.50    [Parsed_metadata_1 @ 0000020c699b9e40] frame:4    pts:21967   pts_time:21.967
+[Parsed_metadata_1 @ 0000020c699b9e40] lavfi.scene_score=0.441655
+[Parsed_metadata_1 @ 0000020c699b9e40] frame:5    pts:23767   pts_time:23.767
+[Parsed_metadata_1 @ 0000020c699b9e40] lavfi.scene_score=0.489801
+[out#0/null @ 0000020c699317c0] video:2KiB audio:5172KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown
+frame=    6 fps=0.0 q=-0.0 Lsize=N/A time=00:00:27.58 bitrate=N/A speed=41.5x elapsed=0:00:00.66    

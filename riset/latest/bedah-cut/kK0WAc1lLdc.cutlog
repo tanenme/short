@@ -1,0 +1,51 @@
+Input #0, matroska,webm, from 'brightsbrain/kK0WAc1lLdc - Trik Rahasia Membuat Squishy Jerawat Yang Lagi Viral？! #squishy.webm':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    ENCODER         : Lavf63.1.101
+  Duration: 00:00:24.86, start: 0.000000, bitrate: 1075 kb/s
+  Stream #0:0: Video: av1 (libdav1d) (Main), yuv420p(tv, bt709), 720x1280 [SAR 1:1 DAR 9:16], 30 fps, 30 tbr, 1k tbn (default)
+    Metadata:
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:24.833000000
+  Stream #0:1(eng): Audio: opus, 48000 Hz, stereo, fltp (default)
+    Metadata:
+      DURATION        : 00:00:24.861000000
+Stream mapping:
+  Stream #0:0 -> #0:0 (av1 (libdav1d) -> wrapped_avframe (native))
+  Stream #0:1 -> #0:1 (opus (native) -> pcm_s16le (native))
+Press [q] to stop, [?] for help
+[Parsed_metadata_1 @ 000002c19f162600] frame:0    pts:2167    pts_time:2.167
+[Parsed_metadata_1 @ 000002c19f162600] lavfi.scene_score=0.403662
+Output #0, null, to 'pipe:':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    encoder         : Lavf63.1.101
+  Stream #0:0: Video: wrapped_avframe, yuv420p(tv, bt709, progressive), 720x1280 [SAR 1:1 DAR 9:16], q=2-31, 200 kb/s, 30 fps, 30 tbn (default)
+    Metadata:
+      encoder         : Lavc63.1.101 wrapped_avframe
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:24.833000000
+  Stream #0:1(eng): Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s (default)
+    Metadata:
+      encoder         : Lavc63.1.101 pcm_s16le
+      DURATION        : 00:00:24.861000000
+[Parsed_metadata_1 @ 000002c19f162600] frame:1    pts:2900    pts_time:2.9
+[Parsed_metadata_1 @ 000002c19f162600] lavfi.scene_score=0.418119
+[Parsed_metadata_1 @ 000002c19f162600] frame:2    pts:3633    pts_time:3.633
+[Parsed_metadata_1 @ 000002c19f162600] lavfi.scene_score=0.456909
+[Parsed_metadata_1 @ 000002c19f162600] frame:3    pts:4600    pts_time:4.6
+[Parsed_metadata_1 @ 000002c19f162600] lavfi.scene_score=0.415662
+[Parsed_metadata_1 @ 000002c19f162600] frame:4    pts:6267    pts_time:6.267
+[Parsed_metadata_1 @ 000002c19f162600] lavfi.scene_score=0.597980
+[Parsed_metadata_1 @ 000002c19f162600] frame:5    pts:7733    pts_time:7.733
+[Parsed_metadata_1 @ 000002c19f162600] lavfi.scene_score=0.546789
+[Parsed_metadata_1 @ 000002c19f162600] frame:6    pts:12400   pts_time:12.4
+[Parsed_metadata_1 @ 000002c19f162600] lavfi.scene_score=0.669877
+[Parsed_metadata_1 @ 000002c19f162600] frame:7    pts:20333   pts_time:20.333
+[Parsed_metadata_1 @ 000002c19f162600] lavfi.scene_score=0.534454
+[out#0/null @ 000002c19f0b4b80] video:3KiB audio:4659KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown
+frame=    8 fps=0.0 q=-0.0 Lsize=N/A time=00:00:24.84 bitrate=N/A speed=51.2x elapsed=0:00:00.48    

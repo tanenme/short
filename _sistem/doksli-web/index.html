@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doksli Finder AI — Mesin Pencari Klip Shorts</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #09090b; color: #f4f4f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #18181b; }
+    ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.2); }
+      50% { box-shadow: 0 0 25px rgba(99, 102, 241, 0.45); }
+    }
+    .vision-pro-card { animation: pulse-glow 3s infinite ease-in-out; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Top Navbar -->
+  <header class="border-b border-zinc-800 bg-zinc-950/80 backdrop-blur sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-violet-500 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/20">
+        🎬
+      </div>
+      <div>
+        <h1 class="text-base font-bold tracking-tight text-white flex items-center gap-2">
+          Doksli Finder AI
+          <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-medium">Exa + Vision Pro</span>
+        </h1>
+        <p class="text-xs text-zinc-400">Pencarian Footage Raw & Kurasi Otomatis AI (Bebas Overlay • 9:16 • Skenario)</p>
+      </div>
+    </div>
+
+    <!-- Controls & Key -->
+    <div class="flex items-center space-x-4">
+      <!-- Mode Raw Toggle -->
+      <label class="flex items-center space-x-2 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-1.5 cursor-pointer hover:border-emerald-500/50 transition">
+        <input type="checkbox" id="rawModeToggle" checked class="rounded bg-zinc-950 border-zinc-700 text-emerald-500 focus:ring-0">
+        <span class="text-xs font-semibold text-emerald-400 flex items-center gap-1">
+          🛡️ Raw Only
+        </span>
+      </label>
+
+      <div class="flex items-center bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 focus-within:border-indigo-500 transition">
+        <span class="text-xs text-zinc-500 mr-2">🔑 Key:</span>
+        <input type="password" id="apiKeyInput" placeholder="Opsional (pakai .env)" class="bg-transparent text-xs text-zinc-200 outline-none w-36 font-mono" value="">
+        <button onclick="toggleKeyVisibility()" class="text-zinc-500 hover:text-zinc-300 text-xs ml-1">👁️</button>
+      </div>
+      <button onclick="saveApiKey()" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 py-1.5 rounded-lg border border-zinc-700 transition">
+        Simpan
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Grid Layout -->
+  <main class="flex-1 p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-[1750px] w-full mx-auto">
+
+    <!-- LEFT COLUMN: Naskah & Generator (5 Cols) -->
+    <div class="lg:col-span-5 flex flex-col space-y-5">
+      
+      <!-- Box 1: Pilih / Import Naskah -->
+      <div class="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+            📄 1. Naskah Video
+          </h2>
+          <span class="text-xs text-zinc-500">Pilih paket atau ketik naskah</span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-zinc-400 mb-1.5">Pilih dari Paket C1-Fakta:</label>
+          <select id="packageSelect" onchange="loadSelectedPackage()" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-200 focus:border-indigo-500 outline-none">
+            <option value="">-- Muat Daftar Paket... --</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-zinc-400 mb-1.5">Isi Teks Naskah:</label>
+          <textarea id="naskahInput" rows="6" placeholder="Tempel naskah video di sini..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-xs text-zinc-200 focus:border-indigo-500 outline-none font-sans leading-relaxed resize-none"></textarea>
+        </div>
+
+        <button onclick="extractKeywords()" id="btnExtract" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-medium text-xs py-2.5 px-4 rounded-xl shadow-lg shadow-indigo-600/20 transition flex items-center justify-center gap-2">
+          <span>⚡ Analisa & Ekstrak Query Pencarian</span>
+        </button>
+      </div>
+
+      <!-- Box 2: Rekomendasi Query & Target Beat -->
+      <div class="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+            🎯 2. Query Siap Cari
+          </h2>
+          <span class="text-xs text-zinc-500">Klik untuk langsung mencari</span>
+        </div>
+
+        <div id="queryList" class="flex flex-col gap-2">
+          <div class="p-4 rounded-xl border border-dashed border-zinc-800 text-center text-xs text-zinc-500">
+            Pilih atau tempel naskah di atas, lalu klik <strong>Analisa</strong> untuk memunculkan query cerdas.
+          </div>
+        </div>
+      </div>
+
+      <!-- Box 3: Keranjang Doksli Terpilih (Sources.md) -->
+      <div class="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-5 shadow-sm space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+            📌 Keranjang Klip Terpilih (<span id="savedCount" class="text-indigo-400 font-bold">0</span>/10)
+          </h2>
+          <button onclick="copySourcesTable()" class="text-xs bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-lg transition font-medium">
+            📋 Salin Format sources.md
+          </button>
+        </div>
+
+        <div id="savedList" class="max-h-56 overflow-y-auto space-y-2 text-xs pr-1">
+          <p class="text-zinc-600 italic text-center py-4">Belum ada klip yang disimpan. Klik tombol <strong>+ Simpan</strong> pada hasil pencarian.</p>
+        </div>
+      </div>
+
+      <!-- Box 4: Mesin Editor Video Otomatis -->
+      <div class="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+            🎬 3. Editor Video Otomatis
+          </h2>
+          <span id="editorStatusBadge" class="text-[10px] bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full font-mono">STANDBY</span>
+        </div>
+
+        <div id="editorAssetSummary" class="bg-zinc-950/60 border border-zinc-800/60 rounded-xl p-3 text-xs space-y-1.5 text-zinc-400">
+          <div class="flex justify-between"><span>📄 Brief Adegan:</span> <span id="statBrief" class="text-zinc-500 font-mono">-</span></div>
+          <div class="flex justify-between"><span>🎙️ Voiceover (VO):</span> <span id="statVo" class="text-zinc-500 font-mono">-</span></div>
+          <div class="flex justify-between"><span>🎥 Klip Mentah:</span> <span id="statClips" class="text-zinc-500 font-mono">-</span></div>
+          <div class="flex justify-between"><span>🎵 BGM & SFX:</span> <span class="text-emerald-400 font-mono">Tersedia (Auto-Ducking)</span></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button onclick="triggerBuildCapcut()" id="btnBuildCapcut" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs py-2.5 px-3 rounded-xl transition shadow flex items-center justify-center gap-1.5">
+            <span>🎨 Buat Draft CapCut</span>
+          </button>
+          <button onclick="triggerRenderDirect()" id="btnRenderDirect" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs py-2.5 px-3 rounded-xl transition shadow flex items-center justify-center gap-1.5">
+            <span>🚀 Render MP4 Langsung</span>
+          </button>
+        </div>
+
+        <div id="editorFeedback" class="hidden text-xs p-3 rounded-xl"></div>
+
+        <div id="editorVideoPreview" class="hidden space-y-2 pt-2 border-t border-zinc-800">
+          <span class="text-xs font-semibold text-zinc-300">Hasil Video Final:</span>
+          <video id="finalVideoPlayer" controls class="w-full rounded-xl border border-zinc-700 bg-black aspect-[9/16] max-h-72 object-contain"></video>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: Search Engine & Results (7 Cols) -->
+    <div class="lg:col-span-7 flex flex-col space-y-5">
+      
+      <!-- Search Controller Box -->
+      <div class="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-5 shadow-sm space-y-4">
+        
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+            🔍 3. Mesin Pencari Doksli Exa
+          </h2>
+          <div class="flex items-center space-x-2">
+            <span class="text-[11px] text-zinc-500">Preset Bersih:</span>
+            <div class="flex bg-zinc-950 border border-zinc-800 rounded-lg p-0.5 text-[11px]">
+              <button onclick="setPreset('all')" id="btnPresetAll" class="px-2.5 py-1 rounded-md bg-indigo-600 text-white font-medium">Semua</button>
+              <button onclick="setPreset('reddit_raw')" id="btnPresetReddit" class="px-2.5 py-1 rounded-md text-zinc-400 hover:text-white font-medium">🐱 Reddit</button>
+              <button onclick="setPreset('cctv_petcam')" id="btnPresetCCTV" class="px-2.5 py-1 rounded-md text-zinc-400 hover:text-white font-medium">📹 CCTV/Cam</button>
+              <button onclick="setPreset('stock_broll')" id="btnPresetStock" class="px-2.5 py-1 rounded-md text-zinc-400 hover:text-white font-medium">💎 4K Stock</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="flex gap-2">
+          <div class="relative flex-1">
+            <input type="text" id="searchQueryInput" oninput="syncScenarioWithQuery()" placeholder="Ketik kata kunci pencarian alami... (mis. cat chattering ek ek at gecko)" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl pl-4 pr-10 py-3 text-xs text-zinc-100 placeholder-zinc-500 focus:border-indigo-500 outline-none transition font-sans">
+            <button onclick="clearSearchQuery()" class="absolute right-3 top-3 text-zinc-500 hover:text-zinc-300 text-xs">✕</button>
+          </div>
+          <button onclick="handleSearchClick()" id="btnSearch" class="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-medium text-xs px-6 py-3 rounded-xl shadow-lg shadow-indigo-600/20 transition flex items-center gap-2 whitespace-nowrap">
+            <span id="btnSearchText">Cari Doksli</span> 🚀
+          </button>
+        </div>
+
+        <!-- NEW: Vision Pro Filter & Auto-Curator Panel -->
+        <div class="p-3.5 rounded-xl bg-gradient-to-r from-violet-950/40 via-indigo-950/30 to-purple-950/30 border border-indigo-500/30 space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="flex items-center space-x-2.5 cursor-pointer select-none">
+              <input type="checkbox" id="visionProToggle" onchange="toggleVisionProUI()" checked class="w-4 h-4 rounded text-indigo-500 focus:ring-0 bg-zinc-900 border-zinc-700">
+              <span class="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                <span>✨ Filter Vision Pro (Auto-Kurasi AI)</span>
+                <span class="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded font-mono font-semibold">AUTO-SCAN</span>
+              </span>
+            </label>
+            <div class="flex items-center space-x-2 text-xs">
+              <span class="text-zinc-400">Target Lolos:</span>
+              <select id="visionProTargetCount" class="bg-zinc-900 border border-indigo-500/40 text-indigo-300 rounded px-2 py-0.5 text-xs font-semibold outline-none">
+                <option value="1">1 Calon</option>
+                <option value="2">2 Calon</option>
+                <option value="3" selected>3 Calon Terkuat</option>
+                <option value="5">5 Calon</option>
+                <option value="10">10 Calon</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Sub-filters checkboxes -->
+          <div id="visionProSubFilters" class="grid grid-cols-1 md:grid-cols-3 gap-2 pt-2 border-t border-indigo-500/20 text-xs">
+            <label class="flex items-center space-x-2 bg-zinc-950/70 border border-zinc-800/80 rounded-lg p-2 cursor-pointer hover:border-indigo-500/40 transition">
+              <input type="checkbox" id="subBebasOverlay" checked class="rounded bg-zinc-900 border-zinc-700 text-indigo-500 focus:ring-0">
+              <div>
+                <div class="font-medium text-zinc-200">🛡️ Bebas Overlay</div>
+                <div class="text-[10px] text-zinc-400">Tanpa subtitle tebal / meme</div>
+              </div>
+            </label>
+
+            <label class="flex items-center space-x-2 bg-zinc-950/70 border border-zinc-800/80 rounded-lg p-2 cursor-pointer hover:border-indigo-500/40 transition">
+              <input type="checkbox" id="subDimensi916" checked class="rounded bg-zinc-900 border-zinc-700 text-indigo-500 focus:ring-0">
+              <div>
+                <div class="font-medium text-zinc-200">📱 Dimensi 9:16</div>
+                <div class="text-[10px] text-zinc-400">Wajib vertikal Shorts/Reels</div>
+              </div>
+            </label>
+
+            <label class="flex items-center space-x-2 bg-zinc-950/70 border border-zinc-800/80 rounded-lg p-2 cursor-pointer hover:border-indigo-500/40 transition">
+              <input type="checkbox" id="subMiripSkenario" checked class="rounded bg-zinc-900 border-zinc-700 text-indigo-500 focus:ring-0">
+              <div>
+                <div class="font-medium text-zinc-200">🎯 Mirip Skenario</div>
+                <div class="text-[10px] text-zinc-400">Cocok dengan naskah/keyword</div>
+              </div>
+            </label>
+          </div>
+
+          <!-- Skenario Target Input -->
+          <div id="visionProScenarioRow" class="flex items-center gap-2 pt-1 text-xs">
+            <span class="text-zinc-400 whitespace-nowrap text-[11px] font-medium">Target Skenario:</span>
+            <input type="text" id="visionProScenarioInput" placeholder="Deskripsi adegan/hewan (mis. kucing mulut getar bunyi ek-ek lihat cicak)..." class="flex-1 bg-zinc-950/80 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-zinc-200 placeholder-zinc-500 outline-none focus:border-indigo-500 transition">
+          </div>
+        </div>
+
+        <!-- Filters Row -->
+        <div class="flex flex-wrap items-center justify-between gap-4 pt-1 border-t border-zinc-800/60 text-xs text-zinc-400">
+          <div class="flex items-center space-x-3">
+            <span class="text-zinc-500 font-medium">Platform:</span>
+            <label class="flex items-center space-x-1.5 cursor-pointer text-zinc-300 hover:text-white">
+              <input type="checkbox" id="platYT" value="youtube.com" checked class="rounded bg-zinc-950 border-zinc-700 text-indigo-600 focus:ring-0">
+              <span>YouTube</span>
+            </label>
+            <label class="flex items-center space-x-1.5 cursor-pointer text-zinc-300 hover:text-white">
+              <input type="checkbox" id="platTT" value="tiktok.com" checked class="rounded bg-zinc-950 border-zinc-700 text-indigo-600 focus:ring-0">
+              <span>TikTok</span>
+            </label>
+            <label class="flex items-center space-x-1.5 cursor-pointer text-zinc-300 hover:text-white">
+              <input type="checkbox" id="platRD" value="reddit.com" checked class="rounded bg-zinc-950 border-zinc-700 text-indigo-600 focus:ring-0">
+              <span>Reddit</span>
+            </label>
+            <label class="flex items-center space-x-1.5 cursor-pointer text-zinc-300 hover:text-white">
+              <input type="checkbox" id="platPX" value="pexels.com" checked class="rounded bg-zinc-950 border-zinc-700 text-indigo-600 focus:ring-0">
+              <span>Pexels</span>
+            </label>
+            <label class="flex items-center space-x-1.5 cursor-pointer text-zinc-300 hover:text-white">
+              <input type="checkbox" id="platIG" value="instagram.com" class="rounded bg-zinc-950 border-zinc-700 text-indigo-600 focus:ring-0">
+              <span>Instagram</span>
+            </label>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <span class="text-zinc-500">Maksimal Pencarian:</span>
+            <select id="limitSelect" class="bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1 text-xs text-zinc-300 outline-none">
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="15" selected>15</option>
+              <option value="20">20</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Vision Pro Live Progress Card -->
+      <div id="visionProProgressCard" class="hidden bg-indigo-950/40 border border-indigo-500/40 rounded-2xl p-4 space-y-2.5">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-semibold text-indigo-300 flex items-center gap-2">
+            <span class="animate-spin text-sm">⚙️</span>
+            <span id="vpProgressText">Memeriksa kandidat 1/15 dengan Gemini Vision Pro...</span>
+          </span>
+          <div class="flex items-center gap-2">
+            <span id="vpFoundCount" class="font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/30 text-xs">0 / 3 Calon Terkuat</span>
+            <button onclick="stopVisionPro()" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-[11px] border border-zinc-700 transition">⏹️ Stop Kurasi</button>
+          </div>
+        </div>
+        <div class="w-full bg-zinc-950 h-2 rounded-full overflow-hidden border border-zinc-800">
+          <div id="vpProgressBar" class="bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400 h-full w-0 transition-all duration-300"></div>
+        </div>
+      </div>
+
+      <!-- Top Showcase Calon Terkuat (Vision Pro Winners) -->
+      <div id="showcaseContainer" class="hidden space-y-3">
+        <div class="flex items-center justify-between px-1">
+          <h4 class="text-xs font-bold text-amber-300 flex items-center gap-2 tracking-wide uppercase">
+            <span>🏆 Calon Terkuat Pilihan Vision Pro</span>
+            <span id="showcaseBadge" class="bg-amber-500/20 text-amber-300 text-[10px] px-2 py-0.5 rounded-full border border-amber-500/30 font-mono">0 Lolos</span>
+          </h4>
+          <span class="text-[11px] text-zinc-400 italic">Lolos kualifikasi: Bebas Overlay • 9:16 Vertikal • Mirip Skenario</span>
+        </div>
+        <div id="showcaseCards" class="grid grid-cols-1 gap-3"></div>
+      </div>
+
+      <!-- Results Header & Counter -->
+      <div class="flex items-center justify-between px-1">
+        <h3 id="allResultsTitle" class="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-2">
+          📋 Hasil Temuan Klip (<span id="resultCount" class="text-indigo-400">0</span>)
+        </h3>
+        <span id="searchStatus" class="text-xs text-zinc-500 italic"></span>
+      </div>
+
+      <!-- Results Container -->
+      <div id="resultsContainer" class="flex-1 space-y-3 overflow-y-auto max-h-[850px] pr-1">
+        <div class="bg-zinc-900/30 border border-dashed border-zinc-800 rounded-2xl p-12 text-center text-zinc-500 text-xs">
+          Masukkan kata kunci atau pilih dari query naskah di sebelah kiri untuk mencari video klip.
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-zinc-900 border border-zinc-700 text-zinc-100 text-xs px-4 py-3 rounded-xl shadow-2xl opacity-0 pointer-events-none transition-all transform translate-y-2 z-50 flex items-center gap-2">
+    <span id="toastMsg">Notification</span>
+  </div>
+
+  <script>
+    let savedClips = [];
+    let currentPreset = "all";
+    let isVisionProScanning = false;
+    let shouldStopVisionPro = false;
+    let currentSearchResults = [];
+    let qualifyingCandidates = [];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadPackages();
+      const savedKey = localStorage.getItem("exa_api_key");
+      if (savedKey) {
+        document.getElementById("apiKeyInput").value = savedKey;
+      }
+      toggleVisionProUI();
+    });
+
+    function toggleVisionProUI() {
+      const isVP = document.getElementById("visionProToggle").checked;
+      const subBox = document.getElementById("visionProSubFilters");
+      const scenRow = document.getElementById("visionProScenarioRow");
+      const btnText = document.getElementById("btnSearchText");
+
+      if (isVP) {
+        subBox.classList.remove("hidden");
+        scenRow.classList.remove("hidden");
+        btnText.textContent = "✨ Cari & Kurasi Vision Pro";
+      } else {
+        subBox.classList.add("hidden");
+        scenRow.classList.add("hidden");
+        btnText.textContent = "Cari Doksli";
+      }
+    }
+
+    function syncScenarioWithQuery() {
+      const q = document.getElementById("searchQueryInput").value.trim();
+      const scenInput = document.getElementById("visionProScenarioInput");
+      if (!scenInput.value.trim() || scenInput.dataset.auto === "true") {
+        scenInput.value = q;
+        scenInput.dataset.auto = "true";
+      }
+    }
+
+    function setPreset(p) {
+      currentPreset = p;
+      ['all', 'reddit_raw', 'cctv_petcam', 'stock_broll'].forEach(k => {
+        const btn = document.getElementById('btnPreset' + (k === 'all' ? 'All' : k === 'reddit_raw' ? 'Reddit' : k === 'cctv_petcam' ? 'CCTV' : 'Stock'));
+        if (btn) {
+          if (k === p) {
+            btn.className = "px-2.5 py-1 rounded-md bg-indigo-600 text-white font-medium";
+          } else {
+            btn.className = "px-2.5 py-1 rounded-md text-zinc-400 hover:text-white font-medium";
+          }
+        }
+      });
+
+      // Synchronize checkboxes to match preset
+      if (p === 'reddit_raw') {
+        document.getElementById('platRD').checked = true;
+        document.getElementById('platYT').checked = false;
+        document.getElementById('platTT').checked = false;
+        document.getElementById('platPX').checked = false;
+        document.getElementById('platIG').checked = false;
+      } else if (p === 'stock_broll') {
+        document.getElementById('platPX').checked = true;
+        document.getElementById('platRD').checked = false;
+        document.getElementById('platYT').checked = false;
+        document.getElementById('platTT').checked = false;
+        document.getElementById('platIG').checked = false;
+      } else if (p === 'all') {
+        document.getElementById('platYT').checked = true;
+        document.getElementById('platTT').checked = true;
+        document.getElementById('platRD').checked = true;
+        document.getElementById('platPX').checked = true;
+        document.getElementById('platIG').checked = false;
+      } else if (p === 'cctv_petcam') {
+        document.getElementById('platYT').checked = true;
+        document.getElementById('platTT').checked = true;
+        document.getElementById('platRD').checked = true;
+        document.getElementById('platPX').checked = false;
+      }
+
+      showToast(`🎯 Preset disetel ke: ${p.toUpperCase()}`);
+      if (document.getElementById("searchQueryInput").value.trim()) {
+        executeSearch();
+      }
+    }
+
+    function saveApiKey() {
+      const key = document.getElementById("apiKeyInput").value.trim();
+      if (key) {
+        localStorage.setItem("exa_api_key", key);
+        showToast("✅ Exa API Key tersimpan!");
+      }
+    }
+
+    function toggleKeyVisibility() {
+      const el = document.getElementById("apiKeyInput");
+      el.type = el.type === "password" ? "text" : "password";
+    }
+
+    let packagesMap = {};
+
+    async function loadPackages() {
+      try {
+        const res = await fetch("/api/packages");
+        const data = await res.json();
+        const sel = document.getElementById("packageSelect");
+        sel.innerHTML = '<option value="">-- Pilih Paket Naskah --</option>';
+        packagesMap = {};
+        data.packages.forEach(p => {
+          if (!p.has_naskah) return;
+          packagesMap[p.id] = p.content;
+          const opt = document.createElement("option");
+          opt.value = p.id;
+          opt.textContent = `${p.id} — ${p.title}`;
+          sel.appendChild(opt);
+        });
+      } catch (e) {
+        console.error("Gagal load paket:", e);
+        showToast("❌ Gagal memuat daftar paket: " + e.message);
+      }
+    }
+
+    function loadSelectedPackage() {
+      const sel = document.getElementById("packageSelect");
+      const pkgId = sel.value;
+      if (pkgId && packagesMap[pkgId]) {
+        const full = packagesMap[pkgId];
+        let voText = full;
+        const voMatch = full.match(/## (?:VO final|Naskah)[^\n]*\n+([\s\S]*?)(?:\n## |$)/i);
+        if (voMatch && voMatch[1].trim()) {
+          voText = voMatch[1].trim();
+        }
+        document.getElementById("naskahInput").value = voText;
+        extractKeywords();
+        checkEditorStatus(pkgId);
+      }
+    }
+
+    async function checkEditorStatus(pkgId) {
+      if (!pkgId) return;
+      const badge = document.getElementById("editorStatusBadge");
+      const sBrief = document.getElementById("statBrief");
+      const sVo = document.getElementById("statVo");
+      const sClips = document.getElementById("statClips");
+      const vPreview = document.getElementById("editorVideoPreview");
+      const vPlayer = document.getElementById("finalVideoPlayer");
+      
+      badge.textContent = "MEMERIKSA...";
+      badge.className = "text-[10px] bg-yellow-900/40 text-yellow-300 px-2 py-0.5 rounded-full font-mono";
+      
+      try {
+        const res = await fetch(`/api/editor/status/${pkgId}`);
+        const data = await res.json();
+        if (data.success) {
+          sBrief.textContent = data.has_brief ? `${data.scenes_count} Adegan` : "Tidak ada";
+          sBrief.className = data.has_brief ? "text-emerald-400 font-mono" : "text-rose-400 font-mono";
+          
+          sVo.textContent = data.has_vo ? `${data.vo_duration}s` : "Belum ada";
+          sVo.className = data.has_vo ? "text-emerald-400 font-mono" : "text-rose-400 font-mono";
+          
+          sClips.textContent = `${data.clips_count} File`;
+          sClips.className = data.clips_count >= 5 ? "text-emerald-400 font-mono" : "text-yellow-400 font-mono";
+          
+          if (data.has_output) {
+            badge.textContent = "SIAP TAYANG";
+            badge.className = "text-[10px] bg-emerald-900/40 text-emerald-300 px-2 py-0.5 rounded-full font-mono";
+            vPlayer.src = `/api/editor/video/${pkgId}?t=${Date.now()}`;
+            vPreview.classList.remove("hidden");
+          } else if (data.has_brief && data.has_vo && data.clips_count > 0) {
+            badge.textContent = "SIAP RAKIT";
+            badge.className = "text-[10px] bg-indigo-900/40 text-indigo-300 px-2 py-0.5 rounded-full font-mono";
+            vPreview.classList.add("hidden");
+          } else {
+            badge.textContent = "KURANG ASET";
+            badge.className = "text-[10px] bg-rose-900/40 text-rose-300 px-2 py-0.5 rounded-full font-mono";
+            vPreview.classList.add("hidden");
+          }
+        }
+      } catch (e) {
+        console.error("Editor status check failed", e);
+      }
+    }
+
+    async function triggerBuildCapcut() {
+      const sel = document.getElementById("packageSelect");
+      const pkgId = sel.value;
+      if (!pkgId) {
+        showToast("⚠️ Pilih paket naskah terlebih dahulu!");
+        return;
+      }
+      const btn = document.getElementById("btnBuildCapcut");
+      const fb = document.getElementById("editorFeedback");
+      btn.disabled = true;
+      btn.innerHTML = `<span>⏳ Membuat Draft...</span>`;
+      fb.className = "text-xs p-3 rounded-xl bg-indigo-950/60 border border-indigo-800 text-indigo-300 block";
+      fb.textContent = "Sedang merakit timeline CapCut (video, transitions, VO, ducked BGM, SFX, text templates)...";
+      
+      try {
+        const res = await fetch("/api/editor/build-capcut", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ package_name: pkgId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          fb.className = "text-xs p-3 rounded-xl bg-emerald-950/60 border border-emerald-800 text-emerald-300 block";
+          fb.innerHTML = `✅ <strong>Berhasil!</strong> Draft CapCut siap dibuka di aplikasi CapCut Desktop.<br><code class="text-zinc-300 text-[11px]">${data.draft_path}</code>`;
+          showToast("🎉 Draft CapCut berhasil dibuat!");
+          checkEditorStatus(pkgId);
+        } else {
+          fb.className = "text-xs p-3 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-300 block";
+          fb.textContent = `❌ Gagal: ${data.error}`;
+        }
+      } catch (e) {
+        fb.className = "text-xs p-3 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-300 block";
+        fb.textContent = `❌ Error: ${e.message}`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>🎨 Buat Draft CapCut</span>`;
+      }
+    }
+
+    async function triggerRenderDirect() {
+      const sel = document.getElementById("packageSelect");
+      const pkgId = sel.value;
+      if (!pkgId) {
+        showToast("⚠️ Pilih paket naskah terlebih dahulu!");
+        return;
+      }
+      const btn = document.getElementById("btnRenderDirect");
+      const fb = document.getElementById("editorFeedback");
+      btn.disabled = true;
+      btn.innerHTML = `<span>⏳ Merender MP4...</span>`;
+      fb.className = "text-xs p-3 rounded-xl bg-emerald-950/60 border border-emerald-800 text-emerald-300 block";
+      fb.textContent = "FFmpeg sedang memproses video 9:16 vertikal, mixing audio ducking, memasang SFX, dan membakar subtitle...";
+      
+      try {
+        const res = await fetch("/api/editor/render-direct", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ package_name: pkgId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          fb.className = "text-xs p-3 rounded-xl bg-emerald-950/60 border border-emerald-800 text-emerald-300 block";
+          fb.innerHTML = `✅ <strong>Render Selesai!</strong> Video MP4 siap tayang.`;
+          showToast("🚀 Video MP4 berhasil di-render!");
+          checkEditorStatus(pkgId);
+        } else {
+          fb.className = "text-xs p-3 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-300 block";
+          fb.textContent = `❌ Gagal: ${data.error}`;
+        }
+      } catch (e) {
+        fb.className = "text-xs p-3 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-300 block";
+        fb.textContent = `❌ Error: ${e.message}`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>🚀 Render MP4 Langsung</span>`;
+      }
+    }
+
+    async function extractKeywords() {
+      const text = document.getElementById("naskahInput").value.trim();
+      if (!text) {
+        showToast("⚠️ Masukkan teks naskah terlebih dahulu!");
+        return;
+      }
+      const btn = document.getElementById("btnExtract");
+      btn.disabled = true;
+      btn.innerHTML = `<span>⏳ Menganalisa Naskah...</span>`;
+
+      try {
+        const res = await fetch("/api/extract-keywords", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ naskah: text })
+        });
+        const data = await res.json();
+        renderQueries(data.recommended_queries);
+
+        // Also pre-fill scenario target
+        const scenInput = document.getElementById("visionProScenarioInput");
+        if (data.recommended_queries && data.recommended_queries[0]) {
+          scenInput.value = data.recommended_queries[0];
+          scenInput.dataset.auto = "true";
+        }
+        showToast("✨ Query & Skenario berhasil dibuat!");
+      } catch (e) {
+        showToast("❌ Gagal mengekstrak: " + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span>⚡ Analisa & Ekstrak Query Pencarian</span>`;
+      }
+    }
+
+    function renderQueries(queries) {
+      const box = document.getElementById("queryList");
+      if (!queries || queries.length === 0) {
+        box.innerHTML = `<p class="text-xs text-zinc-500">Tidak ada query terdeteksi.</p>`;
+        return;
+      }
+      box.innerHTML = "";
+      queries.forEach((q, idx) => {
+        const item = document.createElement("div");
+        item.className = "flex items-center justify-between p-2.5 rounded-xl bg-zinc-950 border border-zinc-800/80 hover:border-indigo-500/50 transition cursor-pointer group";
+        item.onclick = () => selectQuery(q);
+        item.innerHTML = `
+          <div class="flex items-center space-x-2.5">
+            <span class="text-[10px] font-mono text-zinc-500 group-hover:text-indigo-400">#${idx+1}</span>
+            <span class="text-xs text-zinc-200 group-hover:text-white font-medium">${escapeHtml(q)}</span>
+          </div>
+          <button class="text-xs text-indigo-400 opacity-0 group-hover:opacity-100 transition font-medium">Cari ➜</button>
+        `;
+        box.appendChild(item);
+      });
+
+      if (queries[0]) {
+        document.getElementById("searchQueryInput").value = queries[0];
+        syncScenarioWithQuery();
+      }
+    }
+
+    function selectQuery(q) {
+      document.getElementById("searchQueryInput").value = q;
+      const scenInput = document.getElementById("visionProScenarioInput");
+      scenInput.value = q;
+      scenInput.dataset.auto = "true";
+      handleSearchClick();
+    }
+
+    function clearSearchQuery() {
+      document.getElementById("searchQueryInput").value = "";
+    }
+
+    function handleSearchClick() {
+      if (isVisionProScanning) {
+        stopVisionPro();
+        return;
+      }
+      executeSearch();
+    }
+
+    async function executeSearch() {
+      const q = document.getElementById("searchQueryInput").value.trim();
+      const apiKey = document.getElementById("apiKeyInput").value.trim();
+      const rawMode = document.getElementById("rawModeToggle").checked;
+      const isVP = document.getElementById("visionProToggle").checked;
+
+      if (!q) {
+        showToast("⚠️ Ketik kata kunci terlebih dahulu!");
+        return;
+      }
+
+      const platforms = [];
+      if (document.getElementById("platYT").checked) platforms.push("youtube.com");
+      if (document.getElementById("platTT").checked) platforms.push("tiktok.com");
+      if (document.getElementById("platRD").checked) platforms.push("reddit.com");
+      if (document.getElementById("platPX").checked) platforms.push("pexels.com");
+      if (document.getElementById("platIG").checked) platforms.push("instagram.com");
+
+      const limit = parseInt(document.getElementById("limitSelect").value) || 15;
+      const btn = document.getElementById("btnSearch");
+      const btnText = document.getElementById("btnSearchText");
+      const status = document.getElementById("searchStatus");
+      const box = document.getElementById("resultsContainer");
+
+      btn.disabled = true;
+      btnText.textContent = isVP ? "Mencari & Menyiapkan Vision..." : "Mencari...";
+      status.textContent = `Menghubungi Exa (${rawMode ? 'Mode Raw ON' : 'Normal'})...`;
+      box.innerHTML = `<div class="p-12 text-center text-xs text-zinc-400 animate-pulse">🔎 Mencari kandidat klip via Exa Neural Search...</div>`;
+
+      // Reset Showcase
+      document.getElementById("showcaseContainer").classList.add("hidden");
+      document.getElementById("showcaseCards").innerHTML = "";
+      qualifyingCandidates = [];
+
+      try {
+        const res = await fetch("/api/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query: q,
+            platforms: platforms,
+            num_results: limit,
+            raw_mode: rawMode,
+            preset: currentPreset,
+            api_key: apiKey
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || "Gagal melakukan pencarian.");
+        }
+
+        const data = await res.json();
+        currentSearchResults = data.results || [];
+        document.getElementById("resultCount").textContent = data.count;
+        status.textContent = `Ditemukan ${data.count} kandidat (Query: "${data.query_used}").`;
+        renderResults(currentSearchResults);
+
+        // If Vision Pro is enabled, start auto curation loop!
+        if (isVP && currentSearchResults.length > 0) {
+          startVisionProCuration();
+        }
+      } catch (e) {
+        box.innerHTML = `<div class="p-8 text-center text-xs text-red-400 bg-red-950/20 border border-red-800/40 rounded-xl">❌ ${escapeHtml(e.message)}</div>`;
+        status.textContent = `Error pencarian.`;
+      } finally {
+        btn.disabled = false;
+        toggleVisionProUI();
+      }
+    }
+
+    function renderResults(results) {
+      const box = document.getElementById("resultsContainer");
+      if (!results || results.length === 0) {
+        box.innerHTML = `<div class="p-12 text-center text-xs text-zinc-500">Tidak ada video yang cocok. Coba matikan saklar Raw Only atau ubah kata kunci.</div>`;
+        return;
+      }
+      box.innerHTML = "";
+      results.forEach((item, idx) => {
+        const card = createVideoCard(item, idx, false);
+        box.appendChild(card);
+      });
+    }
+
+    function createVideoCard(item, idx, isShowcase) {
+      const card = document.createElement("div");
+      card.id = isShowcase ? `showcase-card-${idx}` : `clip-card-${idx}`;
+      
+      const baseBorder = isShowcase 
+        ? "bg-zinc-900 border-2 border-indigo-500/80 shadow-lg shadow-indigo-500/10 vision-pro-card" 
+        : "bg-zinc-900/80 border border-zinc-800 hover:border-zinc-700";
+
+      card.className = `${baseBorder} rounded-xl p-4 transition space-y-3 relative`;
+      
+      let badgeColor = "bg-zinc-800 text-zinc-300 border-zinc-700";
+      let icon = "🌐";
+      let dlHelperBtn = "";
+
+      if (item.platform === "youtube") {
+        badgeColor = "bg-red-500/10 text-red-400 border-red-500/20";
+        icon = "▶️ YouTube";
+        dlHelperBtn = `<a href="https://savetube.me" target="_blank" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-[11px] font-medium transition">SaveTube ⬇️</a>`;
+      } else if (item.platform === "tiktok") {
+        badgeColor = "bg-cyan-500/10 text-cyan-400 border-cyan-500/20";
+        icon = "🎵 TikTok";
+        dlHelperBtn = `<a href="https://snaptik.app" target="_blank" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-[11px] font-medium transition">SnapTik ⬇️</a>`;
+      } else if (item.platform === "reddit") {
+        badgeColor = "bg-orange-500/10 text-orange-400 border-orange-500/20";
+        icon = "🐱 Reddit (Raw)";
+        dlHelperBtn = `<a href="https://rapidsave.com" target="_blank" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-[11px] font-medium transition">RapidSave ⬇️</a>`;
+      } else if (item.platform === "pexels") {
+        badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+        icon = "💎 Pexels (100% Free)";
+      } else if (item.platform === "instagram") {
+        badgeColor = "bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20";
+        icon = "📸 Instagram";
+        dlHelperBtn = `<a href="https://snapinsta.app" target="_blank" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-[11px] font-medium transition">SnapInsta ⬇️</a>`;
+      }
+
+      const highlightsHtml = item.highlights && item.highlights.length > 0 
+        ? `<div class="bg-zinc-950/60 border border-zinc-800/60 rounded-lg p-2.5 text-[11px] text-zinc-400 leading-relaxed font-sans">${escapeHtml(item.highlights[0])}</div>` 
+        : `<div class="text-[11px] text-zinc-500 leading-relaxed">${escapeHtml(item.snippet)}</div>`;
+
+      const idPrefix = isShowcase ? `sc-` : ``;
+
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center space-x-2">
+            ${isShowcase ? `<span class="text-xs px-2.5 py-0.5 rounded-md font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">🏆 CALON #${idx+1}</span>` : ''}
+            <span class="text-xs px-2.5 py-0.5 rounded-md font-semibold border ${badgeColor}">${icon}</span>
+            ${item.author ? `<span class="text-[11px] text-zinc-400 font-mono">@${escapeHtml(item.author)}</span>` : ''}
+          </div>
+          <div class="flex items-center space-x-2">
+            <div id="${idPrefix}cleanBadge-${idx}" class="text-[10px] ${item.vp_evaluated ? '' : 'hidden'} font-mono px-2 py-0.5 rounded-md font-semibold"></div>
+            <span class="text-[10px] text-zinc-500 font-mono">#${idx+1}</span>
+          </div>
+        </div>
+
+        <div class="flex gap-3">
+          <div id="${idPrefix}thumbBox-${idx}" class="${item.thumbnail ? '' : 'hidden'} w-24 h-16 bg-zinc-950 rounded-lg overflow-hidden flex-shrink-0 border border-zinc-800">
+            <img id="${idPrefix}thumbImg-${idx}" src="${item.thumbnail || ''}" class="w-full h-full object-cover">
+          </div>
+          <div class="flex-1 min-w-0">
+            <a href="${item.url}" target="_blank" class="text-xs font-semibold text-zinc-100 hover:text-indigo-400 transition leading-snug line-clamp-2">
+              ${escapeHtml(item.title || item.url)}
+            </a>
+            <div class="text-[11px] text-zinc-500 font-mono truncate mt-0.5">${item.url}</div>
+          </div>
+        </div>
+
+        ${highlightsHtml}
+
+        <!-- AI Cleanliness & Vision Report Container -->
+        <div id="${idPrefix}cleanReport-${idx}" class="${item.vp_evaluated ? '' : 'hidden'} p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-[11px] space-y-1"></div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center justify-between pt-2 border-t border-zinc-800/40">
+          <div class="flex items-center space-x-2">
+            <a href="${item.url}" target="_blank" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-[11px] font-medium transition flex items-center gap-1">
+              <span>Tonton</span> ↗
+            </a>
+            <button onclick="copyToClipboard('${item.url}')" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-[11px] font-medium transition">
+              📋 Salin Link
+            </button>
+            ${dlHelperBtn}
+            ${!isShowcase ? `
+            <button onclick="evaluateSingleItem(${idx})" id="btnScan-${idx}" class="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded text-[11px] font-medium transition flex items-center gap-1">
+              <span>🔍 Scan Vision</span>
+            </button>` : ''}
+          </div>
+
+          <button onclick="saveClip(${JSON.stringify(item).replace(/"/g, '&quot;')})" class="px-3.5 py-1 ${isShowcase ? 'bg-gradient-to-r from-amber-600 to-indigo-600 hover:from-amber-500 hover:to-indigo-500 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-indigo-400 border border-zinc-700'} rounded text-[11px] font-semibold transition">
+            + Simpan
+          </button>
+        </div>
+      `;
+
+      if (item.vp_evaluated && item.vp_data) {
+        applyVpDataToCard(card, item.vp_data, idx, idPrefix);
+      }
+
+      return card;
+    }
+
+    // Auto Curation Loop for Vision Pro
+    async function startVisionProCuration() {
+      if (isVisionProScanning) return;
+      isVisionProScanning = true;
+      shouldStopVisionPro = false;
+
+      const targetN = parseInt(document.getElementById("visionProTargetCount").value) || 3;
+      const progressCard = document.getElementById("visionProProgressCard");
+      const progressText = document.getElementById("vpProgressText");
+      const progressBar = document.getElementById("vpProgressBar");
+      const foundCountBadge = document.getElementById("vpFoundCount");
+      const showcaseContainer = document.getElementById("showcaseContainer");
+      const showcaseCards = document.getElementById("showcaseCards");
+      const showcaseBadge = document.getElementById("showcaseBadge");
+
+      progressCard.classList.remove("hidden");
+      showcaseContainer.classList.remove("hidden");
+      
+      const scenario = document.getElementById("visionProScenarioInput").value.trim() || document.getElementById("searchQueryInput").value.trim();
+      const checkOverlay = document.getElementById("subBebasOverlay").checked;
+      const checkVertical = document.getElementById("subDimensi916").checked;
+      const checkScenario = document.getElementById("subMiripSkenario").checked;
+
+      const totalItems = currentSearchResults.length;
+      qualifyingCandidates = [];
+
+      for (let i = 0; i < totalItems; i++) {
+        if (shouldStopVisionPro) {
+          showToast("⏹️ Kurasi Vision Pro dihentikan pengguna.");
+          break;
+        }
+
+        const item = currentSearchResults[i];
+        progressText.innerHTML = `Memeriksa kandidat <strong>${i+1}/${totalItems}</strong>: "${escapeHtml((item.title || item.url).substring(0, 45))}..."`;
+        progressBar.style.width = `${Math.round(((i + 1) / totalItems) * 100)}%`;
+        foundCountBadge.textContent = `${qualifyingCandidates.length} / ${targetN} Calon Terkuat`;
+
+        try {
+          const res = await fetch("/api/vision-pro-evaluate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              url: item.url,
+              platform: item.platform,
+              scenario: scenario,
+              check_overlay: checkOverlay,
+              check_vertical: checkVertical,
+              check_scenario: checkScenario
+            })
+          });
+
+          const data = await res.json();
+          if (data.success && data.evaluation) {
+            const ev = data.evaluation;
+            item.thumbnail = data.thumbnail || item.thumbnail;
+            item.vp_evaluated = true;
+            item.vp_data = ev;
+
+            // Apply to item in main results list
+            const mainCard = document.getElementById(`clip-card-${i}`);
+            if (mainCard) {
+              applyVpDataToCard(mainCard, ev, i, "");
+            }
+
+            // Check if passed criteria
+            if (ev.passed) {
+              qualifyingCandidates.push(item);
+              // Sort showcase candidates by total score
+              qualifyingCandidates.sort((a, b) => (b.vp_data.total_score || 0) - (a.vp_data.total_score || 0));
+              
+              // Re-render showcase container
+              showcaseCards.innerHTML = "";
+              qualifyingCandidates.forEach((c, cIdx) => {
+                showcaseCards.appendChild(createVideoCard(c, cIdx, true));
+              });
+
+              showcaseBadge.textContent = `${qualifyingCandidates.length} Lolos (Target ${targetN})`;
+              foundCountBadge.textContent = `${qualifyingCandidates.length} / ${targetN} Calon Terkuat`;
+
+              // Check if Target N reached!
+              if (qualifyingCandidates.length >= targetN) {
+                showToast(`🎉 Berhasil menemukan ${targetN} calon terkuat yang lolos semua kriteria!`);
+                progressText.innerHTML = `✅ <strong>Selesai!</strong> Ditemukan ${targetN} calon terkuat lolos semua sub-filter.`;
+                progressBar.style.width = "100%";
+                break;
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Eval error for item", i, err);
+        }
+      }
+
+      isVisionProScanning = false;
+      document.getElementById("btnSearchText").textContent = "✨ Cari & Kurasi Vision Pro";
+      if (qualifyingCandidates.length < targetN && !shouldStopVisionPro) {
+        showToast(`Selesai scan: Ditemukan ${qualifyingCandidates.length} calon lolos.`);
+        progressText.innerHTML = `Scan tuntas. Ditemukan <strong>${qualifyingCandidates.length}</strong> calon lolos kualifikasi.`;
+      }
+    }
+
+    function stopVisionPro() {
+      shouldStopVisionPro = true;
+      isVisionProScanning = false;
+      document.getElementById("vpProgressText").textContent = "Kurasi dihentikan.";
+      document.getElementById("btnSearchText").textContent = "✨ Cari & Kurasi Vision Pro";
+    }
+
+    async function evaluateSingleItem(idx) {
+      const item = currentSearchResults[idx];
+      if (!item) return;
+
+      const btn = document.getElementById(`btnScan-${idx}`);
+      btn.disabled = true;
+      btn.innerHTML = `<span>Scanning...</span> ⏳`;
+
+      const scenario = document.getElementById("visionProScenarioInput").value.trim() || document.getElementById("searchQueryInput").value.trim();
+      const checkOverlay = document.getElementById("subBebasOverlay").checked;
+      const checkVertical = document.getElementById("subDimensi916").checked;
+      const checkScenario = document.getElementById("subMiripSkenario").checked;
+
+      try {
+        const res = await fetch("/api/vision-pro-evaluate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: item.url,
+            platform: item.platform,
+            scenario: scenario,
+            check_overlay: checkOverlay,
+            check_vertical: checkVertical,
+            check_scenario: checkScenario
+          })
+        });
+
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || "Gagal evaluasi vision.");
+
+        item.thumbnail = data.thumbnail || item.thumbnail;
+        item.vp_evaluated = true;
+        item.vp_data = data.evaluation;
+
+        const card = document.getElementById(`clip-card-${idx}`);
+        applyVpDataToCard(card, data.evaluation, idx, "");
+        btn.innerHTML = `<span>Terscan</span> ✓`;
+        showToast(`Evaluasi selesai: Skor ${data.evaluation.total_score}`);
+      } catch (e) {
+        btn.innerHTML = `<span>Gagal</span>`;
+        showToast("⚠️ " + e.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function applyVpDataToCard(card, ev, idx, prefix) {
+      const badge = card.querySelector(`#${prefix}cleanBadge-${idx}`);
+      const report = card.querySelector(`#${prefix}cleanReport-${idx}`);
+      const thumbBox = card.querySelector(`#${prefix}thumbBox-${idx}`);
+      const thumbImg = card.querySelector(`#${prefix}thumbImg-${idx}`);
+
+      if (thumbBox && thumbImg && thumbImg.src) {
+        thumbBox.classList.remove("hidden");
+      }
+
+      if (badge) {
+        badge.classList.remove("hidden");
+        if (ev.passed) {
+          badge.className = "text-[10px] font-mono px-2 py-0.5 rounded-md font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+          badge.innerHTML = `🟢 LOLOS VISION PRO (Skor ${ev.total_score})`;
+        } else {
+          badge.className = "text-[10px] font-mono px-2 py-0.5 rounded-md font-semibold bg-red-500/20 text-red-400 border border-red-500/30";
+          badge.innerHTML = `🔴 DIELIMINASI (Skor ${ev.total_score})`;
+        }
+      }
+
+      if (report) {
+        report.classList.remove("hidden");
+        
+        let tagsHtml = `<div class="flex flex-wrap gap-1.5 pt-0.5 pb-1">`;
+        tagsHtml += ev.overlay_score >= 60 
+          ? `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px]">🛡️ Overlay: ${ev.overlay_status} (${ev.overlay_score})</span>`
+          : `<span class="bg-red-500/10 text-red-400 border border-red-500/20 px-2 py-0.5 rounded text-[10px]">⚠️ Overlay: ${ev.overlay_status} (${ev.overlay_score})</span>`;
+
+        tagsHtml += ev.is_vertical 
+          ? `<span class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded text-[10px]">📱 Format: 9:16 Vertikal</span>`
+          : `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded text-[10px]">📺 Format: ${ev.aspect_ratio || 'Horizontal'}</span>`;
+
+        tagsHtml += ev.match_score >= 55 
+          ? `<span class="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded text-[10px]">🎯 Relevan: ${ev.match_score}%</span>`
+          : `<span class="bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded text-[10px]">🎯 Relevan: ${ev.match_score}%</span>`;
+
+        tagsHtml += `</div>`;
+
+        let reasonFailHtml = "";
+        if (ev.reasons_failed && ev.reasons_failed.length > 0) {
+          reasonFailHtml = `<div class="text-[10px] text-red-400 font-medium">Alasan Dieliminasi: ${escapeHtml(ev.reasons_failed.join(' • '))}</div>`;
+        }
+
+        report.innerHTML = `
+          ${tagsHtml}
+          <div class="text-[11px] text-zinc-300 leading-relaxed font-sans"><span class="text-zinc-500 font-medium">Analisa AI:</span> ${escapeHtml(ev.details)}</div>
+          ${reasonFailHtml}
+        `;
+      }
+    }
+
+    function saveClip(item) {
+      if (savedClips.some(c => c.url === item.url)) {
+        showToast("⚠️ Klip ini sudah ada di keranjang!");
+        return;
+      }
+      savedClips.push(item);
+      updateSavedClipsUI();
+      showToast("✅ Klip ditambahkan ke keranjang!");
+    }
+
+    function removeClip(idx) {
+      savedClips.splice(idx, 1);
+      updateSavedClipsUI();
+    }
+
+    function updateSavedClipsUI() {
+      document.getElementById("savedCount").textContent = savedClips.length;
+      const box = document.getElementById("savedList");
+      if (savedClips.length === 0) {
+        box.innerHTML = `<p class="text-zinc-600 italic text-center py-4">Belum ada klip yang disimpan. Klik tombol <strong>+ Simpan</strong> pada hasil pencarian.</p>`;
+        return;
+      }
+      box.innerHTML = "";
+      savedClips.forEach((c, idx) => {
+        const item = document.createElement("div");
+        item.className = "flex items-center justify-between p-2 rounded-lg bg-zinc-950 border border-zinc-800 gap-2";
+        item.innerHTML = `
+          <div class="flex items-center space-x-2 truncate">
+            <span class="text-[10px] text-zinc-500 font-mono">#${idx+1}</span>
+            <span class="truncate font-medium text-zinc-300">${escapeHtml(c.title)}</span>
+          </div>
+          <div class="flex items-center space-x-1.5 flex-shrink-0">
+            <a href="${c.url}" target="_blank" class="text-indigo-400 hover:underline">Link</a>
+            <button onclick="removeClip(${idx})" class="text-zinc-500 hover:text-red-400 ml-1">✕</button>
+          </div>
+        `;
+        box.appendChild(item);
+      });
+    }
+
+    function copySourcesTable() {
+      if (savedClips.length === 0) {
+        showToast("⚠️ Keranjang klip masih kosong!");
+        return;
+      }
+      let md = `| Slot | Beat | Link sumber | Kreator | Timestamp | Lisensi/Sumber | Transform-note (CapCut) |\n|---|---|---|---|---|---|---|\n`;
+      savedClips.forEach((c, i) => {
+        md += `| ${i+1} | Slot visual ${i+1} | ${c.url} | ${c.author || '@creator'} | 00:00–00:02 | ${c.platform.toUpperCase()} | crop 9:16 + zoom-punch + speed 1.08x |\n`;
+      });
+      copyToClipboard(md);
+      showToast("📋 Format tabel sources.md berhasil disalin!");
+    }
+
+    function copyToClipboard(txt) {
+      navigator.clipboard.writeText(txt);
+      showToast("📋 Berhasil disalin ke clipboard!");
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      document.getElementById("toastMsg").innerHTML = msg;
+      t.classList.remove("opacity-0", "translate-y-2", "pointer-events-none");
+      t.classList.add("opacity-100", "translate-y-0");
+      setTimeout(() => {
+        t.classList.remove("opacity-100", "translate-y-0");
+        t.classList.add("opacity-0", "translate-y-2", "pointer-events-none");
+      }, 3000);
+    }
+
+    function escapeHtml(str) {
+      return (str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>

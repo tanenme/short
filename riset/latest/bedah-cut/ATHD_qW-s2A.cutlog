@@ -1,0 +1,49 @@
+Input #0, matroska,webm, from 'pintarinaja/ATHD_qW-s2A - inilah cara buat squishy kriuk tanpa lilin #shortvideo.webm':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    ENCODER         : Lavf63.1.101
+  Duration: 00:00:27.58, start: 0.000000, bitrate: 1222 kb/s
+  Stream #0:0: Video: av1 (libdav1d) (Main), yuv420p(tv, bt709), 720x1280 [SAR 1:1 DAR 9:16], 30 fps, 30 tbr, 1k tbn (default)
+    Metadata:
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:27.533000000
+  Stream #0:1(eng): Audio: opus, 48000 Hz, stereo, fltp (default)
+    Metadata:
+      DURATION        : 00:00:27.581000000
+Stream mapping:
+  Stream #0:0 -> #0:0 (av1 (libdav1d) -> wrapped_avframe (native))
+  Stream #0:1 -> #0:1 (opus (native) -> pcm_s16le (native))
+Press [q] to stop, [?] for help
+[Parsed_metadata_1 @ 000002e2dc85f5c0] frame:0    pts:7133    pts_time:7.133
+[Parsed_metadata_1 @ 000002e2dc85f5c0] lavfi.scene_score=0.642326
+Output #0, null, to 'pipe:':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    encoder         : Lavf63.1.101
+  Stream #0:0: Video: wrapped_avframe, yuv420p(tv, bt709, progressive), 720x1280 [SAR 1:1 DAR 9:16], q=2-31, 200 kb/s, 30 fps, 30 tbn (default)
+    Metadata:
+      encoder         : Lavc63.1.101 wrapped_avframe
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:27.533000000
+  Stream #0:1(eng): Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s (default)
+    Metadata:
+      encoder         : Lavc63.1.101 pcm_s16le
+      DURATION        : 00:00:27.581000000
+[Parsed_metadata_1 @ 000002e2dc85f5c0] frame:1    pts:10833   pts_time:10.833
+[Parsed_metadata_1 @ 000002e2dc85f5c0] lavfi.scene_score=0.428536
+[Parsed_metadata_1 @ 000002e2dc85f5c0] frame:2    pts:13933   pts_time:13.933
+[Parsed_metadata_1 @ 000002e2dc85f5c0] lavfi.scene_score=0.447183
+[Parsed_metadata_1 @ 000002e2dc85f5c0] frame:3    pts:16900   pts_time:16.9
+[Parsed_metadata_1 @ 000002e2dc85f5c0] lavfi.scene_score=0.540116
+[Parsed_metadata_1 @ 000002e2dc85f5c0] frame:4    pts:22500   pts_time:22.5
+[Parsed_metadata_1 @ 000002e2dc85f5c0] lavfi.scene_score=0.558372
+frame=    5 fps=0.0 q=-0.0 size=N/A time=00:00:23.67 bitrate=N/A speed=46.1x elapsed=0:00:00.51    [Parsed_metadata_1 @ 000002e2dc85f5c0] frame:5    pts:23400   pts_time:23.4
+[Parsed_metadata_1 @ 000002e2dc85f5c0] lavfi.scene_score=0.520816
+[Parsed_metadata_1 @ 000002e2dc85f5c0] frame:6    pts:25333   pts_time:25.333
+[Parsed_metadata_1 @ 000002e2dc85f5c0] lavfi.scene_score=0.464105
+[out#0/null @ 000002e2d8a52bc0] video:3KiB audio:5168KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown
+frame=    7 fps=0.0 q=-0.0 Lsize=N/A time=00:00:27.56 bitrate=N/A speed=44.7x elapsed=0:00:00.61    

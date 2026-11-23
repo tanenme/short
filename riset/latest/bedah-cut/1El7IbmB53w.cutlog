@@ -1,0 +1,43 @@
+Input #0, matroska,webm, from 'pintarinaja/1El7IbmB53w - Kasih hadiah ini ke temenmu saat wisuda !!! #shorts #squishy.webm':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    ENCODER         : Lavf63.1.101
+  Duration: 00:00:22.86, start: 0.000000, bitrate: 1392 kb/s
+  Stream #0:0: Video: av1 (libdav1d) (Main), yuv420p(tv, bt709), 720x1280 [SAR 1:1 DAR 9:16], 30 fps, 30 tbr, 1k tbn (default)
+    Metadata:
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:22.833000000
+  Stream #0:1(eng): Audio: opus, 48000 Hz, stereo, fltp (default)
+    Metadata:
+      DURATION        : 00:00:22.861000000
+Stream mapping:
+  Stream #0:0 -> #0:0 (av1 (libdav1d) -> wrapped_avframe (native))
+  Stream #0:1 -> #0:1 (opus (native) -> pcm_s16le (native))
+Press [q] to stop, [?] for help
+[Parsed_metadata_1 @ 0000016423586c80] frame:0    pts:10133   pts_time:10.133
+[Parsed_metadata_1 @ 0000016423586c80] lavfi.scene_score=0.468196
+Output #0, null, to 'pipe:':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    encoder         : Lavf63.1.101
+  Stream #0:0: Video: wrapped_avframe, yuv420p(tv, bt709, progressive), 720x1280 [SAR 1:1 DAR 9:16], q=2-31, 200 kb/s, 30 fps, 30 tbn (default)
+    Metadata:
+      encoder         : Lavc63.1.101 wrapped_avframe
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:22.833000000
+  Stream #0:1(eng): Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s (default)
+    Metadata:
+      encoder         : Lavc63.1.101 pcm_s16le
+      DURATION        : 00:00:22.861000000
+[Parsed_metadata_1 @ 0000016423586c80] frame:1    pts:10633   pts_time:10.633
+[Parsed_metadata_1 @ 0000016423586c80] lavfi.scene_score=0.474780
+[Parsed_metadata_1 @ 0000016423586c80] frame:2    pts:12333   pts_time:12.333
+[Parsed_metadata_1 @ 0000016423586c80] lavfi.scene_score=0.495955
+frame=    3 fps=0.0 q=-0.0 size=N/A time=00:00:17.63 bitrate=N/A speed=  35x elapsed=0:00:00.50    [Parsed_metadata_1 @ 0000016423586c80] frame:3    pts:20200   pts_time:20.2
+[Parsed_metadata_1 @ 0000016423586c80] lavfi.scene_score=0.469038
+[out#0/null @ 0000016421a74580] video:2KiB audio:4284KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown
+frame=    4 fps=0.0 q=-0.0 Lsize=N/A time=00:00:22.84 bitrate=N/A speed=35.1x elapsed=0:00:00.65    

@@ -1,0 +1,93 @@
+[
+  {
+    "score": 100,
+    "status": "BERSIH",
+    "reason": "Tidak ada elemen UI, subtitle, atau watermark.",
+    "subject_action": "Kucing menatap ke arah pintu terbuka yang gelap",
+    "filename": "@ambragayle_7232716419337653546_hd.mp4"
+  },
+  {
+    "score": 90,
+    "status": "OVERLAY_RINGAN",
+    "reason": "Watermark teks kecil 'Instagram : @bubuldaily' di dada kucing, tanpa UI platform atau subtitle besar.",
+    "subject_action": "Kucing belang berbaring di lantai sambil mengeong atau membuka mulut.",
+    "filename": "@bubuldaily_7059956827462667547_hd.mp4"
+  },
+  {
+    "score": 100,
+    "status": "BERSIH",
+    "reason": "Tidak ada elemen UI, subtitle, teks banner, atau watermark.",
+    "subject_action": "Anak kucing abu-abu berbulu lebat duduk mendongak sambil membuka mulut",
+    "filename": "@cat.craft.stories_7640770254322306326_hd.mp4"
+  },
+  {
+    "score": 100,
+    "status": "BERSIH",
+    "reason": "Tidak ada elemen UI, teks burned-in, maupun watermark.",
+    "subject_action": "Kucing duduk diam di atas papan garukan karton menatap kamera.",
+    "filename": "@daisydean89_7704584682364472609_hd.mp4"
+  },
+  {
+    "score": 65,
+    "status": "OVERLAY_RINGAN",
+    "reason": "Teks fakta/meme 3 baris di tengah atas, tanpa UI media sosial atau watermark",
+    "subject_action": "Burung bertengger di puncak pohon",
+    "filename": "@happyhousecat_7220260573215198507_hd.mp4"
+  },
+  {
+    "score": 100,
+    "status": "BERSIH",
+    "reason": "Nol UI, watermark, teks.",
+    "subject_action": "Kucing mengintip dari balik tepi meja",
+    "filename": "@joanna.gst_7151427507043044635_hd.mp4"
+  },
+  {
+    "score": 100,
+    "status": "BERSIH",
+    "reason": "Nol elemen UI, teks, watermark",
+    "subject_action": "Dua cicak merayap di dinding",
+    "filename": "@korizen_sica_7637513996429724948_hd.mp4"
+  },
+  {
+    "score": 100,
+    "status": "BERSIH",
+    "reason": "Tidak ada elemen UI, subtitle, atau watermark.",
+    "subject_action": "Kucing belang duduk membuka mulut dan menjilat bibir.",
+    "filename": "@leocatvibe_7643647243404184846_hd.mp4"
+  },
+  {
+    "score": 100,
+    "status": "BERSIH",
+    "reason": "Nol UI, subtitle, dan watermark.",
+    "subject_action": "Kucing menjilat hidung",
+    "filename": "@leocatvibe_7644768649278049550_hd.mp4"
+  },
+  {
+    "score": 100,
+    "status": "BERSIH",
+    "reason": "Nol UI, teks burned-in, atau watermark digital.",
+    "subject_action": "Kucing oranye-putih bertumpu di tepi permukaan sambil meringis.",
+    "filename": "@little_abece_7627417592063446293_hd.mp4"
+  },
+  {
+    "score": 100,
+    "status": "BERSIH",
+    "reason": "Tidak ada elemen UI, watermark, atau teks overlay.",
+    "subject_action": "Cicak menempel diam pada kaca jendela.",
+    "filename": "@ultramen.merah1230_7668566325395983636_hd.mp4"
+  },
+  {
+    "score": 100,
+    "status": "BERSIH",
+    "reason": "Bebas elemen UI, teks, watermark",
+    "subject_action": "Anak kucing menjilati cakar depannya",
+    "filename": "@viralpick6_7639275345098591519_hd.mp4"
+  },
+  {
+    "score": 35,
+    "status": "BANYAK_OVERLAY",
+    "reason": "Tangkapan layar penuh UI TikTok: status bar, tombol interaksi kanan, teks audio, username, tombol posting.",
+    "subject_action": "Kucing oranye putih duduk menghadap samping sambil mendongak.",
+    "filename": "@whiskerswizardry_7700273278279011598_hd.mp4"
+  }
+]

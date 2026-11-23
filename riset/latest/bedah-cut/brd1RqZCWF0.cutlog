@@ -1,0 +1,59 @@
+Input #0, matroska,webm, from 'edukasikuy/brd1RqZCWF0 - Inilah Cara Membuat Squishy Yang Bisa Berubah Warna Dari Balon dan Sabun‼️😱 #shorts #diy.webm':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    ENCODER         : Lavf63.1.101
+  Duration: 00:00:24.10, start: 0.000000, bitrate: 2013 kb/s
+  Stream #0:0: Video: av1 (libdav1d) (Main), yuv420p(tv, bt709), 720x1280 [SAR 1:1 DAR 9:16], 60 fps, 60 tbr, 1k tbn (default)
+    Metadata:
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:24.067000000
+  Stream #0:1(eng): Audio: opus, 48000 Hz, stereo, fltp (default)
+    Metadata:
+      DURATION        : 00:00:24.101000000
+Stream mapping:
+  Stream #0:0 -> #0:0 (av1 (libdav1d) -> wrapped_avframe (native))
+  Stream #0:1 -> #0:1 (opus (native) -> pcm_s16le (native))
+Press [q] to stop, [?] for help
+[Parsed_metadata_1 @ 000002c20bbc4100] frame:0    pts:3267    pts_time:3.267
+[Parsed_metadata_1 @ 000002c20bbc4100] lavfi.scene_score=0.511148
+Output #0, null, to 'pipe:':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    encoder         : Lavf63.1.101
+  Stream #0:0: Video: wrapped_avframe, yuv420p(tv, bt709, progressive), 720x1280 [SAR 1:1 DAR 9:16], q=2-31, 200 kb/s, 60 fps, 60 tbn (default)
+    Metadata:
+      encoder         : Lavc63.1.101 wrapped_avframe
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:24.067000000
+  Stream #0:1(eng): Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s (default)
+    Metadata:
+      encoder         : Lavc63.1.101 pcm_s16le
+      DURATION        : 00:00:24.101000000
+[Parsed_metadata_1 @ 000002c20bbc4100] frame:1    pts:4267    pts_time:4.267
+[Parsed_metadata_1 @ 000002c20bbc4100] lavfi.scene_score=0.733302
+[Parsed_metadata_1 @ 000002c20bbc4100] frame:2    pts:5233    pts_time:5.233
+[Parsed_metadata_1 @ 000002c20bbc4100] lavfi.scene_score=0.461996
+[Parsed_metadata_1 @ 000002c20bbc4100] frame:3    pts:7600    pts_time:7.6
+[Parsed_metadata_1 @ 000002c20bbc4100] lavfi.scene_score=0.490772
+[Parsed_metadata_1 @ 000002c20bbc4100] frame:4    pts:10733   pts_time:10.733
+[Parsed_metadata_1 @ 000002c20bbc4100] lavfi.scene_score=0.708270
+[Parsed_metadata_1 @ 000002c20bbc4100] frame:5    pts:11567   pts_time:11.567
+[Parsed_metadata_1 @ 000002c20bbc4100] lavfi.scene_score=0.616572
+frame=    6 fps=0.0 q=-0.0 size=N/A time=00:00:11.79 bitrate=N/A speed=22.9x elapsed=0:00:00.51    [Parsed_metadata_1 @ 000002c20bbc4100] frame:6    pts:12333   pts_time:12.333
+[Parsed_metadata_1 @ 000002c20bbc4100] lavfi.scene_score=0.591353
+[Parsed_metadata_1 @ 000002c20bbc4100] frame:7    pts:15667   pts_time:15.667
+[Parsed_metadata_1 @ 000002c20bbc4100] lavfi.scene_score=0.484922
+[Parsed_metadata_1 @ 000002c20bbc4100] frame:8    pts:17267   pts_time:17.267
+[Parsed_metadata_1 @ 000002c20bbc4100] lavfi.scene_score=0.644783
+[Parsed_metadata_1 @ 000002c20bbc4100] frame:9    pts:19300   pts_time:19.3
+[Parsed_metadata_1 @ 000002c20bbc4100] lavfi.scene_score=0.636370
+[Parsed_metadata_1 @ 000002c20bbc4100] frame:10   pts:21800   pts_time:21.8
+[Parsed_metadata_1 @ 000002c20bbc4100] lavfi.scene_score=0.555122
+[Parsed_metadata_1 @ 000002c20bbc4100] frame:11   pts:22567   pts_time:22.567
+[Parsed_metadata_1 @ 000002c20bbc4100] lavfi.scene_score=0.696178
+[out#0/null @ 000002c20bb01740] video:5KiB audio:4515KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown
+frame=   12 fps=0.0 q=-0.0 Lsize=N/A time=00:00:24.07 bitrate=N/A speed=24.5x elapsed=0:00:00.98    

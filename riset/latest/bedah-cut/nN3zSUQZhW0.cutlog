@@ -1,0 +1,51 @@
+Input #0, matroska,webm, from 'edukasikuy/nN3zSUQZhW0 - Kenapa Squishy Ini Lengket Banget Padahal Gapake Lem⁉️😱 #shortvideo.webm':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    ENCODER         : Lavf63.1.101
+  Duration: 00:00:19.98, start: 0.000000, bitrate: 1826 kb/s
+  Stream #0:0: Video: av1 (libdav1d) (Main), yuv420p(tv, bt709), 720x1280 [SAR 1:1 DAR 9:16], 60 fps, 60 tbr, 1k tbn (default)
+    Metadata:
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:19.967000000
+  Stream #0:1(eng): Audio: opus, 48000 Hz, stereo, fltp (default)
+    Metadata:
+      DURATION        : 00:00:19.981000000
+Stream mapping:
+  Stream #0:0 -> #0:0 (av1 (libdav1d) -> wrapped_avframe (native))
+  Stream #0:1 -> #0:1 (opus (native) -> pcm_s16le (native))
+Press [q] to stop, [?] for help
+[Parsed_metadata_1 @ 0000023921889c00] frame:0    pts:1833    pts_time:1.833
+[Parsed_metadata_1 @ 0000023921889c00] lavfi.scene_score=0.530199
+Output #0, null, to 'pipe:':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    encoder         : Lavf63.1.101
+  Stream #0:0: Video: wrapped_avframe, yuv420p(tv, bt709, progressive), 720x1280 [SAR 1:1 DAR 9:16], q=2-31, 200 kb/s, 60 fps, 60 tbn (default)
+    Metadata:
+      encoder         : Lavc63.1.101 wrapped_avframe
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:19.967000000
+  Stream #0:1(eng): Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s (default)
+    Metadata:
+      encoder         : Lavc63.1.101 pcm_s16le
+      DURATION        : 00:00:19.981000000
+[Parsed_metadata_1 @ 0000023921889c00] frame:1    pts:3033    pts_time:3.033
+[Parsed_metadata_1 @ 0000023921889c00] lavfi.scene_score=0.914333
+[Parsed_metadata_1 @ 0000023921889c00] frame:2    pts:4600    pts_time:4.6
+[Parsed_metadata_1 @ 0000023921889c00] lavfi.scene_score=0.465631
+[Parsed_metadata_1 @ 0000023921889c00] frame:3    pts:5667    pts_time:5.667
+[Parsed_metadata_1 @ 0000023921889c00] lavfi.scene_score=0.403863
+[Parsed_metadata_1 @ 0000023921889c00] frame:4    pts:7067    pts_time:7.067
+[Parsed_metadata_1 @ 0000023921889c00] lavfi.scene_score=0.708842
+[Parsed_metadata_1 @ 0000023921889c00] frame:5    pts:9800    pts_time:9.8
+[Parsed_metadata_1 @ 0000023921889c00] lavfi.scene_score=0.635052
+[Parsed_metadata_1 @ 0000023921889c00] frame:6    pts:11133   pts_time:11.133
+[Parsed_metadata_1 @ 0000023921889c00] lavfi.scene_score=0.531491
+frame=    7 fps=0.0 q=-0.0 size=N/A time=00:00:14.19 bitrate=N/A speed=28.2x elapsed=0:00:00.50    [Parsed_metadata_1 @ 0000023921889c00] frame:7    pts:18100   pts_time:18.1
+[Parsed_metadata_1 @ 0000023921889c00] lavfi.scene_score=0.628114
+[out#0/null @ 00000239218a3540] video:3KiB audio:3744KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown
+frame=    8 fps=0.0 q=-0.0 Lsize=N/A time=00:00:19.96 bitrate=N/A speed=26.5x elapsed=0:00:00.75    

@@ -1,0 +1,55 @@
+Input #0, matroska,webm, from 'edukasikuy/YsssShPm1tU - Apa Yang Terjadi Jika NeeDoh Dicelup Lilin Cair⁉️😱 #shortvideo.webm':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    ENCODER         : Lavf63.1.101
+  Duration: 00:00:18.70, start: 0.000000, bitrate: 2012 kb/s
+  Stream #0:0: Video: av1 (libdav1d) (Main), yuv420p(tv, bt709), 720x1280 [SAR 1:1 DAR 9:16], 60 fps, 60 tbr, 1k tbn (default)
+    Metadata:
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:18.667000000
+  Stream #0:1(eng): Audio: opus, 48000 Hz, stereo, fltp (default)
+    Metadata:
+      DURATION        : 00:00:18.701000000
+Stream mapping:
+  Stream #0:0 -> #0:0 (av1 (libdav1d) -> wrapped_avframe (native))
+  Stream #0:1 -> #0:1 (opus (native) -> pcm_s16le (native))
+Press [q] to stop, [?] for help
+[Parsed_metadata_1 @ 00000244bd7c5d40] frame:0    pts:1100    pts_time:1.1
+[Parsed_metadata_1 @ 00000244bd7c5d40] lavfi.scene_score=0.601255
+Output #0, null, to 'pipe:':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    encoder         : Lavf63.1.101
+  Stream #0:0: Video: wrapped_avframe, yuv420p(tv, bt709, progressive), 720x1280 [SAR 1:1 DAR 9:16], q=2-31, 200 kb/s, 60 fps, 60 tbn (default)
+    Metadata:
+      encoder         : Lavc63.1.101 wrapped_avframe
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:18.667000000
+  Stream #0:1(eng): Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s (default)
+    Metadata:
+      encoder         : Lavc63.1.101 pcm_s16le
+      DURATION        : 00:00:18.701000000
+[Parsed_metadata_1 @ 00000244bd7c5d40] frame:1    pts:2000    pts_time:2
+[Parsed_metadata_1 @ 00000244bd7c5d40] lavfi.scene_score=0.414832
+[Parsed_metadata_1 @ 00000244bd7c5d40] frame:2    pts:3267    pts_time:3.267
+[Parsed_metadata_1 @ 00000244bd7c5d40] lavfi.scene_score=0.693278
+[Parsed_metadata_1 @ 00000244bd7c5d40] frame:3    pts:4200    pts_time:4.2
+[Parsed_metadata_1 @ 00000244bd7c5d40] lavfi.scene_score=0.434324
+[Parsed_metadata_1 @ 00000244bd7c5d40] frame:4    pts:4733    pts_time:4.733
+[Parsed_metadata_1 @ 00000244bd7c5d40] lavfi.scene_score=0.510257
+frame=    5 fps=0.0 q=-0.0 size=N/A time=00:00:05.77 bitrate=N/A speed=11.5x elapsed=0:00:00.50    [Parsed_metadata_1 @ 00000244bd7c5d40] frame:5    pts:8083    pts_time:8.083
+[Parsed_metadata_1 @ 00000244bd7c5d40] lavfi.scene_score=0.591533
+[Parsed_metadata_1 @ 00000244bd7c5d40] frame:6    pts:9767    pts_time:9.767
+[Parsed_metadata_1 @ 00000244bd7c5d40] lavfi.scene_score=0.597206
+[Parsed_metadata_1 @ 00000244bd7c5d40] frame:7    pts:12433   pts_time:12.433
+[Parsed_metadata_1 @ 00000244bd7c5d40] lavfi.scene_score=0.665971
+frame=    8 fps=7.9 q=-0.0 size=N/A time=00:00:12.93 bitrate=N/A speed=12.7x elapsed=0:00:01.01    [Parsed_metadata_1 @ 00000244bd7c5d40] frame:8    pts:15133   pts_time:15.133
+[Parsed_metadata_1 @ 00000244bd7c5d40] lavfi.scene_score=0.656118
+[Parsed_metadata_1 @ 00000244bd7c5d40] frame:9    pts:17033   pts_time:17.033
+[Parsed_metadata_1 @ 00000244bd7c5d40] lavfi.scene_score=0.610542
+[out#0/null @ 00000244bb861fc0] video:4KiB audio:3505KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown
+frame=   10 fps=6.8 q=-0.0 Lsize=N/A time=00:00:18.69 bitrate=N/A speed=12.7x elapsed=0:00:01.47    

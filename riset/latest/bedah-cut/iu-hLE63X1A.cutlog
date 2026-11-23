@@ -1,0 +1,41 @@
+Input #0, matroska,webm, from 'edukasikuy/iu-hLE63X1A - Jangan Bawa Squishy Kamu ke Pantai‼️😱 #shortvideo.webm':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    ENCODER         : Lavf63.1.101
+  Duration: 00:00:20.38, start: 0.000000, bitrate: 1901 kb/s
+  Stream #0:0: Video: av1 (libdav1d) (Main), yuv420p(tv, bt709), 720x1280 [SAR 1:1 DAR 9:16], 60 fps, 60 tbr, 1k tbn (default)
+    Metadata:
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:20.334000000
+  Stream #0:1(eng): Audio: opus, 48000 Hz, stereo, fltp (default)
+    Metadata:
+      DURATION        : 00:00:20.381000000
+Stream mapping:
+  Stream #0:0 -> #0:0 (av1 (libdav1d) -> wrapped_avframe (native))
+  Stream #0:1 -> #0:1 (opus (native) -> pcm_s16le (native))
+Press [q] to stop, [?] for help
+[Parsed_metadata_1 @ 000001b9c2624280] frame:0    pts:15100   pts_time:15.1
+[Parsed_metadata_1 @ 000001b9c2624280] lavfi.scene_score=0.603300
+Output #0, null, to 'pipe:':
+  Metadata:
+    COMPATIBLE_BRANDS: iso6av01mp41
+    MAJOR_BRAND     : dash
+    MINOR_VERSION   : 0
+    encoder         : Lavf63.1.101
+  Stream #0:0: Video: wrapped_avframe, yuv420p(tv, bt709, progressive), 720x1280 [SAR 1:1 DAR 9:16], q=2-31, 200 kb/s, 60 fps, 60 tbn (default)
+    Metadata:
+      encoder         : Lavc63.1.101 wrapped_avframe
+      HANDLER_NAME    : ISO Media file produced by Google Inc.
+      DURATION        : 00:00:20.334000000
+  Stream #0:1(eng): Audio: pcm_s16le, 48000 Hz, stereo, s16, 1536 kb/s (default)
+    Metadata:
+      encoder         : Lavc63.1.101 pcm_s16le
+      DURATION        : 00:00:20.381000000
+[Parsed_metadata_1 @ 000001b9c2624280] frame:1    pts:17167   pts_time:17.167
+[Parsed_metadata_1 @ 000001b9c2624280] lavfi.scene_score=0.437233
+[Parsed_metadata_1 @ 000001b9c2624280] frame:2    pts:19333   pts_time:19.333
+[Parsed_metadata_1 @ 000001b9c2624280] lavfi.scene_score=0.579765
+[out#0/null @ 000001b9be878680] video:1KiB audio:3818KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown
+frame=    3 fps=0.0 q=-0.0 Lsize=N/A time=00:00:20.36 bitrate=N/A speed=23.9x elapsed=0:00:00.85    

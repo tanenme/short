@@ -1,0 +1,89 @@
+[
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\005-kuda-laut\\assets\\06-watch-a-seahorse-give-birth-to-2-000-bab.mp4",
+    "name": "01-hook-jantan-hamil",
+    "shot": "hook",
+    "zoom": 1.1,
+    "dur": 2.4,
+    "start": 4.5
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\005-kuda-laut\\assets\\06-watch-a-seahorse-give-birth-to-2-000-bab.mp4",
+    "name": "02-action-bayi-keluar",
+    "shot": "action",
+    "zoom": 1.11,
+    "dur": 2.4,
+    "start": 13.0
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\005-kuda-laut\\assets\\07-aquarium-of-cattolica-seahorses-webm.mp4",
+    "name": "03-detail-full-body",
+    "shot": "detail",
+    "zoom": 1.09,
+    "dur": 2.4,
+    "start": 7.0
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\005-kuda-laut\\assets\\05-hippocampus-bleekeri-03zoo-basel-jpg.jpg",
+    "name": "04-detail-kuda-laut-basel",
+    "shot": "detail",
+    "zoom": 1.06,
+    "dur": 2.4,
+    "crop": "1000:1778:1900:600",
+    "fx": 0.5,
+    "fy": 0.45
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\005-kuda-laut\\assets\\04-kuda-laut-putih-jantan-di-sydney-lahirka.mp4",
+    "name": "05-action-melilit-tali",
+    "shot": "action",
+    "zoom": 1.1,
+    "dur": 2.4,
+    "start": 22.0,
+    "cx": 0.5
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\005-kuda-laut\\assets\\04-hippocampus-susp-jpg.jpg",
+    "name": "06-detail-kembar-biru",
+    "shot": "detail",
+    "zoom": 1.06,
+    "dur": 2.4,
+    "crop": "700:1244:350:250",
+    "fx": 0.5,
+    "fy": 0.5
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\005-kuda-laut\\assets\\07-aquarium-of-cattolica-seahorses-webm.mp4",
+    "name": "07-action-tegak-laut",
+    "shot": "action",
+    "zoom": 1.1,
+    "dur": 2.4,
+    "start": 4.8
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\005-kuda-laut\\assets\\05-wuppertal-zoo-hippocampus-barbouri-01-0.mp4",
+    "name": "08-detail-zoo-kontras",
+    "shot": "detail",
+    "zoom": 1.13,
+    "dur": 2.4,
+    "start": 17.8
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\005-kuda-laut\\assets\\03-hippocampus-hippocampus-on-ascophyllum-n.jpg",
+    "name": "09-detail-makro-wajah",
+    "shot": "detail",
+    "zoom": 1.06,
+    "dur": 2.4,
+    "crop": "1400:2489:1000:500",
+    "fx": 0.5,
+    "fy": 0.45
+  },
+  {
+    "src": "E:\\YT\\short\\C1-fakta\\005-kuda-laut\\assets\\05-wuppertal-zoo-hippocampus-barbouri-01-0.mp4",
+    "name": "10-detail-zoo-tegak",
+    "shot": "detail",
+    "zoom": 1.12,
+    "dur": 2.4,
+    "start": 19.0
+  }
+]

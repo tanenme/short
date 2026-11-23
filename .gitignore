@@ -1,0 +1,80 @@
+# === Secrets & Environment ===
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+cookies.txt
+
+# === Python & Node ===
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+node_modules/
+
+# === Heavy Media & Generated Outputs (Never Commit Binaries) ===
+*.mp4
+*.mkv
+*.webm
+*.mov
+*.avi
+*.m4v
+*.ogv
+*.mp3
+*.wav
+*.aac
+*.m4a
+*.flac
+*.ogg
+*.part
+*.ytdl
+
+# Research downloads & test downloads
+_test-download/
+riset/brightsbrain/
+riset/edukasikuy/
+riset/pintarinaja/
+riset/latest/brightsbrain/
+riset/latest/edukasikuy/
+riset/latest/pintarinaja/
+riset/*.mp4
+
+# Per-episode generated build/output/temp directories & downloaded image assets
+**/output/
+**/klip/
+**/_temp/
+**/_qc_tmp/
+**/assets*/*.jpg
+**/assets*/*.jpeg
+**/assets*/*.png
+**/assets*/*.webp
+**/assets*/*.gif
+**/asset/*.jpg
+**/asset/*.jpeg
+**/asset/*.png
+**/asset/*.webp
+**/thumb_*.jpg
+**/_temp_thumb_*.jpg
+riset/**/*.jpg
+riset/**/*.png
+
+# Local databases & runtime caches
+*.db
+*.sqlite
+*.sqlite3
+.cache/
+_sistem/state/
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.log

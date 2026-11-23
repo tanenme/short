@@ -1,0 +1,36 @@
+PAKET UPLOAD — 005 Kuda Laut
+=====================================
+
+JUDUL (pilih 1):
+1. Ikan yang Hamilnya Jantan, Bisa Melahirkan 1.500 Anak Sekaligus
+2. Jantan yang Hamil, Lahir, lalu Makan Sebagian Anaknya Sendiri
+3. Kuda Laut: Ikan الوحيد di Dunia yang Ayahnya yang Melahirkan
+
+DESKRIPSI:
+Kuda laut satu-satunya vertebrata di dunia yang berkembang biak dengan cara jantan yang hamil. Saat kawin, betina memindahkan telur ke kantung pengeraman di perut jantan — kantung yang bekerja seperti plasenta, memasok oksigen dan nutrisi ke embrio.
+
+Pengeraman berlangsung sekitar 10–14 hari. Jumlah telurnya bisa sampai 1.500, dan untuk spesies Hippocampus erectus rata-rata anak yang dilahirkan bisa ratusan dalam satu kali kehamilan.
+
+Yang paling aneh: pada 2024, Frontiers in Marine Science mempublikasikan penelitian "nurse eggs" pada kuda laut. Saat makanan jantan kurang, ayah yang hamil ternyata bisa menyerap nutrisi dari embrio di kantungnya sendiri — sebagian anak yang belum lahir dimakan ayahnya sebagai sumber energi.
+
+Riset 2012 di Journal of Experimental Biology menunjukkan jumlah anak per kehamilan meningkat seiring usia pasangan: dari sekitar 85 di kehamilan pertama menjadi hampir 466 di kehamilan keenam.
+
+Sumber:
+• Journal of Experimental Biology (2012)
+• Frontiers in Marine Science (2024)
+• Wikipedia — Seahorse
+• BRIN — Sumberdaya Kuda Laut Indonesia
+
+TAG:
+kuda laut, seahorse, fakta hewan, hewan unik, ikan unik, reproduksi hewan, hewan lucu, short, satwa, ikan, hamil, Curiosity
+
+#faktahewan #kudalaut #shorts
+
+THUMBNAIL (untuk @thumb-maker nanti):
+Frame: close-up kuda laut (head-on, curled tail)
+Teks besar: "YANG HAMIL JANTAN"
+Teks kecil: "1.500 anak sekali lahir"
+Warna: kontras tinggi, biru laut + putih teks
+
+CTA dipakai: A (ringan spesifik) + opsi B rendah hati untuk A/B test
+Template: eksperimental — bukan domestik; rebuild dengan CTA B bila diupload ulang

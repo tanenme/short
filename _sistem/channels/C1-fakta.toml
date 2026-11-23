@@ -1,0 +1,64 @@
+# Channel Profile — C1 Fakta Hewan (Validasi Utama)
+channel_id = "C1-fakta"
+display_name = "C1 — Fakta Hewan Mengejutkan ID"
+folder_name = "C1-fakta"
+niche = "fakta_hewan_domestik_dan_unik"
+status = "validation"
+focus_subjects = ["kucing", "anjing", "ayam", "sapi", "bebek"]
+competitors = ["@edukasikuy", "@BrightsBrain", "@PintarinAjaa"]
+
+[voice]
+engine = "eleven_v4"
+voice_id = ""
+voice_name = "Pratama / Putri Maharani (kunci 1 voice ID tetap per channel)"
+language = "id"
+stability = 0.40
+similarity = 0.80
+median_wpm = 131
+require_audio_tags = true
+
+[pacing]
+min_words = 40
+max_words = 55
+hard_max_words = 60
+min_duration_s = 19.0
+max_duration_s = 25.0
+max_words_per_sentence = 12
+target_clip_count = 10
+min_clip_duration_s = 1.3
+max_clip_duration_s = 5.0
+
+[visual]
+width = 1080
+height = 1920
+fps = 30
+font_name = "Arial Black"
+font_size = 84
+primary_color_hex = "#FFFFFF"
+highlight_color_hex = "#FFDD00"
+outline_color_hex = "#000000"
+target_lufs = -14.0
+bgm_volume_db = -22.0
+zoom_punch_min = 1.06
+zoom_punch_max = 1.12
+
+[ypp]
+min_original_vo_ratio = 0.70
+max_source_clip_s = 5.0
+min_transformations_per_clip = 2
+min_tier1_fact_sources = 2
+max_clips_per_creator_per_week = 1
+forbid_nc_nd_licenses = true
+forbid_second_cta_at_end = true
+min_cleanliness_score = 70
+
+[cta]
+template_id = "template_b"
+pattern = "Tapi kalau kamu suka {subject}, Subscribe ya."
+window_start_s = 2.0
+window_end_s = 8.5
+
+[schedule]
+timezone = "Asia/Jakarta"
+daily_slots = ["06:30", "12:30", "19:30"]
+target_videos_per_day = 3
