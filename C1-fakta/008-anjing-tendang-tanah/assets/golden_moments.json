@@ -1,0 +1,82 @@
+[
+  {
+    "scene_index": 1,
+    "filename": "@winnietheminischnoodle_7481657118110780718_hd.mp4",
+    "start_s": 5.0,
+    "mode": "motion_peak",
+    "metric_score": 28.53,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 2,
+    "filename": "@intern.pollys.dog_7523910954036235542_hd.mp4",
+    "start_s": 7.0,
+    "mode": "motion_balanced",
+    "metric_score": 41.92,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 3,
+    "filename": "@lilwoofclub_7624004677373332744_hd.mp4",
+    "start_s": 3.0,
+    "mode": "motion_balanced",
+    "metric_score": 31.54,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 4,
+    "filename": "@maltese_adventures_7703224238462766358_hd.mp4",
+    "start_s": 3.5,
+    "mode": "motion_balanced",
+    "metric_score": 25.25,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 5,
+    "filename": "@iamartytheparty_7195594932290112773_hd.mp4",
+    "start_s": 0.5,
+    "mode": "motion_balanced",
+    "metric_score": 34.31,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 6,
+    "filename": "@winnietheminischnoodle_7481657118110780718_hd.mp4",
+    "start_s": 5.5,
+    "mode": "motion_balanced",
+    "metric_score": 29.85,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 7,
+    "filename": "@intern.pollys.dog_7523910954036235542_hd.mp4",
+    "start_s": 9.0,
+    "mode": "motion_balanced",
+    "metric_score": 44.82,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 8,
+    "filename": "@fivebyfivek9_7081088504528194858_hd.mp4",
+    "start_s": 9.5,
+    "mode": "motion_balanced",
+    "metric_score": 41.62,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 9,
+    "filename": "@bubbletea_coffee_7579089805972131092_hd.mp4",
+    "start_s": 0.5,
+    "mode": "motion_peak",
+    "metric_score": 38.45,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 10,
+    "filename": "@puggonewild_7487360355878915359_hd.mp4",
+    "start_s": 4.5,
+    "mode": "motion_balanced",
+    "metric_score": 46.14,
+    "use_clip_audio": false
+  }
+]

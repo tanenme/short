@@ -31,16 +31,31 @@ max_clip_duration_s = 5.0
 [visual]
 width = 1080
 height = 1920
-fps = 30
+fps = 60
 font_name = "Arial Black"
-font_size = 84
+font_size = 104
 primary_color_hex = "#FFFFFF"
-highlight_color_hex = "#FFDD00"
+highlight_color_hex = "#FFFFFF"
 outline_color_hex = "#000000"
-target_lufs = -14.0
-bgm_volume_db = -22.0
+target_lufs = -10.8
+bgm_volume_db = -8.0
+sfx_volume_db = -3.0
 zoom_punch_min = 1.06
 zoom_punch_max = 1.12
+subtitle_mode = "squooshify_white_3d"
+subtitle_margin_v = 440
+caption_lead_s = 0.08
+framing_mode = "auto_blur_canvas"
+include_top_callouts = false
+cta_bg_blur = true
+vo_presence_eq = true
+transition_style = "squooshify_v33"
+bottom_readability_grad = false
+vector_heart_cta = true
+vo_zero_gap = true
+vo_tempo_boost = 1.07
+vo_silence_db = -32.0
+vo_min_silence_s = 0.10
 
 [ypp]
 min_original_vo_ratio = 0.70

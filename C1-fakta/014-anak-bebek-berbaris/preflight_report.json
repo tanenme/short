@@ -1,0 +1,128 @@
+{
+  "channel_id": "C1-fakta",
+  "episode_id": "014-anak-bebek-berbaris",
+  "checked_at": "2026-11-23T15:10:28",
+  "stage_verdict": "BLOCKED",
+  "can_render": false,
+  "can_publish": false,
+  "score": 54,
+  "checks": [
+    {
+      "code": "DOCS_COMPLETE",
+      "category": "structure",
+      "severity": "PASS",
+      "message": "Dokumen inti lengkap (naskah, brief-edit, sources, paket-upload)."
+    },
+    {
+      "code": "SCRIPT_WORD_RANGE",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Jumlah kata 49 kata (~22.44s @ 131 kpm) masuk sweet spot."
+    },
+    {
+      "code": "AUDIO_TAGS",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Audio tags Eleven v4 lengkap (6 tag)."
+    },
+    {
+      "code": "SCRIPT_DIGITS",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Tidak ada angka digit mentah di teks VO."
+    },
+    {
+      "code": "CTA_PLACEMENT",
+      "category": "script",
+      "severity": "PASS",
+      "message": "CTA tunggal berada di posisi kalimat #3/6."
+    },
+    {
+      "code": "SENTENCE_BREATH",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Semua kalimat ringkas (<= 12 kata/kalimat)."
+    },
+    {
+      "code": "FACT_SOURCES",
+      "category": "factcheck",
+      "severity": "PASS",
+      "message": "Tercatat 3 URL sumber fakta tertulis (min 2)."
+    },
+    {
+      "code": "SCENE_PACING",
+      "category": "ypp",
+      "severity": "PASS",
+      "message": "10 adegan di brief-edit, semua <= 5.0s."
+    },
+    {
+      "code": "VO_MISSING",
+      "category": "assets",
+      "severity": "WARN",
+      "message": "File VO (.mp3) belum tersedia."
+    },
+    {
+      "code": "CLIPS_COUNT",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "Tersedia 7 klip video di folder aset."
+    },
+    {
+      "code": "LICENSE_AUDIT",
+      "category": "ypp",
+      "severity": "WARN",
+      "message": "Lisensi klip: LOW=0, MEDIUM=0, HIGH(ToS/transform)=7, BLOCKED=0."
+    },
+    {
+      "code": "USABLE_CLIPS_READY",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "7 klip bersih lulus filter kebersihan (>=70)."
+    },
+    {
+      "code": "CREATOR_INTRA_REPEAT",
+      "category": "ypp",
+      "severity": "WARN",
+      "message": "Kreator dipakai >1x di episode yang sama: youtube creator (3x)."
+    },
+    {
+      "code": "AUTOQC_VIDEO_OK",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "AutoQC FFmpeg lulus (5 OK, 1 WARN dari 6 klip)."
+    },
+    {
+      "code": "RENDER_PENDING",
+      "category": "render",
+      "severity": "WARN",
+      "message": "Video final belum di-render oleh Editor Engine v3."
+    },
+    {
+      "code": "VO_REQUIRED_FOR_RENDER",
+      "category": "assets",
+      "severity": "FAIL",
+      "message": "File VO .mp3 belum ada di `assets/` — tidak bisa render."
+    }
+  ],
+  "creator_rotation": {
+    "episode_id": "014-anak-bebek-berbaris",
+    "unique_creators": 5,
+    "creators": {
+      "ducks_in_space": 1,
+      "no rights reserved": 1,
+      "thebackyardbirder": 1,
+      "vt.physics": 1,
+      "youtube creator": 3
+    },
+    "intra_episode_repeats": {
+      "youtube creator": 3
+    },
+    "cross_episode_overlaps_7d": {}
+  },
+  "license_summary": {
+    "LOW": 0,
+    "MEDIUM": 0,
+    "HIGH": 7,
+    "BLOCKED": 0
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "channel_id": "C1-fakta",
+  "episode_id": "011-bebek-tidur-melek",
+  "checked_at": "2026-11-23T23:23:50",
+  "stage_verdict": "READY_TO_PUBLISH",
+  "can_render": true,
+  "can_publish": true,
+  "score": 94,
+  "checks": [
+    {
+      "code": "DOCS_COMPLETE",
+      "category": "structure",
+      "severity": "PASS",
+      "message": "Dokumen inti lengkap (naskah, brief-edit, sources, paket-upload)."
+    },
+    {
+      "code": "SCRIPT_WORD_RANGE",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Jumlah kata 45 kata (~20.61s @ 131 kpm) masuk sweet spot."
+    },
+    {
+      "code": "AUDIO_TAGS",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Audio tags Eleven v4 lengkap (6 tag)."
+    },
+    {
+      "code": "SCRIPT_DIGITS",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Tidak ada angka digit mentah di teks VO."
+    },
+    {
+      "code": "CTA_PLACEMENT",
+      "category": "script",
+      "severity": "PASS",
+      "message": "CTA tunggal berada di posisi kalimat #3/6."
+    },
+    {
+      "code": "SENTENCE_BREATH",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Semua kalimat ringkas (<= 12 kata/kalimat)."
+    },
+    {
+      "code": "FACT_SOURCES",
+      "category": "factcheck",
+      "severity": "PASS",
+      "message": "Tercatat 2 URL sumber fakta tertulis (min 2)."
+    },
+    {
+      "code": "SCENE_PACING",
+      "category": "ypp",
+      "severity": "PASS",
+      "message": "10 adegan di brief-edit, semua <= 5.0s."
+    },
+    {
+      "code": "VO_READY",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "VO tersedia di assets: ElevenLabs_2026-11-07T05_17_54_Mahaputra - Neutral, Calm and Gravelly_pvc_s50_sim75_v4.mp3."
+    },
+    {
+      "code": "CLIPS_COUNT",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "Tersedia 5 klip video di folder aset."
+    },
+    {
+      "code": "LICENSE_AUDIT",
+      "category": "ypp",
+      "severity": "WARN",
+      "message": "Lisensi klip: LOW=0, MEDIUM=0, HIGH(ToS/transform)=5, BLOCKED=0."
+    },
+    {
+      "code": "USABLE_CLIPS_READY",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "5 klip bersih lulus filter kebersihan (>=70)."
+    },
+    {
+      "code": "CREATOR_ROTATION_OK",
+      "category": "ypp",
+      "severity": "PASS",
+      "message": "Rotasi kreator bersih (5 kreator unik, 0 overlap 7 hari)."
+    },
+    {
+      "code": "RENDER_VERIFIED",
+      "category": "render",
+      "severity": "PASS",
+      "message": "Render v3.0.0 terverifikasi (18.6s, 10 adegan, >=2 transform/klip)."
+    }
+  ],
+  "creator_rotation": {
+    "episode_id": "011-bebek-tidur-melek",
+    "unique_creators": 5,
+    "creators": {
+      "@ducks_in_space": 1,
+      "@funny_ducklings": 1,
+      "@monalogue": 1,
+      "@motherthemountain": 1,
+      "@theduckies00": 1
+    },
+    "intra_episode_repeats": {},
+    "cross_episode_overlaps_7d": {}
+  },
+  "license_summary": {
+    "LOW": 0,
+    "MEDIUM": 0,
+    "HIGH": 5,
+    "BLOCKED": 0
+  }
+}

@@ -101,6 +101,7 @@ def render_cinematic_segment(
     cfg: StudioConfig,
     allow_flip: bool = True,
     usage_offset: int = 0,
+    forced_start_s: Optional[float] = None,
 ) -> dict:
     """Render one Shorts scene with anti-reused transforms + dynamic micro-motion.
 
@@ -126,10 +127,9 @@ def render_cinematic_segment(
             f"d={frames}:x='iw/2-(iw/zoom)/2+({pan_dir}*iw*on/{max(1, frames - 1)})':"
             f"y='ih/2-(ih/zoom)/2':s={W}x{H}:fps={FPS}",
             "eq=contrast=1.06:saturation=1.08:brightness=0.01",
-            "vignette=PI/7",
             "format=yuv420p",
         ]
-        transforms.extend([f"ken_burns_{z0:.2f}_to_{z1:.2f}", "color_grade_vignette"])
+        transforms.extend([f"ken_burns_{z0:.2f}_to_{z1:.2f}", "color_grade"])
         cmd = [
             cfg.ffmpeg_cmd(),
             "-y",
@@ -162,8 +162,10 @@ def render_cinematic_segment(
     speed = 1.05 if clip_dur >= (target_dur * 1.12 + 0.4) else 1.0
     needed_src_dur = target_dur * speed
 
-    # Smart inner trim window: avoid dead intro/outro frames; rotate window if clip reused
-    if clip_dur > needed_src_dur + 0.6:
+    # Golden Moment trim window (uses exact forced_start_s when available, else smart inner window)
+    if forced_start_s is not None and clip_dur > needed_src_dur:
+        start_trim = max(0.0, min(clip_dur - needed_src_dur - 0.05, float(forced_start_s)))
+    elif clip_dur > needed_src_dur + 0.6:
         usable = clip_dur - needed_src_dur
         anchor_ratio = [0.30, 0.55, 0.15, 0.72][usage_offset % 4]
         start_trim = max(0.2, min(usable - 0.1, usable * anchor_ratio))
@@ -176,6 +178,69 @@ def render_cinematic_segment(
     z0, z1 = (z_min, z_max) if zoom_in else (z_max, z_min)
     dur_safe = max(0.5, target_dur)
     zoom_expr = f"{z0:.4f}+({z1 - z0:.4f})*min(t/{dur_safe:.3f}\\,1)"
+
+    is_horizontal_or_square = info["width"] > 0 and info["height"] > 0 and info["width"] >= info["height"]
+    use_blur_canvas = getattr(vis, "framing_mode", "auto_blur_canvas") == "auto_blur_canvas" and is_horizontal_or_square
+
+    # Loop source if a rare clip is shorter than target_dur
+    input_flags = ["-stream_loop", "-1"] if (0 < clip_dur < needed_src_dur) else []
+
+    if use_blur_canvas:
+        # Competitor-grade Blurred 9:16 Canvas Fill (preserves full 16:9 / 1:1 action without chopping subjects)
+        transforms[0] = "blur_canvas_9_16"
+        transforms.append(f"dynamic_zoom_{z0:.2f}_to_{z1:.2f}")
+        flip_op = ",hflip" if (allow_flip and (scene_idx % 3 == 2)) else ""
+        if flip_op:
+            transforms.append("hflip")
+        spd_op = f",setpts=PTS/{speed:.3f}" if speed != 1.0 else ""
+        if spd_op:
+            transforms.append(f"speed_{speed:.2f}x")
+        transforms.append("color_grade")
+
+        fg_h = 1140
+        fc = (
+            f"[0:v]split=2[bg_in][fg_in];"
+            f"[bg_in]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},boxblur=28:4,"
+            f"eq=brightness=0.01:saturation=1.02[bg];"
+            f"[fg_in]scale={W}:{fg_h}:force_original_aspect_ratio=increase,crop={W}:{fg_h},"
+            f"scale=w='trunc(iw*({zoom_expr})/2)*2':h='trunc(ih*({zoom_expr})/2)*2':eval=frame,"
+            f"crop={W}:{fg_h}:(iw-{W})/2:(ih-{fg_h})/2{flip_op},"
+            f"eq=contrast=1.06:saturation=1.08:brightness=0.01[fg];"
+            f"[bg][fg]overlay=0:(H-h)/2{spd_op},fps={FPS},setsar=1,format=yuv420p[v]"
+        )
+        cmd = [
+            cfg.ffmpeg_cmd(),
+            "-y",
+            "-ss",
+            f"{start_trim:.3f}",
+            *input_flags,
+            "-i",
+            str(clip_path),
+            "-t",
+            f"{target_dur:.3f}",
+            "-filter_complex",
+            fc,
+            "-map",
+            "[v]",
+            "-an",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "fast",
+            "-crf",
+            "19",
+            "-pix_fmt",
+            "yuv420p",
+            str(seg_out),
+        ]
+        subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return {
+            "transforms": transforms,
+            "start_trim": round(start_trim, 3),
+            "speed": speed,
+            "is_photo": False,
+            "has_audio": info["has_audio"],
+        }
 
     vf_parts = [
         f"scale={W}:{H}:force_original_aspect_ratio=increase",
@@ -196,16 +261,12 @@ def render_cinematic_segment(
     vf_parts.extend(
         [
             "eq=contrast=1.06:saturation=1.08:brightness=0.01",
-            "vignette=PI/7",
             f"fps={FPS}",
             "setsar=1",
             "format=yuv420p",
         ]
     )
-    transforms.append("color_grade_vignette")
-
-    # Loop source if a rare clip is shorter than target_dur
-    input_flags = ["-stream_loop", "-1"] if (0 < clip_dur < needed_src_dur) else []
+    transforms.append("color_grade")
 
     cmd = [
         cfg.ffmpeg_cmd(),
@@ -240,6 +301,20 @@ def render_cinematic_segment(
     }
 
 
+def get_v33_transition_spec(cut_index: int) -> Tuple[str, float]:
+    """Forensic dVlZFNF8NU8 transition recipe @ 60fps (safe >=3-frame xfade minimum).
+
+    - Cut #3 (Act change: Hook/CTA -> Mechanism): 5-frame Radial Zoom-In (0.085s)
+    - Cuts #1, #5, #7, #8 (Entry & Climax/Payoff): 3-4 frame White Exposure Bloom (0.060s)
+    - Intra-beat Match Cuts (#2, #4, #6, #9+): 3-frame snappy cut (0.050s)
+    """
+    if cut_index == 3:
+        return ("zoomin", 0.085)
+    if cut_index in (1, 5, 7, 8):
+        return ("fadewhite", 0.060)
+    return ("fade", 0.050)
+
+
 def concat_with_transitions(
     segments: List[Path],
     segment_durations: List[float],
@@ -247,8 +322,9 @@ def concat_with_transitions(
     cfg: StudioConfig,
     trans_dur: float = 0.12,
     fps: int = 30,
+    transition_style: str = "squooshify_v33",
 ) -> Path:
-    """Join rendered video segments using snappy xfade transitions."""
+    """Join rendered video segments using v3.3 forensic transitions (hard cut + 5f zoom + 3f flash) or classic xfade."""
     if not segments:
         raise ValueError("No video segments to concatenate.")
     if len(segments) == 1:
@@ -266,9 +342,14 @@ def concat_with_transitions(
     prev_label = "v0"
     running_dur = segment_durations[0]
     for i in range(1, len(segments)):
-        eff_td = min(trans_dur, max(0.05, segment_durations[i - 1] * 0.25), max(0.05, segment_durations[i] * 0.25))
+        if transition_style == "squooshify_v33":
+            trans_name, raw_td = get_v33_transition_spec(i)
+            eff_td = min(raw_td, max(0.017, segment_durations[i - 1] * 0.2), max(0.017, segment_durations[i] * 0.2))
+        else:
+            trans_name = XFADE_CYCLE[(i - 1) % len(XFADE_CYCLE)]
+            eff_td = min(trans_dur, max(0.05, segment_durations[i - 1] * 0.25), max(0.05, segment_durations[i] * 0.25))
+
         offset = max(0.0, running_dur - eff_td)
-        trans_name = XFADE_CYCLE[(i - 1) % len(XFADE_CYCLE)]
         out_label = f"xf{i}" if i < len(segments) - 1 else "vout"
         filters.append(
             f"[{prev_label}][v{i}]xfade=transition={trans_name}:duration={eff_td:.3f}:offset={offset:.3f}[{out_label}]"

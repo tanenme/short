@@ -1,0 +1,126 @@
+{
+  "channel_id": "C1-fakta",
+  "episode_id": "010-kucing-dorong-gelas",
+  "checked_at": "2026-11-24T02:07:39",
+  "stage_verdict": "READY_TO_PUBLISH",
+  "can_render": true,
+  "can_publish": true,
+  "score": 88,
+  "checks": [
+    {
+      "code": "DOCS_COMPLETE",
+      "category": "structure",
+      "severity": "PASS",
+      "message": "Dokumen inti lengkap (naskah, brief-edit, sources, paket-upload)."
+    },
+    {
+      "code": "SCRIPT_WORD_RANGE",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Jumlah kata 53 kata (~24.27s @ 131 kpm) masuk sweet spot."
+    },
+    {
+      "code": "AUDIO_TAGS",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Audio tags Eleven v4 lengkap (7 tag)."
+    },
+    {
+      "code": "SCRIPT_DIGITS",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Tidak ada angka digit mentah di teks VO."
+    },
+    {
+      "code": "CTA_PLACEMENT",
+      "category": "script",
+      "severity": "PASS",
+      "message": "CTA tunggal berada di posisi kalimat #3/7."
+    },
+    {
+      "code": "SENTENCE_BREATH",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Semua kalimat ringkas (<= 12 kata/kalimat)."
+    },
+    {
+      "code": "FACT_SOURCES",
+      "category": "factcheck",
+      "severity": "PASS",
+      "message": "Tercatat 2 URL sumber fakta tertulis (min 2)."
+    },
+    {
+      "code": "SCENE_PACING",
+      "category": "ypp",
+      "severity": "PASS",
+      "message": "10 adegan di brief-edit, semua <= 5.0s."
+    },
+    {
+      "code": "VO_READY",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "VO tersedia di assets: ElevenLabs_2026-11-06T09_56_41_Putri Maharani - Neutral and WItty_pvc_s50_sim75_v4.mp3."
+    },
+    {
+      "code": "CLIPS_COUNT",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "Tersedia 10 klip video di folder aset."
+    },
+    {
+      "code": "LICENSE_AUDIT",
+      "category": "ypp",
+      "severity": "WARN",
+      "message": "Lisensi klip: LOW=0, MEDIUM=0, HIGH(ToS/transform)=10, BLOCKED=0."
+    },
+    {
+      "code": "USABLE_CLIPS_READY",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "10 klip bersih lulus filter kebersihan (>=70)."
+    },
+    {
+      "code": "CREATOR_INTRA_REPEAT",
+      "category": "ypp",
+      "severity": "WARN",
+      "message": "Kreator dipakai >1x di episode yang sama: @rupet20 (2x)."
+    },
+    {
+      "code": "AUTOQC_VIDEO_OK",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "AutoQC FFmpeg lulus (10 OK, 0 WARN dari 10 klip)."
+    },
+    {
+      "code": "RENDER_VERIFIED",
+      "category": "render",
+      "severity": "PASS",
+      "message": "Render v3.3.0 terverifikasi (22.596s, 10 adegan, >=2 transform/klip)."
+    }
+  ],
+  "creator_rotation": {
+    "episode_id": "010-kucing-dorong-gelas",
+    "unique_creators": 9,
+    "creators": {
+      "@bangraka81": 1,
+      "@furrytales0162": 1,
+      "@happybotter_oz": 1,
+      "@kayesssss": 1,
+      "@meganoqueef": 1,
+      "@multiverse_matrix": 1,
+      "@ofcourseitsgood": 1,
+      "@richcutepet": 1,
+      "@rupet20": 2
+    },
+    "intra_episode_repeats": {
+      "@rupet20": 2
+    },
+    "cross_episode_overlaps_7d": {}
+  },
+  "license_summary": {
+    "LOW": 0,
+    "MEDIUM": 0,
+    "HIGH": 10,
+    "BLOCKED": 0
+  }
+}

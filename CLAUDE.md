@@ -24,7 +24,8 @@ E:\YT\short\
 │   │   └── C3-reddit.toml        # Profil clone (Misteri / Horor Hewan & Reddit)
 │   ├── sourcing\                 # Unified sourcing, licensing, FFmpeg autoqc, YPP preflight gate
 │   ├── analytics\                # Growth analytics, Kill/Scale 30-day engine, multi-channel scaler
-│   ├── editor-engine\            # Engine render v3.0 (builder, aligner, subtitles, video_fx, audio_mix)
+│   ├── teardown\                 # Forensic 8-dimensi reverse-engineering video & channel referensi
+│   ├── editor-engine\            # Engine render v3.4 (60fps, Zero-Gap WAV Sync, 80ms caption lead, Squooshify 3D white, vector Heart CTA, zoom/flash transitions, BGM -8dB post-hook, SFX -3dB + CTA bell)
 │   ├── doksli-web\               # FastAPI + Web UI kurasi Exa & Vision Pro
 │   ├── tools\dokli.py            # CLI sourcing CC/Commons/iNaturalist/YT + autoqc + CREDITS.md
 │   ├── tests\test_core.py        # Unit test fondasi core & validator
@@ -82,6 +83,10 @@ python _sistem/studio.py metrics log C1-fakta --episode 009-kucing-ek-cicak --vi
 python _sistem/studio.py metrics report C1-fakta --write
 python _sistem/studio.py metrics import-csv C1-fakta path/to/youtube-studio.csv
 python _sistem/studio.py clone-channel C2-momen --from C1-fakta --activate
+
+# Forensic Reverse-Engineering Video & Channel Referensi (8 Dimensi)
+python _sistem/studio.py teardown-channel @BrightsBrain --limit 20
+python _sistem/studio.py teardown-video "https://www.youtube.com/shorts/VIDEO_ID"
 
 # Jalankan unit test fondasi & editor
 python -m unittest discover -s _sistem/tests -v

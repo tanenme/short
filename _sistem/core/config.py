@@ -130,18 +130,18 @@ class StudioConfig:
         return canonical
 
     def channel_bgm_dir(self, channel_id: Optional[str] = None) -> Path:
-        """Resolve BGM dir, supporting standard `bgm/` and legacy `backgorud sound/`."""
+        """Resolve BGM dir, supporting standard `bgm/` and legacy `background sound/` / `backgorud sound/`."""
         ch_dir = self.channel_dir(channel_id)
-        for name in ("_audio/bgm", "bgm", "backgorud sound"):
+        for name in ("_audio/bgm", "bgm", "background sound", "backgorud sound"):
             p = ch_dir / name
             if p.exists():
                 return p
         return ch_dir / "bgm"
 
     def channel_sfx_dir(self, channel_id: Optional[str] = None) -> Path:
-        """Resolve SFX dir, supporting standard `sfx/` and legacy `effek sounf/`."""
+        """Resolve SFX dir, supporting standard `sfx/`, `effek sound/`, and legacy `effek sounf/`."""
         ch_dir = self.channel_dir(channel_id)
-        for name in ("_audio/sfx", "sfx", "effek sounf"):
+        for name in ("_audio/sfx", "sfx", "effek sound", "effek sounf"):
             p = ch_dir / name
             if p.exists():
                 return p

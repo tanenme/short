@@ -1,7 +1,7 @@
 {
   "channel_id": "C1-fakta",
   "episode_id": "009-kucing-ek-cicak",
-  "checked_at": "2026-11-23T14:31:29",
+  "checked_at": "2026-11-24T02:16:01",
   "stage_verdict": "READY_TO_PUBLISH",
   "can_render": true,
   "can_publish": true,
@@ -59,7 +59,7 @@
       "code": "VO_READY",
       "category": "assets",
       "severity": "PASS",
-      "message": "VO tersedia di assets: ElevenLabs_2026-11-06T07_45_09_Pratama - Clear, Confident and Warm_pvc_s45_sim80_v4.mp3."
+      "message": "VO tersedia di assets: ElevenLabs_2026-11-23T13_18_10_Alex - Upbeat, Energetic and Clear_pvc_s50_sim75_v4.mp3."
     },
     {
       "code": "CLIPS_COUNT",
@@ -101,7 +101,7 @@
       "code": "RENDER_VERIFIED",
       "category": "render",
       "severity": "PASS",
-      "message": "Render v3.0.0 terverifikasi (20.349s, 10 adegan, >=2 transform/klip)."
+      "message": "Render v3.4.0 terverifikasi (16.45s, 10 adegan, >=2 transform/klip)."
     }
   ],
   "creator_rotation": {

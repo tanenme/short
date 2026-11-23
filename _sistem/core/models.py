@@ -51,14 +51,29 @@ class VisualStyle(BaseModel):
     height: int = 1920
     fps: int = 30
     font_name: str = "Arial Black"
-    font_size: int = 84
+    font_size: int = 104
     primary_color_hex: str = "#FFFFFF"
     highlight_color_hex: str = "#FFDD00"
     outline_color_hex: str = "#000000"
-    target_lufs: float = -14.0
-    bgm_volume_db: float = -22.0
+    target_lufs: float = -10.8
+    bgm_volume_db: float = -8.0
+    sfx_volume_db: float = -3.0
     zoom_punch_min: float = 1.06
     zoom_punch_max: float = 1.12
+    subtitle_mode: Literal["squooshify_white_3d", "rsvp_1word", "grouped"] = "squooshify_white_3d"
+    subtitle_margin_v: int = 440
+    caption_lead_s: float = 0.08
+    framing_mode: Literal["auto_blur_canvas", "crop_9_16"] = "auto_blur_canvas"
+    include_top_callouts: bool = False
+    cta_bg_blur: bool = True
+    vo_presence_eq: bool = True
+    transition_style: Literal["squooshify_v33", "xfade_classic", "hard_cut"] = "squooshify_v33"
+    bottom_readability_grad: bool = False
+    vector_heart_cta: bool = True
+    vo_zero_gap: bool = True
+    vo_tempo_boost: float = 1.07
+    vo_silence_db: float = -32.0
+    vo_min_silence_s: float = 0.10
 
 
 class YppSafetyRules(BaseModel):

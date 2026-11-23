@@ -787,14 +787,21 @@
         return;
       }
       box.innerHTML = jobs.map(j => {
+        const pct = Math.max(0, Math.min(100, Number(j.progress_pct || (j.status === "succeeded" ? 100 : 0))));
         const cls = j.status === "succeeded" ? "text-emerald-400 border-emerald-500/30"
           : j.status === "failed" ? "text-rose-400 border-rose-500/30"
           : "text-amber-300 border-amber-500/30";
+        const barCls = j.status === "succeeded" ? "bg-emerald-500"
+          : j.status === "failed" ? "bg-rose-500"
+          : "bg-indigo-500";
         return `
-          <div class="bg-zinc-950 border ${cls} rounded-xl p-2.5 space-y-1">
+          <div class="bg-zinc-950 border ${cls} rounded-xl p-2.5 space-y-1.5">
             <div class="flex items-center justify-between font-mono text-[10px]">
               <span class="uppercase font-bold">${escapeHtml(j.job_type)} • ${escapeHtml(j.status)}</span>
-              <span class="text-zinc-500">${escapeHtml(j.job_id)}</span>
+              <span class="font-bold text-white">${pct}%</span>
+            </div>
+            <div class="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden">
+              <div class="${barCls} h-full transition-all duration-300" style="width: ${pct}%"></div>
             </div>
             <div class="text-zinc-200 font-medium truncate">${escapeHtml(j.channel_id)}/${escapeHtml(j.episode_id)}</div>
             <div class="text-[11px] text-zinc-400 truncate">${escapeHtml(j.error || j.progress_msg || "")}</div>

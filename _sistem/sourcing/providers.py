@@ -419,10 +419,14 @@ def download_to_episode(
         downloaded_path = dest
     else:
         out_tpl = str(assets_dir / f"{base_name}.%(ext)s")
+        ff_args = ["--ffmpeg-location", str(cfg.ffmpeg_bin)] if cfg.ffmpeg_bin else []
         cmd = [
             cfg.ytdlp_cmd(),
             "--no-warnings",
             "--no-playlist",
+            "--js-runtimes",
+            "node",
+            *ff_args,
             "-f",
             "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080][ext=mp4]/b",
             "--merge-output-format",

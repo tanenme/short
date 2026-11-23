@@ -63,6 +63,7 @@ riset/*.mp4
 **/_temp_thumb_*.jpg
 riset/**/*.jpg
 riset/**/*.png
+riset/forensics/
 
 # Local databases & runtime caches
 *.db

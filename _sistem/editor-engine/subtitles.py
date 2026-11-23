@@ -95,30 +95,67 @@ def _group_words_for_readability(words: List[dict], highlights: Set[str]) -> Lis
     return grouped
 
 
+def _build_rsvp_single_words(words: List[dict], highlights: Set[str]) -> List[dict]:
+    """Strict 1-word-at-a-time RSVP captions (competitor style: @edukasikuy / @BrightsBrain)."""
+    items: List[dict] = []
+    for curr in words:
+        raw = re.sub(r"[^\w\?\!\-]", "", (curr.get("word") or "").strip().upper())
+        if not raw:
+            continue
+        start = float(curr["start"])
+        end = max(float(curr["end"]), start + 0.16)
+        is_hl = _is_highlight(raw, highlights)
+        items.append(
+            {
+                "text": raw,
+                "start": start,
+                "end": end,
+                "highlight": is_hl,
+                "parts": [(raw, is_hl)],
+            }
+        )
+    # Zero-gap hypnotic RSVP continuity: bridge small pauses (<0.28s) so no blank frames flash between words
+    for idx in range(len(items) - 1):
+        gap = items[idx + 1]["start"] - items[idx]["end"]
+        if gap < 0.0:
+            items[idx]["end"] = max(items[idx]["start"] + 0.08, items[idx + 1]["start"] - 0.01)
+        elif gap <= 0.28:
+            items[idx]["end"] = max(items[idx]["start"] + 0.08, items[idx + 1]["start"] - 0.01)
+    return items
+
+
 def generate_ass_subtitles(
     words: List[dict],
     scenes: List[dict],
     highlights: Iterable[str],
     visual: VisualStyle,
     output_path: Path,
-    include_callouts: bool = True,
+    include_callouts: Optional[bool] = None,
     cta_window: tuple[float, float] | None = None,
+    subject_label: str = "",
 ) -> Path:
-    """Build a multi-layer ASS file: Kinetic captions + Upper Callout Banners + CTA Subscribe Pill."""
+    """Build a multi-layer ASS file supporting Squooshify 3D pure-white RSVP, classic RSVP, or grouped mode."""
     hl_set = {h.upper() for h in highlights if h}
-    primary = hex_to_ass_bgr(visual.primary_color_hex)
-    highlight_bgr = hex_to_ass_bgr(visual.highlight_color_hex)
+    mode = getattr(visual, "subtitle_mode", "squooshify_white_3d")
+    is_squooshify = mode == "squooshify_white_3d"
+    is_rsvp = is_squooshify or (mode == "rsvp_1word")
+
+    if include_callouts is None:
+        include_callouts = bool(getattr(visual, "include_top_callouts", not is_squooshify))
+
+    primary = hex_to_ass_bgr("#FFFFFF" if is_squooshify else visual.primary_color_hex)
+    highlight_bgr = hex_to_ass_bgr("#FFFFFF" if is_squooshify else visual.highlight_color_hex)
     outline = hex_to_ass_bgr(visual.outline_color_hex)
-    shadow_bg = "&H90000000&"
-    callout_bg = "&H55101018&"  # Dark translucent pill backing
-    yt_red_bg = "&H101818E6&"   # Crisp YouTube red pill backing (BGR: E6,18,18)
+    shadow_bg = "&HA8000000&" if is_squooshify else "&H90000000&"
+    callout_bg = "&H55101018&"
+    yt_red_bg = "&H081818E6&"
+    sticker_bg = "&H08B83868&"  # High-contrast deep purple/magenta pill for white bold text
 
-    kinetic_size = max(visual.font_size, 92)
+    kinetic_size = max(visual.font_size, 104 if is_rsvp else 92)
+    margin_v = getattr(visual, "subtitle_margin_v", 440 if is_squooshify else (620 if is_rsvp else 450))
+    outline_w = 6 if is_squooshify else 10
+    shadow_d = 10 if is_squooshify else 5
 
-    # Safe zone positioning for 1080x1920 YouTube Shorts (dead-center horizontally):
-    # - Kinetic caption: Alignment=2 (bottom-center), MarginV=450
-    # - CtaBadge: Alignment=2 (bottom-center), MarginV=595 (right above kinetic caption)
-    # - Callout banner: Alignment=8 (top-center), MarginV=230 (below top Shorts UI)
     lines = [
         "[Script Info]",
         "ScriptType: v4.00+",
@@ -131,38 +168,62 @@ def generate_ass_subtitles(
         "Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, "
         "Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
         f"Style: Kinetic,{visual.font_name},{kinetic_size},{primary},&H000000FF&,{outline},{shadow_bg},"
-        f"-1,0,0,0,100,100,1,0,1,10,4,2,70,70,450,1",
-        f"Style: Callout,{visual.font_name},50,{highlight_bgr},&H000000FF&,{callout_bg},{callout_bg},"
+        f"-1,0,0,0,100,100,1,0,1,{outline_w},{shadow_d},2,70,70,{margin_v},1",
+        f"Style: Callout,{visual.font_name},50,{ hex_to_ass_bgr(visual.highlight_color_hex) },&H000000FF&,{callout_bg},{callout_bg},"
         f"-1,0,0,0,100,100,1,0,3,18,0,8,70,70,230,1",
-        f"Style: CtaBadge,{visual.font_name},48,&H00FFFFFF&,&H000000FF&,{yt_red_bg},{yt_red_bg},"
-        f"-1,0,0,0,100,100,2,0,3,18,0,2,70,70,595,1",
+        f"Style: CtaBadge,{visual.font_name},52,&H00FFFFFF&,&H000000FF&,{yt_red_bg},{yt_red_bg},"
+        f"-1,0,0,0,100,100,2,0,3,22,0,5,70,70,0,1",
+        f"Style: CtaSticker,{visual.font_name},50,&H00FFFFFF&,&H000000FF&,{sticker_bg},{sticker_bg},"
+        f"-1,0,0,0,100,100,2,0,3,22,0,5,70,70,0,1",
+        f"Style: CtaHeartWhite,Arial,40,&H00FFFFFF&,&H000000FF&,&H00000000&,&H90000000&,"
+        f"0,0,0,0,100,100,0,0,1,8,6,5,0,0,0,1",
+        f"Style: CtaHeartRed,Arial,40,&H00381EFF&,&H000000FF&,&H00FFFFFF&,&H90000000&,"
+        f"0,0,0,0,100,100,0,0,1,8,6,5,0,0,0,1",
         "",
         "[Events]",
         "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
     ]
 
-    # Layer 2: Kinetic word-by-word captions
-    grouped = _group_words_for_readability(words, hl_set)
+    # Layer 2: Kinetic captions (with perceptual visual lead so caption snaps dead-on with spoken voice!)
+    lead_s = max(0.0, float(getattr(visual, "caption_lead_s", 0.08)))
+    raw_items = _build_rsvp_single_words(words, hl_set) if is_rsvp else _group_words_for_readability(words, hl_set)
+    grouped = []
+    for it in raw_items:
+        it_copy = dict(it)
+        it_copy["start"] = max(0.0, round(float(it["start"]) - lead_s, 3))
+        it_copy["end"] = max(it_copy["start"] + 0.08, round(float(it["end"]) - lead_s, 3))
+        grouped.append(it_copy)
+    for idx in range(len(grouped) - 1):
+        if grouped[idx]["end"] > grouped[idx + 1]["start"]:
+            grouped[idx]["end"] = max(grouped[idx]["start"] + 0.06, round(grouped[idx + 1]["start"] - 0.005, 3))
+
     for item in grouped:
         t_start = fmt_ass_time(item["start"])
         t_end = fmt_ass_time(item["end"])
-        pop = (
-            "{\\fscx124\\fscy124\\t(0,80,\\fscx104\\fscy104)}"
-            if item["highlight"]
-            else "{\\fscx114\\fscy114\\t(0,65,\\fscx100\\fscy100)}"
-        )
+        if is_squooshify:
+            pop = (
+                "{\\blur0.7\\fscx88\\fscy88\\t(0,30,\\fscx110\\fscy110)\\t(30,70,\\fscx103\\fscy103)}"
+                if item["highlight"]
+                else "{\\blur0.7\\fscx90\\fscy90\\t(0,28,\\fscx106\\fscy106)\\t(28,65,\\fscx100\\fscy100)}"
+            )
+        else:
+            pop = (
+                "{\\fscx124\\fscy124\\t(0,80,\\fscx104\\fscy104)}"
+                if item["highlight"]
+                else "{\\fscx114\\fscy114\\t(0,65,\\fscx100\\fscy100)}"
+            )
 
         rendered_parts = []
         for p_text, p_hl in item["parts"]:
             safe = _escape_ass(p_text)
-            if p_hl:
+            if p_hl and not is_squooshify:
                 rendered_parts.append(f"{{\\c{highlight_bgr}}}{safe}{{\\c{primary}}}")
             else:
                 rendered_parts.append(safe)
         text_body = " ".join(rendered_parts)
         lines.append(f"Dialogue: 2,{t_start},{t_end},Kinetic,,0,0,0,,{pop}{text_body}")
 
-    # Layer 1: Upper-third callout banners on high-impact beats (Hook, Mitos, Payoff)
+    # Layer 1: Upper-third callout banners (disabled by default in Squooshify mode for clean top 80%)
     if include_callouts and scenes:
         callout_indices = {scenes[0]["index"], scenes[-1]["index"]}
         if len(scenes) >= 2:
@@ -180,13 +241,35 @@ def generate_ass_subtitles(
             anim = "{\\fad(120,120)\\fscx92\\fscy92\\t(0,110,\\fscx100\\fscy100)}"
             lines.append(f"Dialogue: 1,{t_start},{t_end},Callout,,0,0,0,,{anim}{stext.upper()}")
 
-    # Layer 3: Crisp animated YouTube-style SUBSCRIBE pill during exact CTA window
+    # Layer 3: Squooshify v3.3 2-Beat Center-Screen Interactive CTA (Vector Heart White -> Red + Pills)
     if cta_window is not None:
         cta_s, cta_e = cta_window
-        t_start = fmt_ass_time(cta_s)
-        t_end = fmt_ass_time(min(cta_s + 2.2, max(cta_s + 1.4, cta_e)))
-        bounce = "{\\fad(100,180)\\fscx80\\fscy80\\t(0,110,\\fscx110\\fscy110)\\t(110,210,\\fscx100\\fscy100)}"
-        lines.append(f"Dialogue: 3,{t_start},{t_end},CtaBadge,,0,0,0,,{bounce}SUBSCRIBE")
+        dur = max(0.9, cta_e - cta_s)
+        mid_t = cta_s + dur * 0.52
+        end_t = cta_e
+        cx = visual.width // 2
+        cy_pill = int(visual.height * 0.56)
+        cy_heart = int(visual.height * 0.39)
+        bounce1 = f"{{\\pos({cx},{cy_pill})\\fad(60,80)\\fscx80\\fscy80\\t(0,75,\\fscx110\\fscy110)\\t(75,140,\\fscx100\\fscy100)}}"
+        bounce2 = f"{{\\pos({cx},{cy_pill})\\fad(60,100)\\fscx80\\fscy80\\t(0,75,\\fscx110\\fscy110)\\t(75,140,\\fscx100\\fscy100)}}"
+        lines.append(
+            f"Dialogue: 3,{fmt_ass_time(cta_s)},{fmt_ass_time(mid_t)},CtaBadge,,0,0,0,,{bounce1}SUBSCRIBE  +  LIKE"
+        )
+        subj_up = _escape_ass(subject_label or "IMUT").upper()
+        lines.append(
+            f"Dialogue: 3,{fmt_ass_time(mid_t)},{fmt_ass_time(end_t)},CtaSticker,,0,0,0,,{bounce2}+1 {subj_up} LIKE!"
+        )
+        if getattr(visual, "vector_heart_cta", True):
+            # Crisp symmetric ASS cubic-bezier heart vector (zero green-screen artifacts, 60fps smooth!)
+            heart_path = "m 0 32 b 0 0 -55 -20 -80 15 b -105 50 -75 95 0 155 b 75 95 105 50 80 15 b 55 -20 0 0 0 32"
+            h_anim1 = f"{{\\an5\\pos({cx},{cy_heart})\\fad(60,40)\\fscx72\\fscy72\\t(0,90,\\fscx108\\fscy108)\\t(90,170,\\fscx100\\fscy100)\\p1}}{heart_path}{{\\p0}}"
+            h_anim2 = f"{{\\an5\\pos({cx},{cy_heart})\\fad(40,120)\\fscx92\\fscy92\\t(0,75,\\fscx128\\fscy128)\\t(75,160,\\fscx108\\fscy108)\\p1}}{heart_path}{{\\p0}}"
+            lines.append(
+                f"Dialogue: 4,{fmt_ass_time(cta_s)},{fmt_ass_time(mid_t)},CtaHeartWhite,,0,0,0,,{h_anim1}"
+            )
+            lines.append(
+                f"Dialogue: 4,{fmt_ass_time(mid_t)},{fmt_ass_time(end_t)},CtaHeartRed,,0,0,0,,{h_anim2}"
+            )
 
     output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return output_path

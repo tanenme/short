@@ -1,0 +1,379 @@
+{
+  "schema_version": "1.0.0",
+  "episode_id": "014-anak-bebek-berbaris",
+  "channel_id": "C1-fakta",
+  "title": "014 Kenapa Anak Bebek Selalu Berenang Berbaris di Belakang Induknya?",
+  "subject": "",
+  "status": "sourced",
+  "created_at": "2026-11-23T14:56:01",
+  "updated_at": "2026-11-23T14:56:01",
+  "script": {
+    "hook_text": "Kenapa anak bebek selalu berenang BERBARIS di belakang induknya",
+    "vo_full_text": "[curious, fast-paced] Kenapa anak bebek selalu berenang BERBARIS di belakang induknya?\n\n[skeptical, then firm] Banyak yang kira cuma takut hilang, padahal BUKAN!\n\n[warm, conversational] Tapi kalau kamu suka bebek, Subscribe ya.\n\n[intrigued, hushed revelation] Kayuhan induknya bikin OMBAK pendorong di belakangnya... [excited] Anak bebek tinggal BERSELANCAR gratis sambil meneruskan ombak ke adiknya!\n\n[punchy, amused conclusion] Makanya mereka bisa berenang jauh tanpa gampang KELELAHAN.",
+    "word_count": 49,
+    "estimated_duration_s": 22.44,
+    "audio_tags": [
+      "curious, fast-paced",
+      "skeptical, then firm",
+      "warm, conversational",
+      "intrigued, hushed revelation",
+      "excited",
+      "punchy, amused conclusion"
+    ],
+    "highlight_words": [
+      "BERBARIS",
+      "BUKAN",
+      "OMBAK",
+      "BERSELANCAR",
+      "KELELAHAN"
+    ],
+    "cta_template": "template_b"
+  },
+  "fact_sources": [
+    {
+      "title": "Sumber #1",
+      "publisher": "",
+      "url": "https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/waveriding-and-wavepassing-by-ducklings-in-formation-swimming/945633B700405A456A5706101B63846B",
+      "claim_verified": "",
+      "tier": "tier1"
+    },
+    {
+      "title": "Sumber #2",
+      "publisher": "",
+      "url": "https://www.science.org/content/article/why-do-ducklings-swim-row",
+      "claim_verified": "",
+      "tier": "tier1"
+    },
+    {
+      "title": "Sumber #3",
+      "publisher": "",
+      "url": "https://physicsworld.com/a/ducklings-surf-in-formation-to-conserve-energy/",
+      "claim_verified": "",
+      "tier": "tier1"
+    }
+  ],
+  "scenes": [
+    {
+      "index": 1,
+      "brief_start_s": 0.0,
+      "brief_end_s": 2.4,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Induk bebek berenang diikuti barisan anak bebek rapi",
+      "vo_line": "Kenapa anak bebek selalu berenang BERBARIS di belakang induknya?",
+      "screen_text": "KENAPA BERBARIS?!",
+      "sfx_cue": "audio asli air tipis + whoosh",
+      "highlight_words": [
+        "BERBARIS"
+      ],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 2,
+      "brief_start_s": 2.4,
+      "brief_end_s": 4.8,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Anak bebek kecil berenang mengejar di air tenang",
+      "vo_line": "Banyak yang kira cuma takut hilang, padahal BUKAN!",
+      "screen_text": "Takut hilang? BUKAN!",
+      "sfx_cue": "pop negatif",
+      "highlight_words": [
+        "BUKAN"
+      ],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 3,
+      "brief_start_s": 4.8,
+      "brief_end_s": 7.4,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Close-up anak bebek kuning/mallard menggemaskan",
+      "vo_line": "Tapi kalau kamu suka bebek, Subscribe ya.",
+      "screen_text": "Suka bebek? Subscribe!",
+      "sfx_cue": "ding lembut",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 4,
+      "brief_start_s": 7.4,
+      "brief_end_s": 9.6,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Induk bebek mengayuh air membentuk riak gelombang V",
+      "vo_line": "Kayuhan induknya bikin OMBAK...",
+      "screen_text": "Bikin OMBAK!",
+      "sfx_cue": "tension halus",
+      "highlight_words": [
+        "OMBAK"
+      ],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 5,
+      "brief_start_s": 9.6,
+      "brief_end_s": 11.8,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Close-up riak gelombang air di belakang tubuh induk",
+      "vo_line": "...pendorong di belakangnya...",
+      "screen_text": "Gaya dorong air",
+      "sfx_cue": "riser tipis",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 6,
+      "brief_start_s": 11.8,
+      "brief_end_s": 14.2,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Anak bebek terdepan meluncur tepat di puncak gelombang",
+      "vo_line": "Anak bebek tinggal BERSELANCAR gratis...",
+      "screen_text": "BERSELANCAR GRATIS!",
+      "sfx_cue": "whoosh cepat",
+      "highlight_words": [
+        "BERSELANCAR"
+      ],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 7,
+      "brief_start_s": 14.2,
+      "brief_end_s": 16.6,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Barisan 4-6 anak bebek meluncur serentak satu garis",
+      "vo_line": "...sambil meneruskan ombak ke adiknya!",
+      "screen_text": "Estafet gelombang",
+      "sfx_cue": "pop ringan",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 8,
+      "brief_start_s": 16.6,
+      "brief_end_s": 18.8,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Rombongan bebek melintasi danau luas dari sudut lebar",
+      "vo_line": "Makanya mereka bisa berenang jauh...",
+      "screen_text": "Hemat energi!",
+      "sfx_cue": "zip SFX",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 9,
+      "brief_start_s": 18.8,
+      "brief_end_s": 20.8,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Anak bebek tetap lincah mengapung di belakang induk",
+      "vo_line": "...tanpa gampang KELELAHAN.",
+      "screen_text": "Anti KELELAHAN!",
+      "sfx_cue": "pop ringan",
+      "highlight_words": [
+        "KELELAHAN"
+      ],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 10,
+      "brief_start_s": 20.8,
+      "brief_end_s": 22.4,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Anak bebek menggemaskan berenang tenang (payoff tutup)",
+      "vo_line": "(payoff tutup fakta)",
+      "screen_text": "Trik fisika alam!",
+      "sfx_cue": "sting tutup",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    }
+  ],
+  "clips": [
+    {
+      "filename": "ducks-in-space_i-think-i-like-this-little-l_20512.f788.mp4",
+      "source_platform": "youtube",
+      "source_url": "https://www.youtube.com/watch?v=qsbu8nKfBCc",
+      "creator": "ducks_in_space",
+      "license": "youtube ToS",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": 17.47,
+      "width": 608,
+      "height": 1080,
+      "sha256": "ba5b7ab4b8ae7ae0c089e86f703f647e1aafe59454e88ea0cad5f916ce15af68"
+    },
+    {
+      "filename": "thebackyardbirder_mama-mallard-duck-watches-ov_20382.f399.mp4",
+      "source_platform": "youtube",
+      "source_url": "https://www.youtube.com/shorts/Q8Cu0QCXGqM",
+      "creator": "TheBackyardBirder",
+      "license": "youtube ToS",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": 57.75,
+      "width": 1080,
+      "height": 1080,
+      "sha256": "fb7e0555119fdc8bcda5d25cb4cd42967a206a758a4f02c121928b9b4550b78d"
+    },
+    {
+      "filename": "vt-physics_unlocking-the-mystery-why-du_20469.f788.mp4",
+      "source_platform": "youtube",
+      "source_url": "https://www.youtube.com/shorts/_3a9LvM3xus",
+      "creator": "vt.physics",
+      "license": "youtube ToS",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": 59.67,
+      "width": 608,
+      "height": 1080,
+      "sha256": "8fc5cc0b8edfa2c74338795aa3e8f3718487bc0022ec6dc9210871cb8e4eadb1"
+    },
+    {
+      "filename": "youtube-creator_18-ducklings-count-them-if-y_20515.f788.mp4",
+      "source_platform": "youtube",
+      "source_url": "https://www.youtube.com/shorts/s7yqWWg7Idc",
+      "creator": "YouTube Creator",
+      "license": "youtube ToS",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": 42.16,
+      "width": 608,
+      "height": 1080,
+      "sha256": "041a37f9bb800a336bf69a77b24e107795eeba5456fc7a58f198004cdd4daa63"
+    },
+    {
+      "filename": "youtube-creator_video-clip_20473.f397.mp4",
+      "source_platform": "youtube",
+      "source_url": "https://www.youtube.com/shorts/adANfBE_S7M",
+      "creator": "YouTube Creator",
+      "license": "youtube ToS",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": 15.0,
+      "width": 480,
+      "height": 854,
+      "sha256": "e7bbd8ebcc6cae89f433cb1359cb827012e559748a754d9ccef54b5bdf1fb8ef"
+    },
+    {
+      "filename": "youtube-creator_video-clip_20476.f137.mp4",
+      "source_platform": "youtube",
+      "source_url": "https://www.youtube.com/watch?v=FAREr6aTFtk",
+      "creator": "YouTube Creator",
+      "license": "youtube ToS",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": 517.68,
+      "width": 1920,
+      "height": 1080,
+      "sha256": "17033d01638c0dfb6762bbc8a12462f1c541d669435690f10c4b08d7678264ef"
+    }
+  ],
+  "vo_file": null,
+  "words_alignment": [],
+  "upload": {
+    "titles": [],
+    "description": "",
+    "tags": [],
+    "scheduled_slot": "",
+    "cover_frame_s": null,
+    "cover_text": ""
+  },
+  "qc_report": {
+    "channel_id": "C1-fakta",
+    "episode_id": "014-anak-bebek-berbaris",
+    "checked_at": "2026-11-23T14:56:01",
+    "passed": true,
+    "score": 92,
+    "checks": [
+      {
+        "code": "DOCS_COMPLETE",
+        "category": "structure",
+        "severity": "PASS",
+        "message": "Dokumen inti lengkap (naskah, brief-edit, sources, paket-upload)."
+      },
+      {
+        "code": "SCRIPT_WORD_RANGE",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Jumlah kata 49 kata (~22.44s @ 131 kpm) masuk sweet spot."
+      },
+      {
+        "code": "AUDIO_TAGS",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Audio tags Eleven v4 lengkap (6 tag)."
+      },
+      {
+        "code": "SCRIPT_DIGITS",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Tidak ada angka digit mentah di teks VO."
+      },
+      {
+        "code": "CTA_PLACEMENT",
+        "category": "script",
+        "severity": "PASS",
+        "message": "CTA tunggal berada di posisi kalimat #3/6."
+      },
+      {
+        "code": "SENTENCE_BREATH",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Semua kalimat ringkas (<= 12 kata/kalimat)."
+      },
+      {
+        "code": "FACT_SOURCES",
+        "category": "factcheck",
+        "severity": "PASS",
+        "message": "Tercatat 3 URL sumber fakta tertulis (min 2)."
+      },
+      {
+        "code": "SCENE_PACING",
+        "category": "ypp",
+        "severity": "PASS",
+        "message": "10 adegan di brief-edit, semua <= 5.0s."
+      },
+      {
+        "code": "VO_MISSING",
+        "category": "assets",
+        "severity": "WARN",
+        "message": "File VO (.mp3) belum tersedia."
+      },
+      {
+        "code": "CLIPS_COUNT",
+        "category": "assets",
+        "severity": "PASS",
+        "message": "Tersedia 6 klip video di folder aset."
+      }
+    ]
+  },
+  "extra": {}
+}

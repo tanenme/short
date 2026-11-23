@@ -86,7 +86,7 @@ def _list_episodes(channel_dir: Path) -> list[str]:
         if not d.is_dir() or d.name.startswith("_"):
             continue
         # Skip audio bank folders
-        if d.name.lower() in ("bgm", "sfx", "backgorud sound", "effek sounf"):
+        if d.name.lower() in ("bgm", "sfx", "background sound", "backgorud sound", "effek sound", "effek sounf"):
             continue
         eps.append(d.name)
     return eps
@@ -315,12 +315,13 @@ def cmd_jobs(args: argparse.Namespace) -> int:
     if not jobs:
         print("Belum ada riwayat job di studio.db.")
         return 0
-    print(f"{'JOB ID':<16} {'TYPE':<8} {'STATUS':<10} {'CHANNEL/EPISODE':<36} CATATAN")
-    print("-" * 105)
+    print(f"{'JOB ID':<16} {'TYPE':<8} {'STATUS':<10} {'PROGRES':>7}  {'CHANNEL/EPISODE':<32} CATATAN")
+    print("-" * 112)
     for j in jobs:
         target = f"{j['channel_id']}/{j['episode_id']}"
         note = j.get("error") or j.get("progress_msg") or ""
-        print(f"{j['job_id']:<16} {j['job_type']:<8} {j['status']:<10} {target[:35]:<36} {note[:45]}")
+        pct = j.get("progress_pct", 100 if j["status"] == "succeeded" else 0)
+        print(f"{j['job_id']:<16} {j['job_type']:<8} {j['status']:<10} {pct:>6}%  {target[:31]:<32} {note[:42]}")
     return 0
 
 
@@ -348,7 +349,14 @@ def cmd_serve(args: argparse.Namespace) -> int:
     import uvicorn
 
     print(f"Menjalankan Enterprise Shorts Studio v3 di http://{args.host}:{args.port}")
-    uvicorn.run("server:app", host=args.host, port=args.port, reload=args.reload, app_dir=str(web_dir))
+    uvicorn.run(
+        "server:app",
+        host=args.host,
+        port=args.port,
+        reload=args.reload,
+        reload_dirs=[str(SISTEM_DIR)] if args.reload else None,
+        app_dir=str(web_dir),
+    )
     return 0
 
 
@@ -417,6 +425,76 @@ def cmd_clone_channel(args: argparse.Namespace) -> int:
         f"[+] Channel {res['channel_id']} siap di {res['channel_dir']} "
         f"(aset bersama disalin: {res['copied_shared_assets']} file)."
     )
+    return 0
+
+
+def cmd_teardown_video(args: argparse.Namespace) -> int:
+    from teardown.engine import teardown_video
+
+    cfg = get_config()
+    vtt = Path(args.vtt) if args.vtt else None
+    rep = teardown_video(args.target, vtt_path=vtt, run_vision=not args.no_vision, config=cfg)
+    print(f"=== FORENSIC VIDEO TEARDOWN: {rep.video_id} ===")
+    print(f"Durasi: {rep.duration_s}s | Reso: {rep.width}x{rep.height} @{rep.fps}fps")
+    print(
+        f"Total Cut Editorial: {rep.total_cuts} (+ {rep.flash_transitions_count} flash/glitch) "
+        f"| Avg Cut: {rep.avg_cut_duration_s}s | Median: {rep.median_cut_duration_s}s"
+    )
+    print(f"Pacing per Zona: Hook={rep.hook_cut_avg_s}s | CTA={rep.cta_cut_avg_s}s | Body={rep.body_cut_avg_s}s")
+    print(
+        f"Cadence VO: {rep.cadence.total_words} kata | Cold-Open={rep.cadence.cold_open_latency_s}s | "
+        f"WPM={rep.cadence.overall_wpm} (Hook {rep.cadence.hook_wpm} WPM) | CTA={rep.cadence.cta_mechanic_type}"
+    )
+    if rep.cadence.verbal_signatures:
+        print(f"Verbal Signatures: {', '.join(rep.cadence.verbal_signatures)}")
+    print(
+        f"Audio Forensics: {rep.audio.integrated_lufs} LUFS | LRA {rep.audio.loudness_range_lu} LU | "
+        f"Peak {rep.audio.true_peak_dbfs} dBFS | Silence pockets: {rep.audio.silence_pockets_count}"
+    )
+    if rep.vision:
+        print(f"Vision Analysis: mode={rep.vision.subtitle_mode} | y={rep.vision.subtitle_y_zone} | framing={rep.vision.framing_strategy}")
+        print(f"CTA Visual Pattern: {rep.vision.cta_visual_pattern}")
+        for ex in rep.vision.visual_anchor_examples[:3]:
+            print(f"  * Visual Anchor: {ex}")
+    print(f"Storyboard: {rep.storyboard_image}")
+    print("\n--- Recommended ChannelProfile TOML Override ---")
+    print(rep.recommended_toml_override)
+    return 0
+
+
+def cmd_teardown_channel(args: argparse.Namespace) -> int:
+    from teardown.engine import teardown_channel
+
+    cfg = get_config()
+    rep = teardown_channel(args.target, limit=args.limit, config=cfg)
+    print(f"=== FORENSIC CHANNEL OUTLIER TEARDOWN: @{rep.channel_handle} ({rep.videos_sampled} Shorts) ===")
+    print(f"Median Views: {rep.median_views:,} | Mean Views: {rep.mean_views:,} | Max Views: {rep.max_views:,}")
+    print(f"Winning Hook Patterns: {', '.join(rep.winning_patterns)}")
+    print(f"\n{'MULT':>7} {'VIEWS':>11} {'PATTERN':<26} JUDUL")
+    print("-" * 105)
+    for o in rep.outliers[:10]:
+        tag = "🔥" if o.is_viral_outlier else "  "
+        print(f"{tag}{o.outlier_multiplier:>5.1f}x {o.views:>11,} {o.hook_pattern:<26} {o.title[:52]}")
+    return 0
+
+
+def cmd_sfx_download(args: argparse.Namespace) -> int:
+    from sourcing.soundboard import build_soundboard_catalog, download_myinstants_sfx, search_myinstants
+
+    cfg = get_config()
+    if args.catalog:
+        cat = build_soundboard_catalog(args.channel, cfg, write_file=True)
+        auto_n = sum(1 for v in cat.values() if v["auto_use"])
+        print(f"[+] Katalog soundboard diperbarui: {len(cat)} file ({auto_n} auto-aktif di engine) -> {cfg.channel_sfx_dir(args.channel) / '_soundboard_catalog.json'}")
+        return 0
+    if args.search_only:
+        hits = search_myinstants(args.query, limit=args.limit)
+        for i, h in enumerate(hits, 1):
+            print(f"{i:>2}. {h['title']} -> {h['mp3_url']}")
+        return 0
+    res = download_myinstants_sfx(args.query, channel_id=args.channel, config=cfg)
+    build_soundboard_catalog(args.channel, cfg, write_file=True)
+    print(f"[+] Soundboard diunduh & dikalibrasi: {res['title']} -> {res['path']} ({res['bytes']} bytes)")
     return 0
 
 
@@ -521,6 +599,25 @@ def build_parser() -> argparse.ArgumentParser:
     p_cl.add_argument("--no-overlays", action="store_true")
     p_cl.add_argument("--activate", action="store_true", help="Ubah status planned -> validation")
     p_cl.set_defaults(func=cmd_clone_channel)
+
+    p_tv = sub.add_parser("teardown-video", help="Bedah forensik 8-dimensi video Shorts (lokal atau URL YouTube)")
+    p_tv.add_argument("target", help="Path file video lokal atau URL YouTube Shorts")
+    p_tv.add_argument("--vtt", default="", help="Path file .vtt opsional")
+    p_tv.add_argument("--no-vision", action="store_true", help="Lewati panggilan Gemini Vision")
+    p_tv.set_defaults(func=cmd_teardown_video)
+
+    p_tc = sub.add_parser("teardown-channel", help="Bedah outlier & pola viral channel YouTube (@handle, URL, atau file .list)")
+    p_tc.add_argument("target", help="@handle, URL channel YouTube, atau file .list")
+    p_tc.add_argument("--limit", type=int, default=20)
+    p_tc.set_defaults(func=cmd_teardown_channel)
+
+    p_sfx = sub.add_parser("sfx-download", help="Cari, unduh, atau kalibrasi katalog soundboard SFX channel")
+    p_sfx.add_argument("query", nargs="?", default="", help="Nama soundboard atau URL MP3 MyInstants (kosong = trending ID)")
+    p_sfx.add_argument("--channel", default="C1-fakta")
+    p_sfx.add_argument("--search-only", action="store_true")
+    p_sfx.add_argument("--catalog", action="store_true", help="Scan ulang & kalibrasi _soundboard_catalog.json")
+    p_sfx.add_argument("--limit", type=int, default=10)
+    p_sfx.set_defaults(func=cmd_sfx_download)
 
     return ap
 

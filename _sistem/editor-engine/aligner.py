@@ -160,15 +160,26 @@ def synchronize_scenes_fuzzy(
 
 
 def detect_cta_window(scenes: List[dict], words: List[dict]) -> Optional[Tuple[float, float]]:
-    """Find the exact (start_s, end_s) timestamp window where the Subscribe CTA occurs."""
-    for w in words:
-        if "subscribe" in normalize_token(w.get("word", "")):
-            start = max(0.0, float(w["start"]) - 0.35)
-            end = float(w["end"]) + 2.0
-            return (round(start, 3), round(end, 3))
-
+    """Find the exact (start_s, end_s) window for the Subscribe CTA, strictly clamped to its scene."""
+    # Find the owning CTA scene first so blur/badges NEVER bleed into the next scene
+    cta_scene = None
     for sc in scenes:
         blob = f"{sc.get('vo', '')} {sc.get('screen_text', '')} {sc.get('visual_desc', '')}".lower()
         if "subscribe" in blob:
-            return (round(sc["start_s"], 3), round(sc["end_s"], 3))
+            cta_scene = sc
+            break
+
+    for w in words:
+        if "subscribe" in normalize_token(w.get("word", "")):
+            start = max(0.0, float(w["start"]) - 0.55)
+            end = float(w["end"]) + 0.70
+            if cta_scene is not None:
+                start = max(float(cta_scene["start_s"]) + 0.10, start)
+                end = min(float(cta_scene["end_s"]) - 0.08, end)
+            if end <= start + 0.6:
+                end = start + 1.2
+            return (round(start, 3), round(end, 3))
+
+    if cta_scene is not None:
+        return (round(float(cta_scene["start_s"]) + 0.15, 3), round(float(cta_scene["end_s"]) - 0.10, 3))
     return None

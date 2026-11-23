@@ -1,0 +1,127 @@
+{
+  "channel_id": "C1-fakta",
+  "episode_id": "008-anjing-tendang-tanah",
+  "checked_at": "2026-11-24T02:15:09",
+  "stage_verdict": "READY_TO_PUBLISH",
+  "can_render": true,
+  "can_publish": true,
+  "score": 94,
+  "checks": [
+    {
+      "code": "DOCS_COMPLETE",
+      "category": "structure",
+      "severity": "PASS",
+      "message": "Dokumen inti lengkap (naskah, brief-edit, sources, paket-upload)."
+    },
+    {
+      "code": "SCRIPT_WORD_RANGE",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Jumlah kata 46 kata (~21.07s @ 131 kpm) masuk sweet spot."
+    },
+    {
+      "code": "AUDIO_TAGS",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Audio tags Eleven v4 lengkap (6 tag)."
+    },
+    {
+      "code": "SCRIPT_DIGITS",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Tidak ada angka digit mentah di teks VO."
+    },
+    {
+      "code": "CTA_PLACEMENT",
+      "category": "script",
+      "severity": "PASS",
+      "message": "CTA tunggal berada di posisi kalimat #3/6."
+    },
+    {
+      "code": "SENTENCE_BREATH",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Semua kalimat ringkas (<= 12 kata/kalimat)."
+    },
+    {
+      "code": "FACT_SOURCES",
+      "category": "factcheck",
+      "severity": "PASS",
+      "message": "Tercatat 2 URL sumber fakta tertulis (min 2)."
+    },
+    {
+      "code": "SCENE_PACING",
+      "category": "ypp",
+      "severity": "PASS",
+      "message": "10 adegan di brief-edit, semua <= 5.0s."
+    },
+    {
+      "code": "VO_READY",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "VO tersedia di assets: ElevenLabs_2026-11-06T09_25_34_Putri Maharani - Neutral and WItty_pvc_s50_sim75_v4.mp3."
+    },
+    {
+      "code": "CLIPS_COUNT",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "Tersedia 12 klip video di folder aset."
+    },
+    {
+      "code": "LICENSE_AUDIT",
+      "category": "ypp",
+      "severity": "WARN",
+      "message": "Lisensi klip: LOW=0, MEDIUM=0, HIGH(ToS/transform)=12, BLOCKED=0."
+    },
+    {
+      "code": "USABLE_CLIPS_READY",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "12 klip bersih lulus filter kebersihan (>=70)."
+    },
+    {
+      "code": "CREATOR_ROTATION_OK",
+      "category": "ypp",
+      "severity": "PASS",
+      "message": "Rotasi kreator bersih (12 kreator unik, 0 overlap 7 hari)."
+    },
+    {
+      "code": "AUTOQC_VIDEO_OK",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "AutoQC FFmpeg lulus (12 OK, 0 WARN dari 12 klip)."
+    },
+    {
+      "code": "RENDER_VERIFIED",
+      "category": "render",
+      "severity": "PASS",
+      "message": "Render v3.4.0 terverifikasi (15.883s, 10 adegan, >=2 transform/klip)."
+    }
+  ],
+  "creator_rotation": {
+    "episode_id": "008-anjing-tendang-tanah",
+    "unique_creators": 12,
+    "creators": {
+      "@alfie.the.cocker7": 1,
+      "@bubbletea_coffee": 1,
+      "@daily_move_1221": 1,
+      "@fivebyfivek9": 1,
+      "@iamartytheparty": 1,
+      "@intern.pollys.dog": 1,
+      "@itsgoldievlogs": 1,
+      "@lilwoofclub": 1,
+      "@maltese_adventures": 1,
+      "@minchi_05": 1,
+      "@puggonewild": 1,
+      "@winnietheminischnoodle": 1
+    },
+    "intra_episode_repeats": {},
+    "cross_episode_overlaps_7d": {}
+  },
+  "license_summary": {
+    "LOW": 0,
+    "MEDIUM": 0,
+    "HIGH": 12,
+    "BLOCKED": 0
+  }
+}

@@ -15,10 +15,11 @@ for p in (str(SISTEM_DIR), str(EDITOR_DIR)):
         sys.path.insert(0, p)
 
 from aligner import detect_cta_window, extract_dynamic_highlights, synchronize_scenes_fuzzy
-from audio_mix import build_audio_filtergraph
+from audio_mix import build_audio_filtergraph, compute_sfx_entries
 from core.config import get_config
 from subtitles import generate_ass_subtitles, hex_to_ass_bgr
-from video_fx import filter_clean_clips
+from video_fx import filter_clean_clips, get_v33_transition_spec
+from vo_tightener import build_speech_segments, parse_silencedetect_output, remap_timestamp
 
 
 class TestEditorEngineV3(unittest.TestCase):
@@ -90,7 +91,10 @@ class TestEditorEngineV3(unittest.TestCase):
         scenes = [{"index": 1, "start_s": 0.0, "end_s": 2.0, "screen_text": "Bunyi EK-EK?!"}]
         with tempfile.TemporaryDirectory() as tmp:
             ass_p = Path(tmp) / "test.ass"
-            generate_ass_subtitles(words, scenes, {"CICAK"}, self.c1.visual, ass_p)
+            vis_grouped = self.c1.visual.model_copy(
+                update={"subtitle_mode": "grouped", "highlight_color_hex": "#FFDD00", "include_top_callouts": True}
+            )
+            generate_ass_subtitles(words, scenes, {"CICAK"}, vis_grouped, ass_p)
             txt = ass_p.read_text(encoding="utf-8")
             self.assertIn("Style: Kinetic", txt)
             self.assertIn("Style: Callout", txt)
@@ -107,7 +111,8 @@ class TestEditorEngineV3(unittest.TestCase):
             sfx_inputs=[(4, 2.5, 0.55)],
         )
         self.assertIn("sidechaincompress", fg_full)
-        self.assertIn("loudnorm=I=-14.0", fg_full)
+        self.assertIn("loudnorm=I=-10.8", fg_full)
+        self.assertIn("equalizer=f=3600", fg_full)
         self.assertIn("[hook_snd]", fg_full)
 
         fg_no_bgm = build_audio_filtergraph(
@@ -120,7 +125,7 @@ class TestEditorEngineV3(unittest.TestCase):
         )
         self.assertNotIn("asplit", fg_no_bgm)
         self.assertNotIn("sidechaincompress", fg_no_bgm)
-        self.assertIn("loudnorm=I=-14.0", fg_no_bgm)
+        self.assertIn("loudnorm=I=-10.8", fg_no_bgm)
 
     def test_detect_cta_window_real_009(self) -> None:
         ep9_assets = self.cfg.episode_assets_dir("009-kucing-ek-cicak", "C1-fakta")
@@ -129,6 +134,74 @@ class TestEditorEngineV3(unittest.TestCase):
         self.assertIsNotNone(win)
         self.assertGreater(win[0], 6.5)
         self.assertLess(win[0], 8.0)
+
+    def test_v33_transitions_vector_heart_and_bgm_drop(self) -> None:
+        self.assertEqual(get_v33_transition_spec(3), ("zoomin", 0.085))
+        self.assertEqual(get_v33_transition_spec(1), ("fadewhite", 0.060))
+        self.assertEqual(get_v33_transition_spec(2), ("fade", 0.050))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            ass_p = Path(tmp) / "v33.ass"
+            generate_ass_subtitles(
+                [{"word": "SUBSCRIBE", "start": 7.5, "end": 8.1}],
+                [],
+                {"SUBSCRIBE"},
+                self.c1.visual,
+                ass_p,
+                cta_window=(7.0, 8.6),
+                subject_label="kucing",
+            )
+            txt = ass_p.read_text(encoding="utf-8")
+            self.assertIn("CtaHeartWhite", txt)
+            self.assertIn("CtaHeartRed", txt)
+            self.assertIn("\\p1", txt)
+
+        fg_drop = build_audio_filtergraph(
+            vo_input_idx=1,
+            vo_duration=20.0,
+            profile=self.c1,
+            bgm_input_idx=2,
+            hook_audio_input_idx=None,
+            sfx_inputs=[],
+            bgm_drop_window=(4.8, 5.25),
+            bgm_start_s=2.0,
+        )
+        self.assertIn("between(t,4.800,5.250)", fg_drop)
+        self.assertIn("adelay=2000|2000", fg_drop)
+
+        # Verify CTA subscribe triggers ding_chime bell cleanly
+        sfx_list = compute_sfx_entries(
+            [{"index": 1, "start_s": 0.0, "end_s": 2.0, "sfx": "", "words": []},
+             {"index": 2, "start_s": 2.0, "end_s": 4.0, "sfx": "", "words": [{"word": "subscribe", "start": 2.6, "end": 3.1}]}],
+            self.cfg.channel_sfx_dir("C1-fakta"),
+            {"SUBSCRIBE"},
+            cta_window=(2.2, 3.6),
+        )
+        sfx_names = [p.name for _, p, _ in sfx_list]
+        self.assertTrue(any("ding" in n for n in sfx_names))
+
+    def test_acoustic_silence_cutter_and_timestamp_remap(self) -> None:
+        sample_stderr = (
+            "[silencedetect @ 0x1] silence_start: 0\n"
+            "[silencedetect @ 0x1] silence_end: 0.20 | silence_duration: 0.20\n"
+            "[silencedetect @ 0x1] silence_start: 2.00\n"
+            "[silencedetect @ 0x1] silence_end: 2.60 | silence_duration: 0.60\n"
+            "[silencedetect @ 0x1] silence_start: 4.50\n"
+        )
+        silences = parse_silencedetect_output(sample_stderr, total_dur_s=5.0)
+        self.assertEqual(silences, [(0.0, 0.20), (2.0, 2.60), (4.5, 5.0)])
+
+        kept = build_speech_segments(5.0, silences, edge_pad_s=0.025)
+        # Expect 2 kept speech islands: [0.175, 2.025] and [2.575, 4.55]
+        self.assertEqual(len(kept), 2)
+        self.assertAlmostEqual(kept[0][0], 0.175, places=3)
+        self.assertAlmostEqual(kept[0][1], 2.025, places=3)
+        self.assertAlmostEqual(kept[1][0], 2.575, places=3)
+        self.assertAlmostEqual(kept[1][1], 4.55, places=3)
+
+        # Word starting at 2.65s (after 0.55s cut internal silence) shifts cleanly earlier
+        mapped = remap_timestamp(2.65, kept, tempo_boost=1.0)
+        self.assertAlmostEqual(mapped, (2.025 - 0.175) + (2.65 - 2.575), places=3)
 
 
 if __name__ == "__main__":

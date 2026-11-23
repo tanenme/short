@@ -1,0 +1,32 @@
+PAKET UPLOAD — 014 Kenapa Anak Bebek Selalu Berenang Berbaris?
+================================================================
+ID video: 014-anak-bebek-berbaris
+Channel: C1-fakta
+Slot jadwal: 12:30 WIB
+CTA dipakai: Template B ("Tapi kalau kamu suka bebek, Subscribe ya.")
+Template: Pertanyaan domestik (49 kata / 22,4 dtk @131 kpm)
+
+JUDUL (pilih 1, 2 cadangan):
+1. Kenapa Anak Bebek Selalu Berenang Berbaris Rapi?! 🦆 #shorts
+2. Bukan Takut Hilang! Rahasia Fisika Anak Bebek Berbaris di Air #bebek
+3. Ternyata Ini Trik "Berselancar" Anak Bebek di Belakang Induknya! #faktahewan
+
+DESKRIPSI:
+Pernah lihat anak bebek selalu berenang berbaris rapi satu garis di belakang induknya? Banyak orang mengira mereka cuma takut tersesat, padahal ada trik fisika fluida yang luar biasa di baliknya!
+
+Menurut studi hidrodinamika Zhi-Ming Yuan dkk. di Journal of Fluid Mechanics (Cambridge University Press, 2021) dan ulasan Science, kayuhan induk bebek menciptakan gelombang pendorong di belakang tubuhnya. Anak bebek yang berenang di titik pas mengalami efek wave-riding (berselancar gratis yang menurunkan hambatan air secara drastis) lalu meneruskan gelombang tersebut ke anak bebek di belakangnya (wave-passing) agar mereka bisa berenang jauh tanpa mudah kelelahan.
+
+Sumber ilmiah:
+- Journal of Fluid Mechanics (Cambridge Core): https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/waveriding-and-wavepassing-by-ducklings-in-formation-swimming/945633B700405A456A5706101B63846B
+- Science (AAAS): https://www.science.org/content/article/why-do-ducklings-swim-row
+- Physics World: https://physicsworld.com/a/ducklings-surf-in-formation-to-conserve-energy/
+
+(Tempel blok atribusi dari CREDITS.md di sini sebelum upload)
+
+#shorts #bebek #anakbebek #faktahewan #faktaunik #edukasihewan #shortvideo
+
+TAG (maks 500 karakter):
+kenapa anak bebek berbaris, fakta bebek, anak bebek berenang, perilaku bebek, fakta hewan unik, edukasi hewan, wave riding ducklings, shorts indonesia, anas platyrhynchos
+
+THUMBNAIL / COVER FRAME:
+Detik ke-0,5 (Scene 1): Barisan rapi anak bebek mengikuti induknya di air dengan riak gelombang V yang jelas + teks 3 kata: "KENAPA BERBARIS?!"

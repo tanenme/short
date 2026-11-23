@@ -1,0 +1,82 @@
+[
+  {
+    "scene_index": 1,
+    "filename": "@theduckies00_7563721683941477687_hd.mp4",
+    "start_s": 0.5,
+    "mode": "motion_balanced",
+    "metric_score": 15.21,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 2,
+    "filename": "@monalogue_7594548763725761815_hd.mp4",
+    "start_s": 7.0,
+    "mode": "motion_balanced",
+    "metric_score": 32.15,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 3,
+    "filename": "@ducks_in_space_7031631170119077166_hd.mp4",
+    "start_s": 5.5,
+    "mode": "motion_balanced",
+    "metric_score": 40.13,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 4,
+    "filename": "@theduckies00_7563721683941477687_hd.mp4",
+    "start_s": 0.5,
+    "mode": "motion_balanced",
+    "metric_score": 16.89,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 5,
+    "filename": "@ducks_in_space_7031631170119077166_hd.mp4",
+    "start_s": 5.5,
+    "mode": "motion_balanced",
+    "metric_score": 42.72,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 6,
+    "filename": "@funny_ducklings_7682959693215583502_hd.mp4",
+    "start_s": 59.5,
+    "mode": "motion_balanced",
+    "metric_score": 43.8,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 7,
+    "filename": "@motherthemountain_7009749574155914497_hd.mp4",
+    "start_s": 10.0,
+    "mode": "motion_peak",
+    "metric_score": 26.26,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 8,
+    "filename": "@theduckies00_7563721683941477687_hd.mp4",
+    "start_s": 0.5,
+    "mode": "motion_balanced",
+    "metric_score": 16.89,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 9,
+    "filename": "@monalogue_7594548763725761815_hd.mp4",
+    "start_s": 13.0,
+    "mode": "motion_peak",
+    "metric_score": 36.54,
+    "use_clip_audio": false
+  },
+  {
+    "scene_index": 10,
+    "filename": "@motherthemountain_7009749574155914497_hd.mp4",
+    "start_s": 10.5,
+    "mode": "motion_balanced",
+    "metric_score": 27.7,
+    "use_clip_audio": false
+  }
+]

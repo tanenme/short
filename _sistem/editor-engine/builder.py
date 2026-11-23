@@ -46,10 +46,12 @@ from audio_mix import (
     resolve_sfx_path,
     wants_original_hook_audio,
 )
-from core.config import get_config
+from core.config import get_config, load_config
 from core.models import ChannelProfile
 from core.validator import extract_vo_section
+from moment_finder import compute_scene_golden_moments
 from subtitles import generate_ass_subtitles
+from vo_tightener import tighten_vo_and_alignment
 from video_fx import (
     PHOTO_EXTS,
     VIDEO_EXTS,
@@ -58,6 +60,7 @@ from video_fx import (
     find_subscribe_overlay,
     generate_qc_contact_sheet,
     get_cleanliness_map,
+    get_v33_transition_spec,
     probe_media_info,
     render_cinematic_segment,
 )
@@ -307,6 +310,8 @@ Format output WAJIB HANYA JSON array:
 
 
 def _load_episode_context(package_name: str, channel_id: Optional[str] = None):
+    global CFG
+    CFG = load_config()
     profile = CFG.get_channel(channel_id)
     pkg_dir = CFG.episode_dir(package_name, profile.channel_id)
     brief_file = pkg_dir / "brief-edit.md"
@@ -676,7 +681,16 @@ def render_ffmpeg_direct(
     enable_cta_overlay: bool = True,
     make_qc_sheet: bool = True,
     enforce_preflight: bool = False,
+    progress_cb=None,
 ) -> str:
+    def _prog(pct: int, msg: str) -> None:
+        if progress_cb:
+            try:
+                progress_cb(pct, msg)
+            except Exception:
+                pass
+
+    _prog(5, "Menjalankan pemeriksaan YPP Pre-Flight Gate...")
     if enforce_preflight:
         from sourcing.preflight import run_preflight_gate
 
@@ -685,6 +699,7 @@ def render_ffmpeg_direct(
             fails = [f"{c.code}: {c.message}" for c in pf.checks if c.severity == "FAIL"]
             raise RuntimeError("YPP Pre-Flight Gate BLOCKED render:\n- " + "\n- ".join(fails))
 
+    _prog(14, "Memuat aset, alignment kata VO, dan pemetaan adegan...")
     ctx = _load_episode_context(package_name, channel_id)
     profile: ChannelProfile = ctx["profile"]
     pkg_dir: Path = ctx["pkg_dir"]
@@ -700,6 +715,21 @@ def render_ffmpeg_direct(
 
     bgm_file = pick_bgm_file(CFG.channel_bgm_dir(profile.channel_id))
     sfx_dir = CFG.channel_sfx_dir(profile.channel_id)
+    cat_file = sfx_dir / "_soundboard_catalog.json"
+    if sfx_dir.exists():
+        need_recat = not cat_file.exists()
+        if not need_recat:
+            try:
+                _cat_tmp = json.loads(cat_file.read_text(encoding="utf-8"))
+                _ob = _cat_tmp.get("signature-bell.mp3")
+                if not _ob or float(_ob.get("target_rms_db", -99)) < -18.0:
+                    need_recat = True
+            except Exception:
+                need_recat = True
+        if need_recat:
+            from sourcing.soundboard import build_soundboard_catalog
+
+            build_soundboard_catalog(profile.channel_id, CFG, write_file=True)
     clean_meta = get_cleanliness_map(assets_dir)
 
     out_dir = pkg_dir / "output"
@@ -712,27 +742,62 @@ def render_ffmpeg_direct(
         shutil.rmtree(temp_dir, ignore_errors=True)
     temp_dir.mkdir(exist_ok=True)
 
-    # 1. Render each scene with anti-reused transforms & dynamic zoom-punch
-    trans_dur = 0.12 if (enable_transitions and len(scenes) > 1) else 0.0
+    # 0. Acoustic Zero-Gap VO Tightening (cuts real silence < vo_silence_db on raw VO & remaps word timings!)
+    vo_silence_db = float(getattr(profile.visual, "vo_silence_db", -32.0))
+    vo_min_silence_s = float(getattr(profile.visual, "vo_min_silence_s", 0.10))
+    if getattr(profile.visual, "vo_zero_gap", True) and vo_file.exists():
+        _prog(18, f"Memotong kantong hening VO (< {vo_silence_db:.1f} dB) & sinkronisasi WAV...")
+        tight_vo_path = temp_dir / "_vo_tightened.wav"
+        vo_file, words, vo_duration = tighten_vo_and_alignment(
+            vo_file=vo_file,
+            words=words,
+            out_mp3=tight_vo_path,
+            cfg=CFG,
+            max_pause_s=vo_min_silence_s,
+            tempo_boost=float(getattr(profile.visual, "vo_tempo_boost", 1.07)),
+            silence_db=vo_silence_db,
+        )
+        if words:
+            scenes = synchronize_scenes_fuzzy(scenes, words, vo_duration)
+            cta_window = detect_cta_window(scenes, words)
+
+    # 1. Locate Golden Moments (audio peak for hook ek-ek, motion peak for fast action like running gecko)
+    _prog(22, "Memindai Golden Moments tiap adegan...")
+    golden_moments = compute_scene_golden_moments(assets_dir, scenes, clip_mapping, CFG)
+
+    # Render each scene with anti-reused transforms & dynamic zoom-punch at its exact Golden Moment
+    t_style = getattr(profile.visual, "transition_style", "squooshify_v33")
     processed_segments: List[Path] = []
     segment_durations: List[float] = []
     usage_counts: Dict[str, int] = {}
     scene_render_log = []
     hook_clip_path: Optional[Path] = None
     hook_clip_has_audio = False
+    hook_audio_start_s = 0.0
 
     for i, sc in enumerate(scenes):
-        clip_path = clip_mapping.get(sc["index"], clips[i % len(clips)])
+        gm = golden_moments.get(sc["index"])
+        clip_path = (assets_dir / gm["filename"]) if (gm and (assets_dir / gm["filename"]).exists()) else clip_mapping.get(sc["index"], clips[i % len(clips)])
+        forced_st = gm.get("start_s") if gm else None
         u_idx = usage_counts.get(clip_path.name, 0)
         usage_counts[clip_path.name] = u_idx + 1
 
-        # Pad segment duration by trans_dur for xfade overlap on all segments except last
-        seg_dur = float(sc["duration_s"]) + (trans_dur if i < len(scenes) - 1 else 0.0)
-        # Skip hflip if clip has minor text/watermark so text doesn't mirror awkwardly
+        # Exact overlap compensation per cut so total duration stays millisecond-locked to VO
+        if enable_transitions and i < len(scenes) - 1:
+            if t_style == "squooshify_v33":
+                _, cut_pad = get_v33_transition_spec(i + 1)
+            elif t_style == "hard_cut":
+                cut_pad = 0.0
+            else:
+                cut_pad = 0.12
+        else:
+            cut_pad = 0.0
+        seg_dur = float(sc["duration_s"]) + cut_pad
         c_status = str(clean_meta.get(clip_path.name, {}).get("status", "BERSIH")).upper()
-        allow_flip = (c_status == "BERSIH")
+        allow_flip = (c_status == "BERSIH") and bool(gm.get("allow_flip", True) if gm else True)
 
         seg_out = temp_dir / f"seg_{i:02d}.mp4"
+        _prog(26 + int((i / max(1, len(scenes))) * 42), f"Merender adegan {i + 1}/{len(scenes)} ({clip_path.name[:24]})...")
         seg_info = render_cinematic_segment(
             clip_path=clip_path,
             seg_out=seg_out,
@@ -742,6 +807,7 @@ def render_ffmpeg_direct(
             cfg=CFG,
             allow_flip=allow_flip,
             usage_offset=u_idx,
+            forced_start_s=forced_st,
         )
         processed_segments.append(seg_out)
         segment_durations.append(seg_dur)
@@ -751,23 +817,27 @@ def render_ffmpeg_direct(
                 "start_s": sc["start_s"],
                 "end_s": sc["end_s"],
                 "clip": clip_path.name,
+                "golden_moment_mode": gm.get("mode") if gm else "default",
                 **seg_info,
             }
         )
         if i == 0:
             hook_clip_path = clip_path
             hook_clip_has_audio = bool(seg_info.get("has_audio", False))
+            hook_audio_start_s = float(seg_info.get("start_trim", 0.0))
 
-    # 2. Join segments with snappy xfade transitions
+    # 2. Join segments with v3.3 forensic transitions (5f zoom-blur on act change + 3f exposure flash + hard cuts)
+    _prog(74, "Menggabungkan transisi v3.3 (zoom-blur & exposure flash)...")
     joined_video = temp_dir / "joined_video.mp4"
-    if enable_transitions and len(processed_segments) > 1:
+    if enable_transitions and len(processed_segments) > 1 and t_style != "hard_cut":
         concat_with_transitions(
             processed_segments,
             segment_durations,
             joined_video,
             CFG,
-            trans_dur=trans_dur,
+            trans_dur=0.12,
             fps=profile.visual.fps,
+            transition_style=t_style,
         )
     else:
         concat_list = temp_dir / "concat_list.txt"
@@ -778,24 +848,31 @@ def render_ffmpeg_direct(
             stderr=subprocess.DEVNULL,
         )
 
-    # 3. Generate multi-layer ASS kinetic subtitles + callout banners + CTA Subscribe pill
+    # 3. Generate multi-layer ASS kinetic subtitles + callout banners + Squooshify 2-Beat CTA Sticker
     ass_file = temp_dir / "captions.ass"
+    subj_guess = next((s for s in profile.focus_subjects if s.lower() in package_name.lower()), "KUCING")
     generate_ass_subtitles(
         words,
         scenes,
         highlights,
         profile.visual,
         ass_file,
-        include_callouts=True,
+        include_callouts=getattr(profile.visual, "include_top_callouts", False),
         cta_window=cta_window if enable_cta_overlay else None,
+        subject_label=subj_guess,
     )
 
     # 4. Prepare FFmpeg inputs for final composite & broadcast audio mastering
     cmd_inputs: List[str] = ["-i", str(joined_video)]
     next_idx = 1
 
-    # Optional green-screen Subscribe CTA overlay
-    cta_overlay_path = find_subscribe_overlay(CFG, profile.channel_id) if (enable_cta_overlay and cta_window) else None
+    # Optional third-party green-screen overlay (skipped when crisp native 60fps vector_heart_cta is enabled)
+    use_vector_heart = bool(getattr(profile.visual, "vector_heart_cta", True))
+    cta_overlay_path = (
+        find_subscribe_overlay(CFG, profile.channel_id)
+        if (enable_cta_overlay and cta_window and not use_vector_heart)
+        else None
+    )
     cta_overlay_idx: Optional[int] = None
     if cta_overlay_path and cta_overlay_path.exists():
         cmd_inputs.extend(["-i", str(cta_overlay_path)])
@@ -814,40 +891,67 @@ def render_ffmpeg_direct(
         bgm_idx = next_idx
         next_idx += 1
 
-    # Optional 0.6s authentic animal hook audio snippet under second 0
+    # Optional authentic animal hook audio snippet ONLY when explicitly verified in golden_moments
     hook_audio_idx: Optional[int] = None
-    if hook_clip_path and hook_clip_has_audio and wants_original_hook_audio(scenes[0]):
+    gm1 = golden_moments.get(scenes[0]["index"]) if scenes else None
+    allow_hook_audio = bool(gm1.get("use_clip_audio", False)) if gm1 else False
+    if hook_clip_path and hook_clip_has_audio and allow_hook_audio and wants_original_hook_audio(scenes[0]):
         cmd_inputs.extend(["-i", str(hook_clip_path)])
         hook_audio_idx = next_idx
         next_idx += 1
 
-    # Precision SFX cues
-    sfx_entries = compute_sfx_entries(scenes, sfx_dir, highlights)
+    # Precision SFX cues (pass filename + sfx_dir + cta_window for subscribe bell sync)
+    sfx_entries = compute_sfx_entries(scenes, sfx_dir, highlights, cta_window=cta_window if enable_cta_overlay else None)
     sfx_inputs = []
     for trigger_s, sfx_p, gain in sfx_entries:
         cmd_inputs.extend(["-i", str(sfx_p)])
-        sfx_inputs.append((next_idx, trigger_s, gain))
+        sfx_inputs.append((next_idx, trigger_s, gain, sfx_p.name, str(sfx_dir)))
         next_idx += 1
 
-    # 5. Build combined video + audio filter_complex
+    # 5. Build combined video + audio filter_complex (CTA Bokeh Blur without dark vignette)
     video_filters: List[str] = []
+    base_v_label = "[0:v]"
+
+    if cta_window is not None and getattr(profile.visual, "cta_bg_blur", True):
+        cta_s, cta_e = cta_window
+        blur_stop = max(cta_s + 0.6, cta_e)
+        video_filters.append(
+            f"{base_v_label}split=2[v_sharp][v_to_blur];"
+            f"[v_to_blur]boxblur=24:3,eq=saturation=1.08,format=yuva420p,"
+            f"fade=t=in:st={cta_s:.3f}:d=0.18:alpha=1,"
+            f"fade=t=out:st={max(cta_s + 0.25, blur_stop - 0.18):.3f}:d=0.18:alpha=1[v_bokeh];"
+            f"[v_sharp][v_bokeh]overlay=0:0:enable='between(t,{cta_s:.3f},{blur_stop:.3f})'[v_base]"
+        )
+        base_v_label = "[v_base]"
+
     if cta_overlay_idx is not None and cta_window is not None:
         cta_start, cta_end = cta_window
-        cta_dur = max(1.8, min(3.2, cta_end - cta_start))
-        cta_stop = cta_start + cta_dur
+        cta_dur = max(0.8, cta_end - cta_start)
+        cta_stop = cta_end
         video_filters.append(
             f"[{cta_overlay_idx}:v]trim=0:{cta_dur:.3f},setpts=PTS-STARTPTS+{cta_start:.3f}/TB,"
-            f"scale={profile.visual.width}:{profile.visual.height}:force_original_aspect_ratio=decrease,"
-            f"chromakey=0x00ff00:0.22:0.08,format=yuva420p,"
-            f"fade=t=in:st={cta_start:.3f}:d=0.18:alpha=1,"
-            f"fade=t=out:st={max(cta_start + 0.3, cta_stop - 0.25):.3f}:d=0.25:alpha=1[cta_ov]"
+            f"scale=540:-1,chromakey=0x00ff00:0.22:0.08,format=yuva420p,"
+            f"fade=t=in:st={cta_start:.3f}:d=0.15:alpha=1,"
+            f"fade=t=out:st={max(cta_start + 0.2, cta_stop - 0.18):.3f}:d=0.18:alpha=1[cta_ov]"
         )
         video_filters.append(
-            f"[0:v][cta_ov]overlay=x=(W-w)/2:y=(H-h)/2:eof_action=pass:enable='between(t,{cta_start:.3f},{cta_stop:.3f})'[v_cta]"
+            f"{base_v_label}[cta_ov]overlay=x=(W-w)/2:y=240:eof_action=pass:enable='between(t,{cta_start:.3f},{cta_stop:.3f})'[v_cta]"
         )
         video_filters.append("[v_cta]subtitles=captions.ass[vout]")
     else:
-        video_filters.append("[0:v]subtitles=captions.ass[vout]")
+        video_filters.append(f"{base_v_label}subtitles=captions.ass[vout]")
+
+    # Detect dramatic myth-twist BGM micro-drop window (~0.45s at "bukan"/"salah")
+    bgm_drop_win = None
+    for w in words:
+        tok = "".join(ch for ch in (w.get("word") or "").lower() if ch.isalnum())
+        if tok in ("bukan", "salah", "impossible"):
+            ws = max(0.0, float(w["start"]) - 0.10)
+            bgm_drop_win = (ws, ws + 0.45)
+            break
+
+    # Start BGM cleanly AFTER the opening hook scene
+    hook_end_s = float(scenes[0]["end_s"]) if scenes else 0.0
 
     audio_fg = build_audio_filtergraph(
         vo_input_idx=vo_idx,
@@ -856,6 +960,9 @@ def render_ffmpeg_direct(
         bgm_input_idx=bgm_idx,
         hook_audio_input_idx=hook_audio_idx,
         sfx_inputs=sfx_inputs,
+        hook_audio_start_s=hook_audio_start_s,
+        bgm_drop_window=bgm_drop_win,
+        bgm_start_s=hook_end_s,
     )
 
     full_filter = ";".join(video_filters) + ";" + audio_fg
@@ -887,6 +994,7 @@ def render_ffmpeg_direct(
         f"{vo_duration:.3f}",
         str(output_path),
     ]
+    _prog(86, "Mastering final MP4 60fps, subtitle 3D, Vector Heart CTA & audio -10.8 LUFS...")
     res = subprocess.run(cmd_final, cwd=str(temp_dir), capture_output=True, text=True)
     if res.returncode != 0:
         raise RuntimeError(f"FFmpeg final render gagal:\n{res.stderr[-1200:]}")
@@ -894,6 +1002,7 @@ def render_ffmpeg_direct(
     shutil.rmtree(temp_dir, ignore_errors=True)
 
     # 6. Write render report + optional visual QC contact sheet
+    _prog(95, "Membuat Visual QC Contact Sheet 3x3...")
     out_p = Path(output_path)
     qc_sheet_path: Optional[Path] = None
     if make_qc_sheet:
@@ -904,7 +1013,7 @@ def render_ffmpeg_direct(
 
     final_info = probe_media_info(out_p, CFG)
     report = {
-        "engine_version": "3.0.0",
+        "engine_version": "3.4.0",
         "channel_id": profile.channel_id,
         "package_name": package_name,
         "output_file": str(out_p),
@@ -919,6 +1028,7 @@ def render_ffmpeg_direct(
         "bgm_used": bgm_file.name if bgm_file else None,
         "sfx_count": len(sfx_entries),
         "target_lufs": profile.visual.target_lufs,
+        "vo_silence_db": vo_silence_db,
         "scenes": scene_render_log,
     }
     (out_dir / f"render_report_{package_name}.json").write_text(

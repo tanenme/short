@@ -61,15 +61,18 @@ def _submit_background_job(
     channel_id: str,
     episode_id: str,
     job_type: str,
-    fn: Callable[[], dict],
+    fn: Callable[[Callable[[int, str], None]], dict],
 ) -> str:
-    job_id = DB.create_job(channel_id, episode_id, job_type, progress_msg=f"Menjalankan {job_type}...")
+    job_id = DB.create_job(channel_id, episode_id, job_type, progress_msg=f"Menunggu antrean {job_type}...")
+
+    def _progress(pct: int, msg: str) -> None:
+        DB.update_job(job_id, progress_pct=pct, progress_msg=msg)
 
     def _runner():
-        DB.update_job(job_id, status="running", progress_msg=f"Sedang memproses {job_type} untuk {episode_id}...")
+        DB.update_job(job_id, status="running", progress_pct=3, progress_msg=f"Memulai {job_type} untuk {episode_id}...")
         try:
-            res = fn()
-            DB.update_job(job_id, status="succeeded", progress_msg="Selesai", result=res)
+            res = fn(_progress)
+            DB.update_job(job_id, status="succeeded", progress_pct=100, progress_msg="Selesai (100%)", result=res)
             try:
                 DB.sync_channel(channel_id)
             except Exception:
@@ -356,11 +359,12 @@ def api_enqueue_job(req: EnqueueJobRequest):
             cid,
             req.package_name,
             "render",
-            lambda: {
+            lambda cb: {
                 "output_path": builder.render_ffmpeg_direct(
                     req.package_name,
                     channel_id=cid,
                     enforce_preflight=req.strict_gate,
+                    progress_cb=cb,
                 )
             },
         )
@@ -371,21 +375,21 @@ def api_enqueue_job(req: EnqueueJobRequest):
             cid,
             req.package_name,
             "capcut",
-            lambda: {"draft_path": builder.build_capcut_project(req.package_name, channel_id=cid)},
+            lambda cb: (cb(35, "Merakit draft CapCut Desktop..."), {"draft_path": builder.build_capcut_project(req.package_name, channel_id=cid)})[1],
         )
     elif req.job_type == "autoqc":
         job_id = _submit_background_job(
             cid,
             req.package_name,
             "autoqc",
-            lambda: run_episode_autoqc(req.package_name, cid, CFG, write_report=True).model_dump(),
+            lambda cb: (cb(30, "Menjalankan FFmpeg AutoQC blur/gelap/freeze..."), run_episode_autoqc(req.package_name, cid, CFG, write_report=True).model_dump())[1],
         )
     elif req.job_type == "vo_tts":
         job_id = _submit_background_job(
             cid,
             req.package_name,
             "vo_tts",
-            lambda: generate_episode_voiceover(req.package_name, cid, voice_id_override=req.voice_id, config=CFG),
+            lambda cb: (cb(35, "Menghubungi ElevenLabs v4 TTS API..."), generate_episode_voiceover(req.package_name, cid, voice_id_override=req.voice_id, config=CFG))[1],
         )
     else:
         raise HTTPException(status_code=400, detail=f"Tipe job tidak dikenal: {req.job_type}")
@@ -402,7 +406,7 @@ def list_packages(channel_id: Optional[str] = None):
         for d in sorted(ch_dir.iterdir()):
             if not d.is_dir() or d.name.startswith("_"):
                 continue
-            if d.name.lower() in ("bgm", "sfx", "backgorud sound", "effek sounf"):
+            if d.name.lower() in ("bgm", "sfx", "background sound", "backgorud sound", "effek sound", "effek sounf"):
                 continue
             n_file = d / "naskah.md"
             title = d.name

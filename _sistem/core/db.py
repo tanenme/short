@@ -66,6 +66,7 @@ class StudioDB:
                     episode_id TEXT NOT NULL,
                     job_type TEXT NOT NULL,
                     status TEXT NOT NULL DEFAULT 'queued',
+                    progress_pct INTEGER NOT NULL DEFAULT 0,
                     progress_msg TEXT NOT NULL DEFAULT '',
                     result_json TEXT NOT NULL DEFAULT '{}',
                     error TEXT NOT NULL DEFAULT '',
@@ -91,6 +92,10 @@ class StudioDB:
                 CREATE INDEX IF NOT EXISTS idx_metrics_ep ON metrics(channel_id, episode_id, recorded_at DESC);
                 """
             )
+            # Safe migration for existing studio.db without progress_pct column
+            cols = {r["name"] for r in conn.execute("PRAGMA table_info(jobs)").fetchall()}
+            if "progress_pct" not in cols:
+                conn.execute("ALTER TABLE jobs ADD COLUMN progress_pct INTEGER NOT NULL DEFAULT 0")
 
     def upsert_episode(self, row: Dict[str, Any]) -> None:
         with self._conn() as conn:
@@ -159,7 +164,7 @@ class StudioDB:
             for d in sorted(ch_dir.iterdir())
             if d.is_dir()
             and not d.name.startswith("_")
-            and d.name.lower() not in ("bgm", "sfx", "backgorud sound", "effek sounf")
+            and d.name.lower() not in ("bgm", "sfx", "background sound", "backgorud sound", "effek sound", "effek sounf")
         ]
 
         now = _now_iso()
@@ -230,6 +235,7 @@ class StudioDB:
         job_id: str,
         *,
         status: Optional[str] = None,
+        progress_pct: Optional[int] = None,
         progress_msg: Optional[str] = None,
         result: Optional[dict] = None,
         error: Optional[str] = None,
@@ -245,6 +251,11 @@ class StudioDB:
             elif status in ("succeeded", "failed"):
                 fields.append("finished_at = ?")
                 params.append(_now_iso())
+                if status == "succeeded" and progress_pct is None:
+                    progress_pct = 100
+        if progress_pct is not None:
+            fields.append("progress_pct = ?")
+            params.append(max(0, min(100, int(progress_pct))))
         if progress_msg is not None:
             fields.append("progress_msg = ?")
             params.append(progress_msg)

@@ -1,0 +1,96 @@
+{
+  "channel_id": "C1-fakta",
+  "episode_id": "014-anak-bebek-berbaris",
+  "total_clips": 6,
+  "ok_count": 5,
+  "warn_count": 1,
+  "fail_count": 0,
+  "items": [
+    {
+      "filename": "ducks-in-space_i-think-i-like-this-little-l_20512.f788.mp4",
+      "duration_s": 17.47,
+      "width": 608,
+      "height": 1080,
+      "is_vertical": true,
+      "blur_mean": 5.64,
+      "yavg": 117.03,
+      "ydif": 3.819,
+      "satavg": 2.59,
+      "verdict": "WARN",
+      "flags": [],
+      "warnings": [
+        "warna pucat (SATAVG=2.59)"
+      ]
+    },
+    {
+      "filename": "thebackyardbirder_mama-mallard-duck-watches-ov_20382.f399.mp4",
+      "duration_s": 57.75,
+      "width": 1080,
+      "height": 1080,
+      "is_vertical": false,
+      "blur_mean": 5.21,
+      "yavg": 76.65,
+      "ydif": 13.563,
+      "satavg": 15.94,
+      "verdict": "OK",
+      "flags": [],
+      "warnings": []
+    },
+    {
+      "filename": "vt-physics_unlocking-the-mystery-why-du_20469.f788.mp4",
+      "duration_s": 59.67,
+      "width": 608,
+      "height": 1080,
+      "is_vertical": true,
+      "blur_mean": 6.08,
+      "yavg": 114.89,
+      "ydif": 10.258,
+      "satavg": 6.45,
+      "verdict": "OK",
+      "flags": [],
+      "warnings": []
+    },
+    {
+      "filename": "youtube-creator_18-ducklings-count-them-if-y_20515.f788.mp4",
+      "duration_s": 42.16,
+      "width": 608,
+      "height": 1080,
+      "is_vertical": true,
+      "blur_mean": 4.14,
+      "yavg": 107.1,
+      "ydif": 31.255,
+      "satavg": 20.28,
+      "verdict": "OK",
+      "flags": [],
+      "warnings": []
+    },
+    {
+      "filename": "youtube-creator_video-clip_20473.f397.mp4",
+      "duration_s": 15.0,
+      "width": 480,
+      "height": 854,
+      "is_vertical": true,
+      "blur_mean": 4.73,
+      "yavg": 113.65,
+      "ydif": 3.835,
+      "satavg": 12.11,
+      "verdict": "OK",
+      "flags": [],
+      "warnings": []
+    },
+    {
+      "filename": "youtube-creator_video-clip_20476.f137.mp4",
+      "duration_s": 517.68,
+      "width": 1920,
+      "height": 1080,
+      "is_vertical": false,
+      "blur_mean": 4.48,
+      "yavg": 135.6,
+      "ydif": 12.288,
+      "satavg": 18.02,
+      "verdict": "OK",
+      "flags": [],
+      "warnings": []
+    }
+  ]
+}

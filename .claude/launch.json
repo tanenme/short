@@ -4,7 +4,7 @@
     {
       "name": "shorts-studio",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["_sistem/studio.py", "serve", "--host", "127.0.0.1", "--port", "8000"],
+      "runtimeArgs": ["_sistem/studio.py", "serve", "--host", "127.0.0.1", "--port", "8000", "--reload"],
       "port": 8000
     }
   ]
