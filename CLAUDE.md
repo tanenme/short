@@ -20,7 +20,7 @@ E:\YT\short\
 │   │   ├── C1-fakta.toml         # Profil validasi utama (Fakta Hewan ID)
 │   │   ├── C2-momen.toml         # Profil clone (Momen Hewan Terekam Kamera)
 │   │   └── C3-reddit.toml        # Profil clone (Misteri / Horor Hewan & Reddit)
-│   ├── editor-engine\builder.py  # Engine render CapCut Draft & FFmpeg direct
+│   ├── editor-engine\            # Engine render v3.0 (builder, aligner, subtitles, video_fx, audio_mix)
 │   ├── doksli-web\               # FastAPI + Web UI kurasi Exa & Vision Pro
 │   ├── tools\dokli.py            # CLI sourcing CC/Commons/iNaturalist/YT + autoqc + CREDITS.md
 │   ├── tests\test_core.py        # Unit test fondasi core & validator
@@ -49,7 +49,10 @@ python _sistem/studio.py audit C1-fakta --episode 009-kucing-ek-cicak --write-ma
 # Buat scaffold episode baru sesuai standar channel
 python _sistem/studio.py init-episode C1-fakta 014-bebek-berbaris --title "Kenapa Anak Bebek Berbaris?" --subject bebek
 
-# Jalankan unit test fondasi
+# Render video Shorts v3 (FFmpeg cinematic + QC contact sheet / CapCut Draft)
+python _sistem/studio.py render C1-fakta 009-kucing-ek-cicak --mode render
+
+# Jalankan unit test fondasi & editor
 python -m unittest discover -s _sistem/tests -v
 ```
 

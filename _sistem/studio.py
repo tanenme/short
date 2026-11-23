@@ -202,6 +202,27 @@ def cmd_init_episode(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_render(args: argparse.Namespace) -> int:
+    engine_dir = SISTEM_DIR / "editor-engine"
+    if str(engine_dir) not in sys.path:
+        sys.path.insert(0, str(engine_dir))
+    import builder
+
+    if args.mode in ("capcut", "both"):
+        draft = builder.build_capcut_project(args.episode, channel_id=args.channel)
+        print(f"[+] Draft CapCut siap: {draft}")
+    if args.mode in ("render", "both"):
+        mp4 = builder.render_ffmpeg_direct(
+            args.episode,
+            channel_id=args.channel,
+            enable_transitions=not args.no_transitions,
+            enable_cta_overlay=not args.no_cta_overlay,
+            make_qc_sheet=True,
+        )
+        print(f"[+] Render MP4 v3 selesai: {mp4}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description="Enterprise YouTube Shorts Content Studio CLI")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -225,6 +246,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_init.add_argument("--subject", default="", help="Subjek/hewan utama untuk template CTA")
     p_init.add_argument("--force", action="store_true", help="Timpa episode.json jika folder sudah ada")
     p_init.set_defaults(func=cmd_init_episode)
+
+    p_ren = sub.add_parser("render", help="Render video Shorts v3 (FFmpeg / CapCut Draft) + QC contact sheet")
+    p_ren.add_argument("channel", help="ID channel (mis. C1-fakta)")
+    p_ren.add_argument("episode", help="Slug episode (mis. 009-kucing-ek-cicak)")
+    p_ren.add_argument("--mode", default="render", choices=["render", "capcut", "both"])
+    p_ren.add_argument("--no-transitions", action="store_true", help="Matikan xfade antar klip")
+    p_ren.add_argument("--no-cta-overlay", action="store_true", help="Matikan green-screen CTA overlay")
+    p_ren.set_defaults(func=cmd_render)
 
     return ap
 
