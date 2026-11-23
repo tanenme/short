@@ -352,6 +352,74 @@ def cmd_serve(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_metrics(args: argparse.Namespace) -> int:
+    from analytics.engine import compute_channel_analytics, generate_weekly_report, import_youtube_csv
+    from core.db import StudioDB
+
+    cfg = get_config()
+    db = StudioDB(config=cfg)
+    cid = cfg.get_channel(args.channel).channel_id
+
+    if args.action == "log":
+        if not args.episode:
+            print("Error: --episode wajib diisi untuk metrics log.")
+            return 1
+        db.record_metrics(
+            cid,
+            args.episode,
+            views=args.views,
+            likes=args.likes,
+            comments=args.comments,
+            subs_gained=args.subs,
+            avg_view_pct=args.apv,
+            swipe_away_pct=args.swipe,
+        )
+        print(f"[+] Metrik {cid}/{args.episode} tersimpan (views={args.views}, subs=+{args.subs}, apv={args.apv}%, swipe={args.swipe}%).")
+        return 0
+
+    if args.action == "import-csv":
+        if not args.csv:
+            print("Error: --csv wajib diisi untuk metrics import-csv.")
+            return 1
+        res = import_youtube_csv(Path(args.csv), cid, db, cfg)
+        print(f"[+] Imported {res['imported']} episode dari CSV (unmatched: {len(res['unmatched'])}).")
+        return 0
+
+    summary = compute_channel_analytics(cid, db, cfg)
+    print(f"=== ANALYTICS FEEDBACK: {cid} [{summary.validation_verdict}] ===")
+    print(
+        f"Tracked: {summary.tracked_videos} | Views: {summary.total_views:,} | Subs: {summary.total_subs:,}/1000 ({summary.subs_progress_pct}%) "
+        f"| Avg APV: {summary.avg_apv}% | Stay: {summary.avg_stay_to_watch_pct}%"
+    )
+    for d in summary.creative_directives:
+        print(f"  -> {d}")
+    if args.write:
+        _, p = generate_weekly_report(cid, db, cfg, write_file=True)
+        print(f"[+] Rapor mingguan disimpan: {p}")
+    return 0
+
+
+def cmd_clone_channel(args: argparse.Namespace) -> int:
+    from analytics.scaler import provision_channel
+
+    cfg = get_config()
+    res = provision_channel(
+        channel_id=args.channel,
+        display_name=args.name or None,
+        niche=args.niche or None,
+        source_channel=args.source,
+        copy_audio_bank=not args.no_audio,
+        copy_overlays=not args.no_overlays,
+        activate=args.activate,
+        config=cfg,
+    )
+    print(
+        f"[+] Channel {res['channel_id']} siap di {res['channel_dir']} "
+        f"(aset bersama disalin: {res['copied_shared_assets']} file)."
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description="Enterprise YouTube Shorts Content Studio CLI")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -429,6 +497,30 @@ def build_parser() -> argparse.ArgumentParser:
     p_sv.add_argument("--port", type=int, default=8000)
     p_sv.add_argument("--reload", action="store_true")
     p_sv.set_defaults(func=cmd_serve)
+
+    p_mt = sub.add_parser("metrics", help="Catat metrik YouTube, impor CSV, atau buat rapor mingguan + Kill/Scale")
+    p_mt.add_argument("action", choices=["report", "log", "import-csv"])
+    p_mt.add_argument("channel", nargs="?", default="C1-fakta")
+    p_mt.add_argument("--episode", default="")
+    p_mt.add_argument("--views", type=int, default=0)
+    p_mt.add_argument("--likes", type=int, default=0)
+    p_mt.add_argument("--comments", type=int, default=0)
+    p_mt.add_argument("--subs", type=int, default=0)
+    p_mt.add_argument("--apv", type=float, default=0.0, help="Average Percentage Viewed (%%)")
+    p_mt.add_argument("--swipe", type=float, default=0.0, help="Swiped Away (%%)")
+    p_mt.add_argument("--csv", default="", help="Path file CSV ekspor YouTube Studio")
+    p_mt.add_argument("--write", action="store_true", help="Tulis _rapor/RAPOR-YYYY-MM-DD.md")
+    p_mt.set_defaults(func=cmd_metrics)
+
+    p_cl = sub.add_parser("clone-channel", help="Siapkan / kloning folder & aset bersama untuk channel baru (C2/C3/...)")
+    p_cl.add_argument("channel", help="ID channel target (mis. C2-momen)")
+    p_cl.add_argument("--from", dest="source", default="C1-fakta", help="Channel sumber aset BGM/SFX/Overlay")
+    p_cl.add_argument("--name", default="", help="Nama tampilan channel (jika channel baru)")
+    p_cl.add_argument("--niche", default="", help="Slug niche (jika channel baru)")
+    p_cl.add_argument("--no-audio", action="store_true")
+    p_cl.add_argument("--no-overlays", action="store_true")
+    p_cl.add_argument("--activate", action="store_true", help="Ubah status planned -> validation")
+    p_cl.set_defaults(func=cmd_clone_channel)
 
     return ap
 

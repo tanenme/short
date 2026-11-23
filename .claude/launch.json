@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "shorts-studio",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["_sistem/studio.py", "serve", "--host", "127.0.0.1", "--port", "8000"],
+      "port": 8000
+    }
+  ]
+}

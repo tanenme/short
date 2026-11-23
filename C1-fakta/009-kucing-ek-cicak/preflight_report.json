@@ -1,0 +1,135 @@
+{
+  "channel_id": "C1-fakta",
+  "episode_id": "009-kucing-ek-cicak",
+  "checked_at": "2026-11-23T14:31:29",
+  "stage_verdict": "READY_TO_PUBLISH",
+  "can_render": true,
+  "can_publish": true,
+  "score": 82,
+  "checks": [
+    {
+      "code": "DOCS_COMPLETE",
+      "category": "structure",
+      "severity": "PASS",
+      "message": "Dokumen inti lengkap (naskah, brief-edit, sources, paket-upload)."
+    },
+    {
+      "code": "SCRIPT_WORD_RANGE",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Jumlah kata 44 kata (~20.15s @ 131 kpm) masuk sweet spot."
+    },
+    {
+      "code": "AUDIO_TAGS",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Audio tags Eleven v4 lengkap (6 tag)."
+    },
+    {
+      "code": "SCRIPT_DIGITS",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Tidak ada angka digit mentah di teks VO."
+    },
+    {
+      "code": "CTA_PLACEMENT",
+      "category": "script",
+      "severity": "PASS",
+      "message": "CTA tunggal berada di posisi kalimat #3/6."
+    },
+    {
+      "code": "SENTENCE_BREATH",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Semua kalimat ringkas (<= 12 kata/kalimat)."
+    },
+    {
+      "code": "FACT_SOURCES",
+      "category": "factcheck",
+      "severity": "PASS",
+      "message": "Tercatat 2 URL sumber fakta tertulis (min 2)."
+    },
+    {
+      "code": "SCENE_PACING",
+      "category": "ypp",
+      "severity": "PASS",
+      "message": "10 adegan di brief-edit, semua <= 5.0s."
+    },
+    {
+      "code": "VO_READY",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "VO tersedia di assets: ElevenLabs_2026-11-06T07_45_09_Pratama - Clear, Confident and Warm_pvc_s45_sim80_v4.mp3."
+    },
+    {
+      "code": "CLIPS_COUNT",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "Tersedia 13 klip video di folder aset."
+    },
+    {
+      "code": "DIRTY_CLIPS_PRESENT",
+      "category": "ypp",
+      "severity": "WARN",
+      "message": "2 klip skor kebersihan < 70: @happyhousecat_7220260573215198507_hd.mp4, @whiskerswizardry_7700273278279011598_hd.mp4."
+    },
+    {
+      "code": "LICENSE_AUDIT",
+      "category": "ypp",
+      "severity": "WARN",
+      "message": "Lisensi klip: LOW=0, MEDIUM=0, HIGH(ToS/transform)=13, BLOCKED=0."
+    },
+    {
+      "code": "USABLE_CLIPS_READY",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "11 klip bersih lulus filter kebersihan (>=70)."
+    },
+    {
+      "code": "CREATOR_INTRA_REPEAT",
+      "category": "ypp",
+      "severity": "WARN",
+      "message": "Kreator dipakai >1x di episode yang sama: @leocatvibe (2x)."
+    },
+    {
+      "code": "AUTOQC_VIDEO_OK",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "AutoQC FFmpeg lulus (12 OK, 1 WARN dari 13 klip)."
+    },
+    {
+      "code": "RENDER_VERIFIED",
+      "category": "render",
+      "severity": "PASS",
+      "message": "Render v3.0.0 terverifikasi (20.349s, 10 adegan, >=2 transform/klip)."
+    }
+  ],
+  "creator_rotation": {
+    "episode_id": "009-kucing-ek-cicak",
+    "unique_creators": 12,
+    "creators": {
+      "@ambragayle": 1,
+      "@bubuldaily": 1,
+      "@cat.craft.stories": 1,
+      "@daisydean89": 1,
+      "@happyhousecat": 1,
+      "@joanna.gst": 1,
+      "@korizen_sica": 1,
+      "@leocatvibe": 2,
+      "@little_abece": 1,
+      "@ultramen.merah1230": 1,
+      "@viralpick6": 1,
+      "@whiskerswizardry": 1
+    },
+    "intra_episode_repeats": {
+      "@leocatvibe": 2
+    },
+    "cross_episode_overlaps_7d": {}
+  },
+  "license_summary": {
+    "LOW": 0,
+    "MEDIUM": 0,
+    "HIGH": 13,
+    "BLOCKED": 0
+  }
+}

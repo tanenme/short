@@ -24,11 +24,13 @@ for p in (str(SISTEM_DIR), str(EDITOR_ENGINE_DIR)):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from core.config import get_config
+from core.config import get_config, load_config
 from core.db import StudioDB
 from core.models import EpisodeManifest, EpisodeStatus
 from core.tts import generate_episode_voiceover, list_elevenlabs_voices
 from core.validator import audit_episode_folder
+from analytics.engine import compute_channel_analytics, generate_weekly_report
+from analytics.scaler import provision_channel
 from sourcing.licensing import generate_credits_markdown
 from sourcing.preflight import run_preflight_gate
 from sourcing.providers import download_to_episode, search_unified
@@ -198,6 +200,27 @@ class TtsGenerateRequest(BaseModel):
     channel_id: str = "C1-fakta"
     package_name: str
     voice_id: Optional[str] = None
+
+
+class RecordMetricsRequest(BaseModel):
+    channel_id: str = "C1-fakta"
+    episode_id: str
+    views: int
+    likes: int = 0
+    comments: int = 0
+    subs_gained: int = 0
+    avg_view_pct: float = 0.0
+    swipe_away_pct: float = 0.0
+
+
+class ProvisionChannelRequest(BaseModel):
+    channel_id: str
+    display_name: Optional[str] = None
+    niche: Optional[str] = None
+    source_channel: str = "C1-fakta"
+    copy_audio_bank: bool = True
+    copy_overlays: bool = True
+    activate: bool = True
 
 
 # ---------------- Studio Control Plane (Multi-Channel + SQLite) ----------------
@@ -712,6 +735,65 @@ def api_tts_generate(req: TtsGenerateRequest):
     try:
         res = generate_episode_voiceover(req.package_name, req.channel_id, voice_id_override=req.voice_id, config=CFG)
         DB.sync_channel(req.channel_id)
+        return res
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+# ---------------- Phase 5: Analytics Feedback Loop & Multi-Channel Scale ----------------
+@app.get("/api/analytics/summary")
+def api_analytics_summary(channel_id: Optional[str] = None):
+    try:
+        summary = compute_channel_analytics(channel_id, DB, CFG)
+        return {"success": True, "summary": summary.model_dump()}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/analytics/record")
+def api_analytics_record(req: RecordMetricsRequest):
+    try:
+        cid = CFG.get_channel(req.channel_id).channel_id
+        DB.record_metrics(
+            cid,
+            req.episode_id,
+            views=req.views,
+            likes=req.likes,
+            comments=req.comments,
+            subs_gained=req.subs_gained,
+            avg_view_pct=req.avg_view_pct,
+            swipe_away_pct=req.swipe_away_pct,
+        )
+        summary = compute_channel_analytics(cid, DB, CFG)
+        return {"success": True, "summary": summary.model_dump()}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/analytics/report")
+def api_analytics_report(channel_id: Optional[str] = None):
+    try:
+        md, out_path = generate_weekly_report(channel_id, DB, CFG, write_file=True)
+        return {"success": True, "report_path": str(out_path), "markdown": md}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+@app.post("/api/channels/provision")
+def api_provision_channel(req: ProvisionChannelRequest):
+    global CFG
+    try:
+        res = provision_channel(
+            channel_id=req.channel_id,
+            display_name=req.display_name,
+            niche=req.niche,
+            source_channel=req.source_channel,
+            copy_audio_bank=req.copy_audio_bank,
+            copy_overlays=req.copy_overlays,
+            activate=req.activate,
+            config=CFG,
+        )
+        CFG = load_config(force_reload=True)
         return res
     except Exception as e:
         return {"success": False, "error": str(e)}

@@ -37,6 +37,7 @@
       <button onclick="switchTab('board')" id="tabBtn-board" class="px-3.5 py-1.5 rounded-lg transition tab-active">Pipeline Board</button>
       <button onclick="switchTab('sourcing')" id="tabBtn-sourcing" class="px-3.5 py-1.5 rounded-lg transition tab-idle">Sourcing & Vision</button>
       <button onclick="switchTab('editor')" id="tabBtn-editor" class="px-3.5 py-1.5 rounded-lg transition tab-idle">Editor, VO & QC</button>
+      <button onclick="switchTab('analytics')" id="tabBtn-analytics" class="px-3.5 py-1.5 rounded-lg transition tab-idle">Analytics & Scale</button>
     </nav>
 
     <!-- Channel Selector + New Episode -->
@@ -269,6 +270,120 @@
       </div>
     </section>
 
+    <!-- ==================== TAB 4: ANALYTICS & SCALE ==================== -->
+    <section id="view-analytics" class="hidden space-y-5">
+      <!-- Validation Runway Header -->
+      <div class="bg-zinc-900/70 border border-zinc-800 rounded-2xl p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2.5">
+              <h2 class="text-sm font-bold text-white">Validasi 30 Hari & Kill/Scale Feedback Loop</h2>
+              <span id="anVerdict" class="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-300">NO_DATA</span>
+            </div>
+            <p class="text-xs text-zinc-400 mt-0.5">Target YPP Shorts: 1.000 Subscribers atau 1 video >500rb views + >15 subs/video → Clone ke C2/C3.</p>
+          </div>
+          <button onclick="generateWeeklyReportNow()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition">
+            Generate Rapor Mingguan (.md)
+          </button>
+        </div>
+
+        <div class="space-y-1.5">
+          <div class="flex justify-between text-xs">
+            <span class="text-zinc-400">Progres Subscribers Validasi</span>
+            <span id="anSubsProgressText" class="font-mono text-emerald-400 font-semibold">0 / 1.000 (0%)</span>
+          </div>
+          <div class="w-full bg-zinc-950 h-2.5 rounded-full overflow-hidden border border-zinc-800">
+            <div id="anSubsBar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 pt-1">
+          <div class="bg-zinc-950/70 border border-zinc-800 rounded-xl p-3">
+            <div class="text-[11px] text-zinc-400">Video Terukur</div>
+            <div id="anTracked" class="text-lg font-bold text-white mt-0.5">0</div>
+          </div>
+          <div class="bg-zinc-950/70 border border-zinc-800 rounded-xl p-3">
+            <div class="text-[11px] text-zinc-400">Total Views</div>
+            <div id="anViews" class="text-lg font-bold text-white mt-0.5">0</div>
+          </div>
+          <div class="bg-zinc-950/70 border border-zinc-800 rounded-xl p-3">
+            <div class="text-[11px] text-zinc-400">Rata-rata APV</div>
+            <div id="anApv" class="text-lg font-bold text-indigo-300 mt-0.5">0%</div>
+          </div>
+          <div class="bg-zinc-950/70 border border-zinc-800 rounded-xl p-3">
+            <div class="text-[11px] text-zinc-400">Stay-to-Watch</div>
+            <div id="anStay" class="text-lg font-bold text-emerald-400 mt-0.5">0%</div>
+          </div>
+          <div class="bg-zinc-950/70 border border-zinc-800 rounded-xl p-3">
+            <div class="text-[11px] text-zinc-400">Subs / Video</div>
+            <div id="anSubsPerVid" class="text-lg font-bold text-amber-300 mt-0.5">0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Left: Log Metrics + Multi-Channel Scale -->
+        <div class="lg:col-span-4 space-y-4">
+          <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 space-y-3">
+            <h3 class="text-sm font-semibold text-zinc-100">Catat Metrik YouTube Studio (48 Jam)</h3>
+            <select id="metricsEpisodeSelect" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 outline-none focus:border-indigo-500"></select>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <label class="text-[11px] text-zinc-400">Views</label>
+                <input id="mViews" type="number" min="0" placeholder="15000" class="w-full mt-1 bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-zinc-100">
+              </div>
+              <div>
+                <label class="text-[11px] text-zinc-400">Subs Gained</label>
+                <input id="mSubs" type="number" min="0" placeholder="45" class="w-full mt-1 bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-zinc-100">
+              </div>
+              <div>
+                <label class="text-[11px] text-zinc-400">APV (%)</label>
+                <input id="mApv" type="number" step="0.1" min="0" placeholder="105.5" class="w-full mt-1 bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-zinc-100">
+              </div>
+              <div>
+                <label class="text-[11px] text-zinc-400">Swiped Away (%)</label>
+                <input id="mSwipe" type="number" step="0.1" min="0" max="100" placeholder="22.0" class="w-full mt-1 bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-zinc-100">
+              </div>
+            </div>
+            <button onclick="submitRecordMetrics()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-2 rounded-xl transition">
+              Simpan Metrik & Hitung Ulang
+            </button>
+          </div>
+
+          <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 space-y-3">
+            <h3 class="text-sm font-semibold text-zinc-100">Multi-Channel Scale (Clone Pabrik)</h3>
+            <p class="text-[11px] text-zinc-400">Siapkan struktur folder lengkap + salin bank BGM/SFX/Overlay dari <code>C1-fakta</code> ke channel kloning dalam 1 klik.</p>
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="provisionCloneChannel('C2-momen')" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 text-xs py-2 px-3 rounded-xl transition">
+                Siapkan C2-momen
+              </button>
+              <button onclick="provisionCloneChannel('C3-reddit')" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border border-zinc-700 text-xs py-2 px-3 rounded-xl transition">
+                Siapkan C3-reddit
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Directives + Subject Kill/Scale + Top Performers -->
+        <div class="lg:col-span-8 space-y-4">
+          <div class="bg-indigo-950/25 border border-indigo-500/30 rounded-2xl p-4 space-y-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-300">Arahan AI Creative Director (Feedback Loop)</h3>
+            <ul id="anDirectives" class="space-y-1.5 text-xs text-zinc-200 list-disc pl-5"></ul>
+          </div>
+
+          <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 space-y-3">
+            <h3 class="text-sm font-semibold text-zinc-100">Kill / Scale Breakdown per Subjek</h3>
+            <div id="anSubjectTable" class="text-xs text-zinc-400">Belum ada data performa.</div>
+          </div>
+
+          <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 space-y-3">
+            <h3 class="text-sm font-semibold text-zinc-100">Leaderboard Episode Terbaik</h3>
+            <div id="anTopEpisodes" class="text-xs text-zinc-400">Belum ada data performa.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- Modal: Create New Episode -->
@@ -319,11 +434,12 @@
     });
 
     function switchTab(tab) {
-      ["board", "sourcing", "editor"].forEach(t => {
+      ["board", "sourcing", "editor", "analytics"].forEach(t => {
         document.getElementById("view-" + t).classList.toggle("hidden", t !== tab);
         const btn = document.getElementById("tabBtn-" + t);
         btn.className = "px-3.5 py-1.5 rounded-lg transition " + (t === tab ? "tab-active" : "tab-idle");
       });
+      if (tab === "analytics") loadAnalyticsSummary();
     }
 
     function openEpisodeInEditor(epId) {
@@ -424,8 +540,9 @@
     async function loadPackagesForChannel() {
       const d = await (await fetch(`/api/packages?channel_id=${encodeURIComponent(activeChannel)}`)).json();
       packagesCache = d.packages || [];
-      ["sourcingPackageSelect", "editorPackageSelect"].forEach(id => {
+      ["sourcingPackageSelect", "editorPackageSelect", "metricsEpisodeSelect"].forEach(id => {
         const sel = document.getElementById(id);
+        if (!sel) return;
         sel.innerHTML = '<option value="">-- Pilih Episode --</option>';
         packagesCache.forEach(p => {
           const opt = document.createElement("option");
@@ -719,6 +836,101 @@
         await loadPackagesForChannel();
       } else {
         showToast("Gagal: " + (d.detail || d.error));
+      }
+    }
+
+    async function loadAnalyticsSummary() {
+      try {
+        const d = await (await fetch(`/api/analytics/summary?channel_id=${encodeURIComponent(activeChannel)}`)).json();
+        if (!d.success || !d.summary) return;
+        const s = d.summary;
+        document.getElementById("anVerdict").textContent = s.validation_verdict;
+        document.getElementById("anSubsProgressText").textContent = `${s.total_subs.toLocaleString()} / 1.000 (${s.subs_progress_pct}%)`;
+        document.getElementById("anSubsBar").style.width = `${Math.min(100, s.subs_progress_pct)}%`;
+        document.getElementById("anTracked").textContent = s.tracked_videos;
+        document.getElementById("anViews").textContent = s.total_views.toLocaleString();
+        document.getElementById("anApv").textContent = `${s.avg_apv}%`;
+        document.getElementById("anStay").textContent = `${s.avg_stay_to_watch_pct}%`;
+        document.getElementById("anSubsPerVid").textContent = s.avg_subs_per_video;
+
+        document.getElementById("anDirectives").innerHTML = (s.creative_directives || [])
+          .map(x => `<li>${escapeHtml(x)}</li>`).join("");
+
+        const subBox = document.getElementById("anSubjectTable");
+        if (s.subject_breakdown && s.subject_breakdown.length) {
+          subBox.innerHTML = `<table class="w-full text-left">
+            <thead class="text-zinc-500 border-b border-zinc-800"><tr><th class="py-1.5">Subjek</th><th>Video</th><th>Views</th><th>Subs</th><th>Avg APV</th><th>Viral</th><th>Putusan</th></tr></thead>
+            <tbody class="divide-y divide-zinc-800/60">${s.subject_breakdown.map(r => `
+              <tr>
+                <td class="py-2 font-semibold text-zinc-200">${escapeHtml(r.subject)}</td>
+                <td>${r.videos}</td>
+                <td class="font-mono">${r.total_views.toLocaleString()}</td>
+                <td class="font-mono text-emerald-400">+${r.total_subs}</td>
+                <td class="font-mono">${r.avg_apv}%</td>
+                <td class="font-mono font-bold">${r.avg_virality}</td>
+                <td><span class="px-2 py-0.5 rounded font-mono text-[10px] ${r.action === 'SCALE' ? 'bg-emerald-500/20 text-emerald-300' : r.action === 'KEEP' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-rose-500/20 text-rose-300'}">${r.action}</span></td>
+              </tr>`).join("")}</tbody></table>`;
+        } else {
+          subBox.textContent = "Catat minimal 1 performa video untuk melihat rekomendasi Kill/Scale per subjek.";
+        }
+
+        const topBox = document.getElementById("anTopEpisodes");
+        if (s.top_episodes && s.top_episodes.length) {
+          topBox.innerHTML = `<table class="w-full text-left">
+            <thead class="text-zinc-500 border-b border-zinc-800"><tr><th class="py-1.5">Episode</th><th>Views</th><th>Subs</th><th>APV</th><th>Stay</th><th>Skor</th></tr></thead>
+            <tbody class="divide-y divide-zinc-800/60">${s.top_episodes.map(e => `
+              <tr>
+                <td class="py-2 font-medium text-zinc-200">${escapeHtml(e.episode_id)}</td>
+                <td class="font-mono">${e.views.toLocaleString()}</td>
+                <td class="font-mono text-emerald-400">+${e.subs_gained}</td>
+                <td class="font-mono">${e.avg_view_pct}%</td>
+                <td class="font-mono">${e.stay_to_watch_pct}%</td>
+                <td class="font-mono font-bold text-amber-300">${e.virality_score}</td>
+              </tr>`).join("")}</tbody></table>`;
+        } else {
+          topBox.textContent = "Belum ada data leaderboard.";
+        }
+      } catch (e) {
+        showToast("Gagal memuat analitik: " + e.message);
+      }
+    }
+
+    async function submitRecordMetrics() {
+      const ep = document.getElementById("metricsEpisodeSelect").value;
+      const views = parseInt(document.getElementById("mViews").value || "0", 10);
+      const subs = parseInt(document.getElementById("mSubs").value || "0", 10);
+      const apv = parseFloat(document.getElementById("mApv").value || "0");
+      const swipe = parseFloat(document.getElementById("mSwipe").value || "0");
+      if (!ep) return showToast("Pilih episode yang mau dicatat metriknya.");
+      const d = await (await fetch("/api/analytics/record", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel_id: activeChannel, episode_id: ep, views, subs_gained: subs, avg_view_pct: apv, swipe_away_pct: swipe })
+      })).json();
+      if (d.success) {
+        showToast(`Metrik ${ep} tersimpan!`);
+        loadAnalyticsSummary();
+      } else {
+        showToast("Gagal simpan: " + d.error);
+      }
+    }
+
+    async function generateWeeklyReportNow() {
+      const d = await (await fetch(`/api/analytics/report?channel_id=${encodeURIComponent(activeChannel)}`, { method: "POST" })).json();
+      showToast(d.success ? `Rapor mingguan dibuat: ${d.report_path}` : "Gagal: " + d.error);
+    }
+
+    async function provisionCloneChannel(targetId) {
+      const d = await (await fetch("/api/channels/provision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channel_id: targetId, source_channel: "C1-fakta", copy_audio_bank: true, copy_overlays: true, activate: true })
+      })).json();
+      if (d.success) {
+        showToast(`${targetId} siap (${d.copied_shared_assets} aset audio/overlay disalin)!`);
+        await loadChannels();
+      } else {
+        showToast("Gagal provision: " + d.error);
       }
     }
 

@@ -23,6 +23,7 @@ E:\YT\short\
 │   │   ├── C2-momen.toml         # Profil clone (Momen Hewan Terekam Kamera)
 │   │   └── C3-reddit.toml        # Profil clone (Misteri / Horor Hewan & Reddit)
 │   ├── sourcing\                 # Unified sourcing, licensing, FFmpeg autoqc, YPP preflight gate
+│   ├── analytics\                # Growth analytics, Kill/Scale 30-day engine, multi-channel scaler
 │   ├── editor-engine\            # Engine render v3.0 (builder, aligner, subtitles, video_fx, audio_mix)
 │   ├── doksli-web\               # FastAPI + Web UI kurasi Exa & Vision Pro
 │   ├── tools\dokli.py            # CLI sourcing CC/Commons/iNaturalist/YT + autoqc + CREDITS.md
@@ -75,6 +76,12 @@ python _sistem/studio.py jobs
 
 # Generate VO ElevenLabs v4 + words_alignment.json otomatis
 python _sistem/studio.py tts C1-fakta --episode 012-ayam-kepala-stabil
+
+# Analytics Feedback Loop, Rapor Mingguan & Multi-Channel Scale
+python _sistem/studio.py metrics log C1-fakta --episode 009-kucing-ek-cicak --views 15000 --subs 45 --apv 108 --swipe 22
+python _sistem/studio.py metrics report C1-fakta --write
+python _sistem/studio.py metrics import-csv C1-fakta path/to/youtube-studio.csv
+python _sistem/studio.py clone-channel C2-momen --from C1-fakta --activate
 
 # Jalankan unit test fondasi & editor
 python -m unittest discover -s _sistem/tests -v
