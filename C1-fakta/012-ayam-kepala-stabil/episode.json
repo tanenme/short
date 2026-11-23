@@ -1,0 +1,278 @@
+{
+  "schema_version": "1.0.0",
+  "episode_id": "012-ayam-kepala-stabil",
+  "channel_id": "C1-fakta",
+  "title": "012 Kenapa Kepala Ayam Diam Terkunci Walau Badannya Digoyang?",
+  "subject": "",
+  "status": "scripted",
+  "created_at": "2026-11-23T12:34:46",
+  "updated_at": "2026-11-23T12:34:46",
+  "script": {
+    "hook_text": "Kenapa kepala ayam diam TERKUNCI walau badannya digoyang",
+    "vo_full_text": "[curious, fast-paced] Kenapa kepala ayam diam TERKUNCI walau badannya digoyang?\n\n[skeptical, then firm] Banyak orang pikir ayam sengaja kaku, tapi BUKAN!\n\n[warm, conversational] Tapi kalau kamu suka ayam, Subscribe ya.\n\n[intrigued, hushed revelation] Bola mata ayam nyaris gak bisa MELIRIK... [excited] Saraf lehernya otomatis mengunci kepala supaya pandangan gak ngeblur!\n\n[punchy, amused conclusion] Makanya waktu jalan pun kepalanya persis gimbal KAMERA.",
+    "word_count": 47,
+    "estimated_duration_s": 21.53,
+    "audio_tags": [
+      "curious, fast-paced",
+      "skeptical, then firm",
+      "warm, conversational",
+      "intrigued, hushed revelation",
+      "excited",
+      "punchy, amused conclusion"
+    ],
+    "highlight_words": [
+      "TERKUNCI",
+      "BUKAN",
+      "MELIRIK",
+      "KAMERA"
+    ],
+    "cta_template": "template_b"
+  },
+  "fact_sources": [
+    {
+      "title": "Sumber #1",
+      "publisher": "",
+      "url": "https://journals.physiology.org/doi/full/10.1152/jn.2001.85.3.1119",
+      "claim_verified": "",
+      "tier": "tier1"
+    },
+    {
+      "title": "Sumber #2",
+      "publisher": "",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2504555/",
+      "claim_verified": "",
+      "tier": "tier1"
+    }
+  ],
+  "scenes": [
+    {
+      "index": 1,
+      "brief_start_s": 0.0,
+      "brief_end_s": 2.2,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 01: Ayam dipegang dan digoyang, kepala diam di titik sama",
+      "vo_line": "Kenapa kepala ayam diam TERKUNCI walau badannya digoyang?",
+      "screen_text": "Kepala TERKUNCI?!",
+      "sfx_cue": "whoosh + click",
+      "highlight_words": [
+        "TERKUNCI"
+      ],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 2,
+      "brief_start_s": 2.2,
+      "brief_end_s": 4.5,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 02: Ayam berdiri tegak menatap lurus",
+      "vo_line": "Banyak orang pikir ayam sengaja kaku, tapi BUKAN!",
+      "screen_text": "Sengaja kaku? BUKAN!",
+      "sfx_cue": "buzzer halus",
+      "highlight_words": [
+        "BUKAN"
+      ],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 3,
+      "brief_start_s": 4.5,
+      "brief_end_s": 7.0,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 03: Ayam kampung gagah menatap kamera + tombol Subscribe",
+      "vo_line": "Tapi kalau kamu suka ayam, Subscribe ya.",
+      "screen_text": "Suka ayam? Subscribe!",
+      "sfx_cue": "ding lembut",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 4,
+      "brief_start_s": 7.0,
+      "brief_end_s": 9.2,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 04: Close-up mata ayam yang besar bundar",
+      "vo_line": "Bola mata ayam nyaris...",
+      "screen_text": "Bola mata gak melirik",
+      "sfx_cue": "bass halus",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 5,
+      "brief_start_s": 9.2,
+      "brief_end_s": 11.5,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 05: Makro pupil ayam terpaku di satu objek",
+      "vo_line": "...gak bisa MELIRIK...",
+      "screen_text": "Otot mata terbatas",
+      "sfx_cue": "tension tipis",
+      "highlight_words": [
+        "MELIRIK"
+      ],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 6,
+      "brief_start_s": 11.5,
+      "brief_end_s": 13.8,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 06: Slow-motion leher ayam mengompensasi goyangan",
+      "vo_line": "Saraf lehernya otomatis mengunci...",
+      "screen_text": "Refleks saraf leher",
+      "sfx_cue": "whoosh",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 7,
+      "brief_start_s": 13.8,
+      "brief_end_s": 16.0,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 07: Perbandingan simulasi pandangan blur vs stabil",
+      "vo_line": "...kepala supaya pandangan gak ngeblur!",
+      "screen_text": "Pandangan gak ngeblur!",
+      "sfx_cue": "riser jernih",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 8,
+      "brief_start_s": 16.0,
+      "brief_end_s": 18.2,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 08: Ayam berjalan di pekarangan dengan kepala maju-berhenti",
+      "vo_line": "Makanya waktu jalan pun kepalanya...",
+      "screen_text": "Waktu jalan pun...",
+      "sfx_cue": "beat naik",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 9,
+      "brief_start_s": 18.2,
+      "brief_end_s": 20.0,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 09: Perbandingan ayam vs gimbal stabilizer kamera",
+      "vo_line": "...persis gimbal KAMERA.",
+      "screen_text": "Gimbal KAMERA alami!",
+      "sfx_cue": "camera shutter SFX",
+      "highlight_words": [
+        "KAMERA"
+      ],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 10,
+      "brief_start_s": 20.0,
+      "brief_end_s": 21.5,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 10: Ayam berkokok/melangkah gagah",
+      "vo_line": "(payoff tutup fakta)",
+      "screen_text": "Steady-cam alam",
+      "sfx_cue": "sting tutup",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    }
+  ],
+  "clips": [],
+  "vo_file": "ElevenLabs_2026-11-07T02_23_17_Putri Maharani - Neutral and WItty_pvc_s50_sim75_v4.mp3",
+  "words_alignment": [],
+  "upload": {
+    "titles": [],
+    "description": "",
+    "tags": [],
+    "scheduled_slot": "",
+    "cover_frame_s": null,
+    "cover_text": ""
+  },
+  "qc_report": {
+    "channel_id": "C1-fakta",
+    "episode_id": "012-ayam-kepala-stabil",
+    "checked_at": "2026-11-23T12:34:46",
+    "passed": true,
+    "score": 92,
+    "checks": [
+      {
+        "code": "DOCS_COMPLETE",
+        "category": "structure",
+        "severity": "PASS",
+        "message": "Dokumen inti lengkap (naskah, brief-edit, sources, paket-upload)."
+      },
+      {
+        "code": "SCRIPT_WORD_RANGE",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Jumlah kata 47 kata (~21.53s @ 131 kpm) masuk sweet spot."
+      },
+      {
+        "code": "AUDIO_TAGS",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Audio tags Eleven v4 lengkap (6 tag)."
+      },
+      {
+        "code": "SCRIPT_DIGITS",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Tidak ada angka digit mentah di teks VO."
+      },
+      {
+        "code": "CTA_PLACEMENT",
+        "category": "script",
+        "severity": "PASS",
+        "message": "CTA tunggal berada di posisi kalimat #3/6."
+      },
+      {
+        "code": "SENTENCE_BREATH",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Semua kalimat ringkas (<= 12 kata/kalimat)."
+      },
+      {
+        "code": "FACT_SOURCES",
+        "category": "factcheck",
+        "severity": "PASS",
+        "message": "Tercatat 2 URL sumber fakta tertulis (min 2)."
+      },
+      {
+        "code": "SCENE_PACING",
+        "category": "ypp",
+        "severity": "PASS",
+        "message": "10 adegan di brief-edit, semua <= 5.0s."
+      },
+      {
+        "code": "VO_READY",
+        "category": "assets",
+        "severity": "PASS",
+        "message": "VO tersedia di assets: ElevenLabs_2026-11-07T02_23_17_Putri Maharani - Neutral and WItty_pvc_s50_sim75_v4.mp3."
+      },
+      {
+        "code": "CLIPS_COUNT",
+        "category": "assets",
+        "severity": "WARN",
+        "message": "Baru ada 0 klip video (disarankan 5-10 klip beragam)."
+      }
+    ]
+  },
+  "extra": {}
+}

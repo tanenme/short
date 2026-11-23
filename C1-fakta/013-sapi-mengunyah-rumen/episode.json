@@ -1,0 +1,275 @@
+{
+  "schema_version": "1.0.0",
+  "episode_id": "013-sapi-mengunyah-rumen",
+  "channel_id": "C1-fakta",
+  "title": "013 Kenapa Sapi Terus Mengunyah Padahal Gak Ada Rumput?",
+  "subject": "",
+  "status": "scripted",
+  "created_at": "2026-11-23T12:34:47",
+  "updated_at": "2026-11-23T12:34:47",
+  "script": {
+    "hook_text": "Kenapa sapi terus MENGUNYAH padahal gak ada rumput",
+    "vo_full_text": "[curious, fast-paced] Kenapa sapi terus MENGUNYAH padahal gak ada rumput?\n\n[skeptical, then firm] Banyak yang kira sapi ngunyah angin, padahal BUKAN!\n\n[warm, conversational] Tapi kalau kamu suka sapi, Subscribe ya.\n\n[intrigued, hushed revelation] Sapi memuntahkan balik rumput dari lambung besarnya... [excited] Gumpalan makanan itu dikunyah ulang agar FERMENTASINYA sempurna!\n\n[punchy, amused conclusion] Makanya sapi menghabiskan separuh harinya cuma mengunyah santai.",
+    "word_count": 46,
+    "estimated_duration_s": 21.07,
+    "audio_tags": [
+      "curious, fast-paced",
+      "skeptical, then firm",
+      "warm, conversational",
+      "intrigued, hushed revelation",
+      "excited",
+      "punchy, amused conclusion"
+    ],
+    "highlight_words": [
+      "MENGUNYAH",
+      "BUKAN",
+      "FERMENTASINYA"
+    ],
+    "cta_template": "template_b"
+  },
+  "fact_sources": [
+    {
+      "title": "Sumber #1",
+      "publisher": "",
+      "url": "https://extension.umn.edu/agriculture/animals-and-livestock/dairy/the-ruminant-digestive-system",
+      "claim_verified": "",
+      "tier": "tier1"
+    },
+    {
+      "title": "Sumber #2",
+      "publisher": "",
+      "url": "https://extension.psu.edu/from-feed-to-milk-understanding-rumen-function",
+      "claim_verified": "",
+      "tier": "tier1"
+    }
+  ],
+  "scenes": [
+    {
+      "index": 1,
+      "brief_start_s": 0.0,
+      "brief_end_s": 2.2,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 01: Sapi di kandang kosong, mulut mengunyah memutar",
+      "vo_line": "Kenapa sapi terus MENGUNYAH padahal gak ada rumput?",
+      "screen_text": "Ngunyah tanpa RUMPUT?!",
+      "sfx_cue": "whoosh + chew sound",
+      "highlight_words": [
+        "MENGUNYAH"
+      ],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 2,
+      "brief_start_s": 2.2,
+      "brief_end_s": 4.5,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 02: Close-up wajah sapi mengunyah santai",
+      "vo_line": "Banyak yang kira sapi ngunyah angin, padahal BUKAN!",
+      "screen_text": "Ngunyah angin? BUKAN!",
+      "sfx_cue": "buzzer halus",
+      "highlight_words": [
+        "BUKAN"
+      ],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 3,
+      "brief_start_s": 4.5,
+      "brief_end_s": 7.0,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 03: Anak sapi lucu menatap kamera + tombol Subscribe",
+      "vo_line": "Tapi kalau kamu suka sapi, Subscribe ya.",
+      "screen_text": "Suka sapi? Subscribe!",
+      "sfx_cue": "ding lembut",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 4,
+      "brief_start_s": 7.0,
+      "brief_end_s": 9.2,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 04: Leher sapi bergerak menelan/memuntahkan makanan",
+      "vo_line": "Sapi memuntahkan balik rumput...",
+      "screen_text": "Muntahkan balik rumput",
+      "sfx_cue": "tension bass",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 5,
+      "brief_start_s": 9.2,
+      "brief_end_s": 11.5,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 05: Potret perut besar sapi di padang rumput",
+      "vo_line": "...dari lambung besarnya...",
+      "screen_text": "Dari lambung RUMEN",
+      "sfx_cue": "ambient padang",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 6,
+      "brief_start_s": 11.5,
+      "brief_end_s": 13.8,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 06: Close-up rahang & mulut sapi mengunyah gumpalan rumput",
+      "vo_line": "Gumpalan makanan itu dikunyah ulang...",
+      "screen_text": "Dikunyah kedua kali",
+      "sfx_cue": "chew SFX",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 7,
+      "brief_start_s": 13.8,
+      "brief_end_s": 16.0,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 07: Air liur busa halus di mulut sapi membantu asam",
+      "vo_line": "...agar FERMENTASINYA sempurna!",
+      "screen_text": "Fermentasi SEMPURNA!",
+      "sfx_cue": "whoosh",
+      "highlight_words": [
+        "FERMENTASINYA"
+      ],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 8,
+      "brief_start_s": 16.0,
+      "brief_end_s": 18.2,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 08: Kawanan sapi berbaring santai di padang rumput",
+      "vo_line": "Makanya sapi menghabiskan...",
+      "screen_text": "Berjam-jam mengunyah...",
+      "sfx_cue": "beat santai",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 9,
+      "brief_start_s": 18.2,
+      "brief_end_s": 20.0,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 09: Sapi memejamkan mata mengunyah lambat",
+      "vo_line": "...separuh harinya cuma mengunyah santai.",
+      "screen_text": "Mengunyah santai",
+      "sfx_cue": "pop ringan",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 10,
+      "brief_start_s": 20.0,
+      "brief_end_s": 21.5,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 10: Sapi berdiri tenang di sore hari",
+      "vo_line": "(payoff tutup fakta)",
+      "screen_text": "Mesin fermentasi alam",
+      "sfx_cue": "sting tutup",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    }
+  ],
+  "clips": [],
+  "vo_file": "ElevenLabs_2026-11-07T02_24_27_Putri Maharani - Neutral and WItty_pvc_s50_sim75_v4.mp3",
+  "words_alignment": [],
+  "upload": {
+    "titles": [],
+    "description": "",
+    "tags": [],
+    "scheduled_slot": "",
+    "cover_frame_s": null,
+    "cover_text": ""
+  },
+  "qc_report": {
+    "channel_id": "C1-fakta",
+    "episode_id": "013-sapi-mengunyah-rumen",
+    "checked_at": "2026-11-23T12:34:47",
+    "passed": true,
+    "score": 92,
+    "checks": [
+      {
+        "code": "DOCS_COMPLETE",
+        "category": "structure",
+        "severity": "PASS",
+        "message": "Dokumen inti lengkap (naskah, brief-edit, sources, paket-upload)."
+      },
+      {
+        "code": "SCRIPT_WORD_RANGE",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Jumlah kata 46 kata (~21.07s @ 131 kpm) masuk sweet spot."
+      },
+      {
+        "code": "AUDIO_TAGS",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Audio tags Eleven v4 lengkap (6 tag)."
+      },
+      {
+        "code": "SCRIPT_DIGITS",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Tidak ada angka digit mentah di teks VO."
+      },
+      {
+        "code": "CTA_PLACEMENT",
+        "category": "script",
+        "severity": "PASS",
+        "message": "CTA tunggal berada di posisi kalimat #3/6."
+      },
+      {
+        "code": "SENTENCE_BREATH",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Semua kalimat ringkas (<= 12 kata/kalimat)."
+      },
+      {
+        "code": "FACT_SOURCES",
+        "category": "factcheck",
+        "severity": "PASS",
+        "message": "Tercatat 2 URL sumber fakta tertulis (min 2)."
+      },
+      {
+        "code": "SCENE_PACING",
+        "category": "ypp",
+        "severity": "PASS",
+        "message": "10 adegan di brief-edit, semua <= 5.0s."
+      },
+      {
+        "code": "VO_READY",
+        "category": "assets",
+        "severity": "PASS",
+        "message": "VO tersedia di assets: ElevenLabs_2026-11-07T02_24_27_Putri Maharani - Neutral and WItty_pvc_s50_sim75_v4.mp3."
+      },
+      {
+        "code": "CLIPS_COUNT",
+        "category": "assets",
+        "severity": "WARN",
+        "message": "Baru ada 0 klip video (disarankan 5-10 klip beragam)."
+      }
+    ]
+  },
+  "extra": {}
+}

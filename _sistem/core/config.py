@@ -147,6 +147,15 @@ class StudioConfig:
                 return p
         return ch_dir / "sfx"
 
+    def channel_overlays_dir(self, channel_id: Optional[str] = None) -> Path:
+        """Resolve shared channel overlays dir (e.g. subscribe/like green-screen animations)."""
+        ch_dir = self.channel_dir(channel_id)
+        for name in ("_overlays", "overlays"):
+            p = ch_dir / name
+            if p.exists():
+                return p
+        return ch_dir / "_overlays"
+
     def ffmpeg_cmd(self) -> str:
         return str(self.ffmpeg_bin) if self.ffmpeg_bin else "ffmpeg"
 

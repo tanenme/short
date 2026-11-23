@@ -31,11 +31,27 @@ class TestStudioCore(unittest.TestCase):
     def test_legacy_dir_resolution(self) -> None:
         bgm = self.cfg.channel_bgm_dir("C1-fakta")
         sfx = self.cfg.channel_sfx_dir("C1-fakta")
+        overlays = self.cfg.channel_overlays_dir("C1-fakta")
         self.assertTrue(bgm.exists(), f"BGM dir should resolve: {bgm}")
         self.assertTrue(sfx.exists(), f"SFX dir should resolve: {sfx}")
+        self.assertTrue(overlays.exists(), f"Overlays dir should resolve: {overlays}")
         ep11_assets = self.cfg.episode_assets_dir("011-bebek-tidur-melek", "C1-fakta")
         self.assertTrue(ep11_assets.exists())
-        self.assertEqual(ep11_assets.name, "asset")
+        self.assertEqual(ep11_assets.name, "assets")
+
+        # Legacy `asset/` fallback still works when `assets/` does not exist
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_root = Path(tmp)
+            (tmp_root / "_sistem" / "channels").mkdir(parents=True)
+            (tmp_root / "_sistem" / "channels" / "C1-fakta.toml").write_text(
+                (SISTEM_DIR / "channels" / "C1-fakta.toml").read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            legacy_asset = tmp_root / "C1-fakta" / "999-legacy" / "asset"
+            legacy_asset.mkdir(parents=True)
+            tmp_cfg = load_config(root_dir=tmp_root, force_reload=True)
+            resolved = tmp_cfg.episode_assets_dir("999-legacy", "C1-fakta")
+            self.assertEqual(resolved, legacy_asset)
 
     def test_script_validator_passes_viral_formula(self) -> None:
         vo = (

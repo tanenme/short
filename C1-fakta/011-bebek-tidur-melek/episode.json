@@ -1,0 +1,351 @@
+{
+  "schema_version": "1.0.0",
+  "episode_id": "011-bebek-tidur-melek",
+  "channel_id": "C1-fakta",
+  "title": "011 Kenapa Bebek Tidur Berbaris Sambil Melek Sebelah Mata?",
+  "subject": "",
+  "status": "vo_ready",
+  "created_at": "2026-11-23T12:34:46",
+  "updated_at": "2026-11-23T12:34:46",
+  "script": {
+    "hook_text": "Kenapa bebek suka tidur sambil MELEK sebelah mata",
+    "vo_full_text": "[curious, fast-paced] Kenapa bebek suka tidur sambil MELEK sebelah mata?\n\n[skeptical, then firm] Banyak orang pikir bebeknya insomnia, tapi SALAH!\n\n[warm, conversational] Tapi kalau kamu suka bebek, Subscribe ya.\n\n[intrigued, hushed revelation] Bebek bisa mematikan separuh otaknya saat tidur... [excited] Sementara satu mata luar tetap AWAS mengintai pemangsa!\n\n[punchy, amused conclusion] Makanya bebek di ujung barisan jadi satpam kelompok.",
+    "word_count": 45,
+    "estimated_duration_s": 20.61,
+    "audio_tags": [
+      "curious, fast-paced",
+      "skeptical, then firm",
+      "warm, conversational",
+      "intrigued, hushed revelation",
+      "excited",
+      "punchy, amused conclusion"
+    ],
+    "highlight_words": [
+      "MELEK",
+      "SALAH",
+      "AWAS"
+    ],
+    "cta_template": "template_b"
+  },
+  "fact_sources": [
+    {
+      "title": "Sumber #1",
+      "publisher": "",
+      "url": "https://www.nature.com/articles/17037",
+      "claim_verified": "",
+      "tier": "tier1"
+    },
+    {
+      "title": "Sumber #2",
+      "publisher": "",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6560081/",
+      "claim_verified": "",
+      "tier": "tier1"
+    }
+  ],
+  "scenes": [
+    {
+      "index": 1,
+      "brief_start_s": 0.0,
+      "brief_end_s": 2.2,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 01: Bebek tidur meringkuk, satu mata terbuka mengawasi",
+      "vo_line": "Kenapa bebek suka tidur sambil MELEK sebelah mata?",
+      "screen_text": "Tidur sambil MELEK?!",
+      "sfx_cue": "whoosh + pop",
+      "highlight_words": [
+        "MELEK"
+      ],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 2,
+      "brief_start_s": 2.2,
+      "brief_end_s": 4.5,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 02: Barisan bebek berderet santai di rumput",
+      "vo_line": "Banyak orang pikir bebeknya insomnia, tapi SALAH!",
+      "screen_text": "Insomnia? SALAH!",
+      "sfx_cue": "buzzer halus",
+      "highlight_words": [
+        "SALAH"
+      ],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 3,
+      "brief_start_s": 4.5,
+      "brief_end_s": 7.0,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 03: Anak bebek lucu menatap kamera + tombol Subscribe",
+      "vo_line": "Tapi kalau kamu suka bebek, Subscribe ya.",
+      "screen_text": "Suka bebek? Subscribe!",
+      "sfx_cue": "ding lembut",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 4,
+      "brief_start_s": 7.0,
+      "brief_end_s": 9.2,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 04: Close-up kepala bebek menyusup ke bawah sayap",
+      "vo_line": "Bebek bisa mematikan...",
+      "screen_text": "Matikan separuh otak",
+      "sfx_cue": "bass halus",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 5,
+      "brief_start_s": 9.2,
+      "brief_end_s": 11.5,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 05: Detail mata bebek yang terpejam pulas",
+      "vo_line": "...separuh otaknya saat tidur...",
+      "screen_text": "Tidur NREM separuh",
+      "sfx_cue": "ambient tenang",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 6,
+      "brief_start_s": 11.5,
+      "brief_end_s": 13.8,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 06: Cut ke mata sisi luar yang terbuka lebar",
+      "vo_line": "Sementara satu mata luar...",
+      "screen_text": "Mata luar tetap AWAS",
+      "sfx_cue": "tension halus",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 7,
+      "brief_start_s": 13.8,
+      "brief_end_s": 16.0,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 07: Sudut pandang mengawasi area sekitar/rumput",
+      "vo_line": "...tetap AWAS mengintai pemangsa!",
+      "screen_text": "Intai pemangsa!",
+      "sfx_cue": "whoosh cepat",
+      "highlight_words": [
+        "AWAS"
+      ],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 8,
+      "brief_start_s": 16.0,
+      "brief_end_s": 18.2,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 08: Bebek-bebek di tengah barisan tidur nyenyak kedua matanya terpejam",
+      "vo_line": "Makanya bebek di ujung barisan...",
+      "screen_text": "Bebek di ujung barisan...",
+      "sfx_cue": "beat naik",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 9,
+      "brief_start_s": 18.2,
+      "brief_end_s": 19.8,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 09: Bebek penjaga di tepi barisan menoleh siaga",
+      "vo_line": "...jadi satpam kelompok.",
+      "screen_text": "Jadi SATPAM kelompok!",
+      "sfx_cue": "pop cepat",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 10,
+      "brief_start_s": 19.8,
+      "brief_end_s": 21.0,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 10: Rombongan bebek berenang/berjalan tenang",
+      "vo_line": "(payoff tutup fakta)",
+      "screen_text": "Trik bertahan hidup",
+      "sfx_cue": "sting tutup",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    }
+  ],
+  "clips": [
+    {
+      "filename": "@ducks_in_space_7031631170119077166_hd.mp4",
+      "source_platform": "local",
+      "source_url": "",
+      "creator": "",
+      "license": "UNKNOWN",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": null,
+      "width": null,
+      "height": null,
+      "sha256": ""
+    },
+    {
+      "filename": "@funny_ducklings_7682959693215583502_hd.mp4",
+      "source_platform": "local",
+      "source_url": "",
+      "creator": "",
+      "license": "UNKNOWN",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": null,
+      "width": null,
+      "height": null,
+      "sha256": ""
+    },
+    {
+      "filename": "@monalogue_7594548763725761815_hd.mp4",
+      "source_platform": "local",
+      "source_url": "",
+      "creator": "",
+      "license": "UNKNOWN",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": null,
+      "width": null,
+      "height": null,
+      "sha256": ""
+    },
+    {
+      "filename": "@motherthemountain_7009749574155914497_hd.mp4",
+      "source_platform": "local",
+      "source_url": "",
+      "creator": "",
+      "license": "UNKNOWN",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": null,
+      "width": null,
+      "height": null,
+      "sha256": ""
+    },
+    {
+      "filename": "@theduckies00_7563721683941477687_hd.mp4",
+      "source_platform": "local",
+      "source_url": "",
+      "creator": "",
+      "license": "UNKNOWN",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": null,
+      "width": null,
+      "height": null,
+      "sha256": ""
+    }
+  ],
+  "vo_file": "ElevenLabs_2026-11-07T05_17_54_Mahaputra - Neutral, Calm and Gravelly_pvc_s50_sim75_v4.mp3",
+  "words_alignment": [],
+  "upload": {
+    "titles": [],
+    "description": "",
+    "tags": [],
+    "scheduled_slot": "",
+    "cover_frame_s": null,
+    "cover_text": ""
+  },
+  "qc_report": {
+    "channel_id": "C1-fakta",
+    "episode_id": "011-bebek-tidur-melek",
+    "checked_at": "2026-11-23T12:34:46",
+    "passed": true,
+    "score": 100,
+    "checks": [
+      {
+        "code": "DOCS_COMPLETE",
+        "category": "structure",
+        "severity": "PASS",
+        "message": "Dokumen inti lengkap (naskah, brief-edit, sources, paket-upload)."
+      },
+      {
+        "code": "SCRIPT_WORD_RANGE",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Jumlah kata 45 kata (~20.61s @ 131 kpm) masuk sweet spot."
+      },
+      {
+        "code": "AUDIO_TAGS",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Audio tags Eleven v4 lengkap (6 tag)."
+      },
+      {
+        "code": "SCRIPT_DIGITS",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Tidak ada angka digit mentah di teks VO."
+      },
+      {
+        "code": "CTA_PLACEMENT",
+        "category": "script",
+        "severity": "PASS",
+        "message": "CTA tunggal berada di posisi kalimat #3/6."
+      },
+      {
+        "code": "SENTENCE_BREATH",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Semua kalimat ringkas (<= 12 kata/kalimat)."
+      },
+      {
+        "code": "FACT_SOURCES",
+        "category": "factcheck",
+        "severity": "PASS",
+        "message": "Tercatat 2 URL sumber fakta tertulis (min 2)."
+      },
+      {
+        "code": "SCENE_PACING",
+        "category": "ypp",
+        "severity": "PASS",
+        "message": "10 adegan di brief-edit, semua <= 5.0s."
+      },
+      {
+        "code": "VO_READY",
+        "category": "assets",
+        "severity": "PASS",
+        "message": "VO tersedia di assets: ElevenLabs_2026-11-07T05_17_54_Mahaputra - Neutral, Calm and Gravelly_pvc_s50_sim75_v4.mp3."
+      },
+      {
+        "code": "CLIPS_COUNT",
+        "category": "assets",
+        "severity": "PASS",
+        "message": "Tersedia 5 klip video di folder aset."
+      }
+    ]
+  },
+  "extra": {}
+}
