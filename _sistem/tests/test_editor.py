@@ -19,6 +19,7 @@ from aligner import (
     apply_intra_unit_clip_splitting,
     detect_bgm_vacuum_windows,
     detect_cta_window,
+    enforce_hook_max_first_shot,
     extract_dynamic_highlights,
     synchronize_scenes_fuzzy,
 )
@@ -31,7 +32,7 @@ from moment_finder import (
     select_subclip2_golden_moment,
     split_clip_into_shots,
 )
-from subtitles import generate_ass_subtitles, hex_to_ass_bgr
+from subtitles import _build_rsvp_single_words, generate_ass_subtitles, hex_to_ass_bgr
 from video_fx import (
     compute_selective_speed,
     filter_clean_clips,
@@ -130,9 +131,10 @@ class TestEditorEngineV3(unittest.TestCase):
             sfx_inputs=[(4, 2.5, 0.55)],
         )
         self.assertIn("sidechaincompress", fg_full)
-        self.assertIn("loudnorm=I=-10.8", fg_full)
+        self.assertIn(f"loudnorm=I={self.c1.visual.target_lufs:.1f}:TP=-1.0:LRA=2.5", fg_full)
         self.assertIn("equalizer=f=3600", fg_full)
         self.assertIn("[hook_snd]", fg_full)
+        self.assertIn("volume='if(lt(t,1.5),1.0+0.35*(1.5-t)/1.5,1.0)'", fg_full)
 
         fg_no_bgm = build_audio_filtergraph(
             vo_input_idx=1,
@@ -144,7 +146,7 @@ class TestEditorEngineV3(unittest.TestCase):
         )
         self.assertNotIn("asplit", fg_no_bgm)
         self.assertNotIn("sidechaincompress", fg_no_bgm)
-        self.assertIn("loudnorm=I=-10.8", fg_no_bgm)
+        self.assertIn(f"loudnorm=I={self.c1.visual.target_lufs:.1f}:TP=-1.0:LRA=2.5", fg_no_bgm)
 
     def test_detect_cta_window_real_009(self) -> None:
         ep9_assets = self.cfg.episode_assets_dir("009-kucing-ek-cicak", "C1-fakta")
@@ -252,7 +254,7 @@ class TestEditorEngineV3(unittest.TestCase):
             bgm_mute_window=(5.4, 7.2),
         )
         self.assertIn("between(t,5.400,7.200)", fg_mute)
-        self.assertIn("volume=0.05", fg_mute)
+        self.assertIn("volume=0.10", fg_mute)
 
         # 2. Adaptive Proof Shot Pacing merges adjacent duplicate body proof clips (<=4.4s) without merging hook/payoff
         scenes = [
@@ -508,7 +510,7 @@ class TestEditorEngineV3(unittest.TestCase):
             bgm_start_s=2.0,
             bgm_vacuum_windows=vac_wins,
         )
-        self.assertIn("volume=0.04", fg_vac)
+        self.assertIn("volume=0.12", fg_vac)
 
         # 3. Zero RSVP double-text overlap during gamified_321 countdown digits
         with tempfile.TemporaryDirectory() as tmp:
@@ -592,6 +594,126 @@ class TestEditorEngineV3(unittest.TestCase):
         )
         # Held 3.8s payoff [15.0..18.8] MUST receive a mid-shot foley re-anchor around ~16.98s
         self.assertTrue(any(16.7 <= t <= 17.3 for t, _, _ in sfx_rew))
+
+    def test_v38_hook_split_rsvp_min_hold_and_cta_duplicate_suppression(self) -> None:
+        # 1. Hook Pattern-Interrupt: a 2.80s opening unit must be split near 1.20s
+        hook_words = [
+            {"word": "Kenapa", "start": 0.00, "end": 0.40},
+            {"word": "kucing", "start": 0.42, "end": 0.80},
+            {"word": "selalu", "start": 0.82, "end": 1.20},
+            {"word": "pilih", "start": 1.22, "end": 1.58},
+            {"word": "KARDUS", "start": 1.60, "end": 2.10},
+            {"word": "sempit", "start": 2.12, "end": 2.55},
+        ]
+        hook_scene = {
+            "index": 1, "start_s": 0.0, "end_s": 2.80, "duration_s": 2.80,
+            "vo": "Kenapa kucing selalu pilih KARDUS sempit", "words": hook_words,
+            "unit_id": "U1", "scene_role": "hook", "is_intra_unit_cut": False,
+        }
+        split = enforce_hook_max_first_shot([hook_scene], max_first_shot_s=1.20)
+        self.assertEqual(len(split), 2)
+        self.assertLessEqual(split[0]["duration_s"], 1.25)
+        self.assertGreaterEqual(split[0]["duration_s"], 0.55)
+        self.assertTrue(split[1]["is_intra_unit_cut"])
+        self.assertEqual(split[1]["unit_id"], "U1")
+
+        # 2. RSVP minimum dwell: "GAK" (0.20s proportional window) must reach 0.34s
+        words = [
+            {"word": "padahal", "start": 1.60, "end": 2.07},
+            {"word": "gak", "start": 2.07, "end": 2.27},
+            {"word": "ada", "start": 2.27, "end": 2.47},
+            {"word": "rumput", "start": 2.47, "end": 2.91},
+        ]
+        items = _build_rsvp_single_words(words, set(), min_hold_s=0.34)
+        # v3.8.1: an unreadable 0.20s word is merged into its neighbour ("GAK ADA") instead of
+        # silently flashing, so the readable unit carries the whole spoken window.
+        gak = next(it for it in items if "GAK" in it["text"])
+        self.assertGreaterEqual(round(gak["end"] - gak["start"], 3), 0.339)
+        # No two RSVP items may overlap after retiming
+        for idx in range(len(items) - 1):
+            self.assertLessEqual(items[idx]["end"], items[idx + 1]["start"] + 0.001)
+
+        # 3. reward_pop CTA must not duplicate the spoken "SUBSCRIBE" caption under its badge
+        with tempfile.TemporaryDirectory() as tmp:
+            ass_p = Path(tmp) / "cta_dup.ass"
+            vis_reward = self.c1.visual.model_copy(update={"cta_style": "reward_pop"})
+            generate_ass_subtitles(
+                [
+                    {"word": "SUBSCRIBE", "start": 6.10, "end": 6.50},
+                    {"word": "KUCING", "start": 6.60, "end": 7.00},
+                ],
+                [],
+                {"SUBSCRIBE"},
+                vis_reward,
+                ass_p,
+                cta_window=(6.0, 7.6),
+                subject_label="kucing",
+            )
+            txt = ass_p.read_text(encoding="utf-8")
+            rsvp_lines = [ln for ln in txt.splitlines() if ln.startswith("Dialogue: 2,")]
+            self.assertFalse(any("SUBSCRIBE" in ln for ln in rsvp_lines))
+            self.assertTrue(any("KUCING" in ln for ln in rsvp_lines))
+
+    def test_v381_vo_locked_beat_payoff_floor_and_fail_closed_proof(self) -> None:
+        # 1) A silent rhetorical beat must end at the next spoken onset, however close it is.
+        words = [
+            {"word": "Kenapa", "start": 0.05, "end": 0.45},
+            {"word": "kucing", "start": 0.47, "end": 0.95},
+            {"word": "padahal", "start": 1.10, "end": 1.55},
+            {"word": "ada", "start": 1.57, "end": 1.85},
+            {"word": "rumput", "start": 1.87, "end": 2.35},
+        ]
+        scenes = [
+            {"index": 1, "brief_start_s": 0.0, "brief_end_s": 1.0, "vo": "Kenapa kucing"},
+            {"index": 2, "brief_start_s": 1.0, "brief_end_s": 1.2, "vo": "(jeda dramatis)"},
+            {"index": 3, "brief_start_s": 1.2, "brief_end_s": 2.4, "vo": "padahal ada rumput"},
+        ]
+        synced = synchronize_scenes_fuzzy(scenes, words, total_duration=2.6)
+        self.assertLessEqual(synced[1]["duration_s"], 0.15)
+        self.assertEqual(synced[1]["end_s"], synced[2]["start_s"])
+        self.assertLessEqual(synced[2]["start_s"], 1.21)
+
+        # 2) The payoff floor borrows time across several preceding scenes and stays contiguous.
+        toks = "Kenapa kucing selalu pilih kardus sempit itu".split()
+        w2, t = [], 0.05
+        for tok in toks:
+            w2.append({"word": tok, "start": round(t, 2), "end": round(t + 0.34, 2)})
+            t += 0.42
+        sc2 = [
+            {"index": 1, "brief_start_s": 0.0, "brief_end_s": 1.0, "vo": "Kenapa kucing selalu"},
+            {"index": 2, "brief_start_s": 1.0, "brief_end_s": 2.0, "vo": "pilih kardus sempit"},
+            {"index": 3, "brief_start_s": 2.0, "brief_end_s": 3.0, "vo": "itu"},
+            {"index": 4, "brief_start_s": 3.0, "brief_end_s": 3.4, "vo": "(payoff tutup)"},
+        ]
+        s2 = synchronize_scenes_fuzzy(sc2, w2, total_duration=3.6)
+        self.assertGreaterEqual(s2[-1]["duration_s"], 1.19)
+        for a, b in zip(s2, s2[1:]):
+            self.assertEqual(a["end_s"], b["start_s"])
+        for sc in s2[:-1]:
+            self.assertGreaterEqual(sc["duration_s"], 0.79)
+        # duration_s must describe the real slot (a fabricated 0.4s floor would desync the render)
+        for sc in s2:
+            self.assertAlmostEqual(sc["duration_s"], round(sc["end_s"] - sc["start_s"], 3), places=3)
+
+        # 3) Proof-hold merge fails closed without vision motion evidence (metric_score is not motion).
+        pscenes = [
+            {"index": 1, "start_s": 0.0, "end_s": 2.0, "duration_s": 2.0, "vo": "hook", "words": [], "sfx": ""},
+            {"index": 2, "start_s": 2.0, "end_s": 4.0, "duration_s": 2.0, "vo": "mitos", "words": [], "sfx": ""},
+            {"index": 3, "start_s": 4.0, "end_s": 6.0, "duration_s": 2.0, "vo": "cta", "words": [], "sfx": ""},
+            {"index": 4, "start_s": 6.0, "end_s": 7.4, "duration_s": 1.4, "vo": "p1", "words": [], "sfx": ""},
+            {"index": 5, "start_s": 7.4, "end_s": 8.6, "duration_s": 1.2, "vo": "p2a", "words": [], "sfx": ""},
+            {"index": 6, "start_s": 8.6, "end_s": 9.8, "duration_s": 1.2, "vo": "p2b", "words": [], "sfx": ""},
+            {"index": 7, "start_s": 9.8, "end_s": 11.6, "duration_s": 1.8, "vo": "payoff", "words": [], "sfx": ""},
+        ]
+        no_vision = {5: {"filename": "proof.mp4", "metric_score": 74.0},
+                     6: {"filename": "proof.mp4", "metric_score": 74.0}}
+        kept = apply_adaptive_proof_pacing(pscenes, no_vision, {}, max_proof_s=2.8, require_motion_proof=True)
+        self.assertEqual(len(kept), 7)
+        verified = {5: {"filename": "proof.mp4", "vision": {"motion_verified": True}},
+                    6: {"filename": "proof.mp4", "vision": {"motion_verified": True}}}
+        merged = apply_adaptive_proof_pacing(pscenes, verified, {}, max_proof_s=2.8, require_motion_proof=True)
+        self.assertEqual(len(merged), 6)
+        self.assertTrue(any(s.get("is_proof_shot") for s in merged))
 
 
 if __name__ == "__main__":

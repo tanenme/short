@@ -236,8 +236,15 @@ def render_cinematic_segment(
 
     use_opening_blur = (scene_idx == 1) and bool(getattr(vis, "opening_radial_blur", True)) and (target_dur >= 0.5)
 
-    is_horizontal_or_square = info["width"] > 0 and info["height"] > 0 and info["width"] >= info["height"]
-    use_blur_canvas = getattr(vis, "framing_mode", "auto_blur_canvas") == "auto_blur_canvas" and is_horizontal_or_square
+    src_w, src_h = int(info["width"] or 0), int(info["height"] or 0)
+    src_ar = (src_w / src_h) if (src_w > 0 and src_h > 0) else 1.0
+    # v3.8: blur canvas only for near-square sources (AR < 1.15). Landscape 16:9 clips now fill the
+    # frame (cover crop, subject-aware cx) instead of surrendering 41% of every shot to blur bands.
+    use_blur_canvas = (
+        getattr(vis, "framing_mode", "auto_blur_canvas") == "auto_blur_canvas"
+        and src_ar >= 0.85
+        and src_ar < float(getattr(vis, "blur_canvas_max_ar", 1.15))
+    )
 
     # Loop source if a rare clip is shorter than target_dur
     input_flags = ["-stream_loop", "-1"] if (0 < clip_dur < needed_src_dur) else []
@@ -254,7 +261,7 @@ def render_cinematic_segment(
             transforms.append(f"speed_{speed:.2f}x")
         transforms.append("color_grade")
 
-        fg_h = 1140
+        fg_h = min(H, max(1140, int(round(H * float(getattr(vis, "framing_fg_ratio", 0.80))))))
         fc = (
             f"[0:v]split=2[bg_in][fg_in];"
             f"[bg_in]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},boxblur=28:4,"

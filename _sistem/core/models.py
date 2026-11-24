@@ -88,6 +88,16 @@ class VisualStyle(BaseModel):
     protect_payoff_hold: bool = True
     suppress_rsvp_on_overlay: bool = True
     clip_safety_margin_s: float = 0.10
+    # v3.8 retention parameters (benchmarked against 5 Squooshify Shorts)
+    hook_max_first_shot_s: float = 1.20
+    max_proof_hold_s: float = 2.80
+    bgm_from_start: bool = True
+    master_true_peak_db: float = -1.00
+    sfx_max_events: int = 6
+    sfx_min_spacing_s: float = 1.10
+    rsvp_min_hold_s: float = 0.34
+    framing_fg_ratio: float = 0.80
+    blur_canvas_max_ar: float = 1.15
 
 
 class YppSafetyRules(BaseModel):

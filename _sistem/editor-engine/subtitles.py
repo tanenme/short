@@ -95,7 +95,35 @@ def _group_words_for_readability(words: List[dict], highlights: Set[str]) -> Lis
     return grouped
 
 
-def _build_rsvp_single_words(words: List[dict], highlights: Set[str]) -> List[dict]:
+def _retime_min_hold(items: List[dict], min_hold_s: float = 0.34, max_drift_s: float = 0.30) -> List[dict]:
+    """v3.8: guarantee every RSVP word stays on screen >= `min_hold_s` (20 frames @60fps).
+
+    Proportional word alignment gives 2-3 letter words 0.06-0.20s (013 "GAK" 0.20s, 009 "CICAK" 0.16s),
+    which is below the readable threshold. Borrow time from the following words (bounded by
+    `max_drift_s`) instead of merging tokens, preserving the strict one-word RSVP aesthetic.
+    """
+    if not items:
+        return items
+    original_total_end = float(items[-1]["end"])
+    shift = 0.0
+    for idx, item in enumerate(items):
+        item["start"] = round(float(item["start"]) + shift, 3)
+        item["end"] = round(float(item["end"]) + shift, 3)
+        item["_shift"] = shift  # media-time offset vs the original word timings
+        if idx >= len(items) - 1:
+            break
+        need = item["start"] + float(min_hold_s)
+        if item["end"] < need:
+            extra = min(need - item["end"], max(0.0, float(max_drift_s) - shift))
+            if extra > 0.005:
+                item["end"] = round(item["end"] + extra, 3)
+                shift = round(shift + extra, 3)
+    if items[-1]["end"] > original_total_end:
+        items[-1]["end"] = max(items[-1]["start"] + 0.10, original_total_end)
+    return items
+
+
+def _build_rsvp_single_words(words: List[dict], highlights: Set[str], min_hold_s: float = 0.34) -> List[dict]:
     """Strict 1-word-at-a-time RSVP captions (competitor style: @edukasikuy / @BrightsBrain)."""
     items: List[dict] = []
     for curr in words:
@@ -121,7 +149,51 @@ def _build_rsvp_single_words(words: List[dict], highlights: Set[str]) -> List[di
             items[idx]["end"] = max(items[idx]["start"] + 0.08, items[idx + 1]["start"] - 0.01)
         elif gap <= 0.28:
             items[idx]["end"] = max(items[idx]["start"] + 0.08, items[idx + 1]["start"] - 0.01)
-    return items
+    items = _retime_min_hold(items, min_hold_s=min_hold_s, max_drift_s=0.15)
+    return _merge_unreadable_items(items, min_hold_s=min_hold_s)
+
+
+def _merge_unreadable_items(items: List[dict], min_hold_s: float = 0.34) -> List[dict]:
+    """v3.8.1: guarantee readability without unbounded A/V drift.
+
+    Proportional alignment gives 2-3 letter words 0.19-0.27s (011: "KAMU" 0.19s, "DI" 0.10s). Bridging
+    leaves no gap to borrow from, so extending a word means delaying every caption after it; a drift cap
+    of 0.15s only rescues the first few. The competitor solution (@Squooshify) is a 1-2 word chunk:
+    merge a still-short word into the NEXT word ("GAK ADA", "TAPI KALAU") so the pair's spoken window is
+    on screen long enough to read, with captions staying exactly voice-locked.
+    """
+    if not items:
+        return items
+    out: List[dict] = []
+    i = 0
+    while i < len(items):
+        cur = items[i]
+        dur = float(cur["end"]) - float(cur["start"])
+        nxt = items[i + 1] if i + 1 < len(items) else None
+        if nxt is not None and dur < min_hold_s - 0.001:
+            end = max(float(nxt["end"]), float(cur["start"]) + float(min_hold_s))
+            out.append(
+                {
+                    "text": f'{cur["text"]} {nxt["text"]}'.strip(),
+                    "start": float(cur["start"]),
+                    "end": end,
+                    "highlight": bool(cur.get("highlight") or nxt.get("highlight")),
+                    "_shift": float(cur.get("_shift", 0.0) or 0.0),
+                    "parts": list(cur.get("parts") or [(cur["text"], cur.get("highlight", False))])
+                    + list(nxt.get("parts") or [(nxt["text"], nxt.get("highlight", False))]),
+                }
+            )
+            i += 2
+        else:
+            out.append(dict(cur))
+            i += 1
+    for idx in range(len(out) - 1):
+        if out[idx]["end"] > out[idx + 1]["start"]:
+            out[idx]["end"] = max(out[idx]["start"] + 0.10, round(out[idx + 1]["start"] - 0.005, 3))
+    # The closing word has no successor to merge into; give it the hold directly.
+    if out and (out[-1]["end"] - out[-1]["start"]) < min_hold_s - 0.001:
+        out[-1]["end"] = round(out[-1]["start"] + min_hold_s, 3)
+    return out
 
 
 def generate_ass_subtitles(
@@ -203,7 +275,12 @@ def generate_ass_subtitles(
 
     # Layer 2: Kinetic captions (with perceptual visual lead so caption snaps dead-on with spoken voice!)
     lead_s = max(0.0, float(getattr(visual, "caption_lead_s", 0.08)))
-    raw_items = _build_rsvp_single_words(words, hl_set) if is_rsvp else _group_words_for_readability(words, hl_set)
+    rsvp_min_hold = float(getattr(visual, "rsvp_min_hold_s", 0.34))
+    raw_items = (
+        _build_rsvp_single_words(words, hl_set, min_hold_s=rsvp_min_hold)
+        if is_rsvp
+        else _group_words_for_readability(words, hl_set)
+    )
     grouped = []
     for it in raw_items:
         it_copy = dict(it)
@@ -214,12 +291,35 @@ def generate_ass_subtitles(
         if grouped[idx]["end"] > grouped[idx + 1]["start"]:
             grouped[idx]["end"] = max(grouped[idx]["start"] + 0.06, round(grouped[idx + 1]["start"] - 0.005, 3))
 
+    # v3.8: drop ONLY duplicate CTA copy (SUBSCRIBE/LIKE/...) while a reward_pop/heart_pill badge is on
+    # screen. v3.7 let "SUBSCRIBE" render at 104px underneath the red Subscribe pill + gold reward badge.
+    if (
+        cta_window is not None
+        and cta_mode != "gamified_321"
+        and bool(getattr(visual, "suppress_rsvp_on_overlay", True))
+    ):
+        c_s, c_e = (float(cta_window[0]), float(cta_window[1]))
+        cta_copy = {"SUBSCRIBE", "LIKE", "KLIK", "KOMEN", "SHARE", "FOLLOW"}
+        grouped = [
+            it for it in grouped
+            if not (
+                c_s - 0.05 <= float(it["start"]) <= c_e + 0.05
+                # A readability merge can join a CTA word into a chunk ("KAMU SUBSCRIBE"); the
+                # badge already says it, so match per token rather than on the whole string.
+                and cta_copy.intersection(re.findall(r"[A-Z]+", str(it.get("text", "")).upper()))
+            )
+        ]
+
     if blank_wins:
         filtered_grouped = []
         for it in grouped:
             st, en = float(it["start"]), float(it["end"])
+            # _retime_min_hold pushed this caption later in media time by `_shift`; the blank
+            # windows are still expressed in raw word/scene coordinates, so shift them to match.
+            d = float(it.get("_shift", 0.0) or 0.0)
             drop_item = False
             for bs, be in blank_wins:
+                bs, be = float(bs) + d, float(be) + d
                 if st >= bs and en <= be:
                     drop_item = True
                     break

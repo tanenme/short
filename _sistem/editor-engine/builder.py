@@ -1,7 +1,7 @@
 """
-Enterprise Autonomous Video Editor Engine for YouTube Shorts (v3.7)
+Enterprise Autonomous Video Editor Engine for YouTube Shorts (v3.8)
 
-Upgrades through v3.7 (@Squooshify Top-10 Forensic DNA):
+Upgrades through v3.8 (@Squooshify Top-10 Forensic DNA + retention audit fixes):
 1. Multi-channel aware (reads ChannelProfile from _sistem/channels/*.toml)
 2. Word-Onset Hard-Cut Aligner (1-frame lead before spoken word onset) + Intra-Unit VO-Keyword Split
 3. Pure 0.000s Hard-Cut Concat + Single-Reveal Flash Budget (max 1 fadewhite on Payoff/Proof reveal)
@@ -35,19 +35,21 @@ from aligner import (
     classify_scene_role,
     detect_bgm_vacuum_windows,
     detect_cta_window,
+    enforce_hook_max_first_shot,
     extract_dynamic_highlights,
     normalize_token,
     strip_audio_tags,
     synchronize_scenes_fuzzy,
 )
 from audio_mix import (
+    apply_mastering_pass,
     build_audio_filtergraph,
     compute_sfx_entries,
     pick_bgm_file,
     resolve_sfx_path,
     wants_original_hook_audio,
 )
-from core.config import get_config, load_config
+from core.config import get_config, load_config, resolve_ai_model
 from core.models import ChannelProfile
 from core.validator import extract_vo_section
 from moment_finder import compute_scene_golden_moments, select_subclip2_golden_moment
@@ -99,7 +101,13 @@ TEXT_TEMPLATE_POPUP = {
 def get_local_ai_client():
     import openai
 
-    return openai.OpenAI(base_url=CFG.ai_base_url, api_key=CFG.ai_api_key or "local")
+    cfg = get_config()
+    return openai.OpenAI(
+        base_url=cfg.ai_base_url,
+        api_key=cfg.ai_api_key or "local",
+        timeout=35.0,
+        max_retries=0,
+    )
 
 
 def get_media_duration(file_path: Path | str) -> float:
@@ -142,55 +150,202 @@ def parse_brief(brief_path: Path) -> List[dict]:
     return rows
 
 
+def _extract_json_array(raw: str) -> Optional[list]:
+    txt = (raw or "").strip()
+    if txt.startswith("```"):
+        txt = re.sub(r"^```(?:json)?\s*", "", txt)
+        txt = re.sub(r"\s*```$", "", txt)
+    try:
+        parsed = json.loads(txt)
+        if isinstance(parsed, list):
+            return parsed
+    except Exception:
+        pass
+    m = re.search(r"\[[\s\S]*\]", txt)
+    if m:
+        try:
+            parsed = json.loads(m.group(0))
+            if isinstance(parsed, list):
+                return parsed
+        except Exception:
+            pass
+    return None
+
+
+def _align_words_acoustic_fallback(assets_dir: Path, vo_file: Path, cfg) -> List[dict]:
+    """Deterministic FFmpeg voice-activity + proportional word-timing fallback when AI audio endpoint is unavailable."""
+    ep_dir = assets_dir.parent
+    naskah_p = ep_dir / "naskah.md"
+    raw_script = ""
+    if naskah_p.exists():
+        raw_script = extract_vo_section(naskah_p.read_text(encoding="utf-8", errors="ignore"))
+    clean_script = strip_audio_tags(raw_script)
+    raw_words = [w for w in re.findall(r"[A-Za-z0-9À-ÿ]+(?:-[A-Za-z0-9À-ÿ]+)?", clean_script) if w]
+    if not raw_words:
+        raise ValueError("Naskah VO kosong sehingga fallback alignment akustik tidak dapat dijalankan.")
+
+    total_dur = max(1.0, probe_media_info(vo_file, cfg)["duration"])
+
+    # Detect silence pockets via FFmpeg silencedetect to find active speech intervals
+    silences: List[tuple] = []
+    try:
+        proc = subprocess.run(
+            [
+                cfg.ffmpeg_cmd(),
+                "-i",
+                str(vo_file),
+                "-af",
+                "silencedetect=noise=-34dB:d=0.18",
+                "-f",
+                "null",
+                "-",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        cur_start: Optional[float] = None
+        for line in (proc.stderr or "").splitlines():
+            ms = re.search(r"silence_start:\s*([0-9.]+)", line)
+            if ms:
+                cur_start = float(ms.group(1))
+            me = re.search(r"silence_end:\s*([0-9.]+)", line)
+            if me and cur_start is not None:
+                silences.append((cur_start, float(me.group(1))))
+                cur_start = None
+        if cur_start is not None and cur_start < total_dur:
+            silences.append((cur_start, total_dur))
+    except Exception:
+        silences = []
+
+    speech_spans: List[tuple] = []
+    cursor = 0.0
+    for s_start, s_end in sorted(silences):
+        if s_start - cursor >= 0.12:
+            speech_spans.append((cursor, s_start))
+        cursor = max(cursor, s_end)
+    if total_dur - cursor >= 0.12:
+        speech_spans.append((cursor, total_dur))
+    if not speech_spans:
+        speech_spans = [(0.05, max(0.5, total_dur - 0.05))]
+
+    total_speech_dur = sum(e - s for s, e in speech_spans)
+    weights = [max(2.0, len(w) * 1.0) for w in raw_words]
+    total_w = sum(weights)
+
+    # Map cumulative weight onto active speech spans
+    aligned: List[dict] = []
+    cum_speech = 0.0
+
+    def _speech_pos_to_wall(pos: float) -> float:
+        rem = max(0.0, min(total_speech_dur, pos))
+        for sp_s, sp_e in speech_spans:
+            sp_len = sp_e - sp_s
+            if rem <= sp_len + 1e-6:
+                return sp_s + rem
+            rem -= sp_len
+        return speech_spans[-1][1]
+
+    for w, wt in zip(raw_words, weights):
+        dur_slice = (wt / total_w) * total_speech_dur
+        st = _speech_pos_to_wall(cum_speech)
+        en = _speech_pos_to_wall(cum_speech + dur_slice)
+        if en <= st + 0.04:
+            en = min(total_dur, st + 0.08)
+        aligned.append({"word": w, "start": round(st, 3), "end": round(en, 3)})
+        cum_speech += dur_slice
+    return aligned
+
+
 def align_voiceover_words(assets_dir: Path, vo_file: Path) -> List[dict]:
     cache_file = assets_dir / "words_alignment.json"
     if cache_file.exists():
         try:
-            return json.loads(cache_file.read_text(encoding="utf-8"))
+            cached = json.loads(cache_file.read_text(encoding="utf-8"))
+            if isinstance(cached, list) and cached:
+                return cached
         except Exception:
             pass
 
-    print("[*] Transcribing VO with word-level timestamps via local AI...")
+    cfg = get_config()
+    audio_model = resolve_ai_model("audio", cfg)
     client = get_local_ai_client()
-    audio_b64 = base64.b64encode(vo_file.read_bytes()).decode("utf-8")
+    words: Optional[List[dict]] = None
 
-    prompt = """Dengarkan audio voiceover Bahasa Indonesia ini dengan sangat teliti.
+    # Tier 1: Multimodal chat completion with input_audio (Gemini / GPT-4o-audio / compatible proxy)
+    print(f"[*] Transcribing VO with word-level timestamps via AI ({audio_model})...")
+    try:
+        audio_b64 = base64.b64encode(vo_file.read_bytes()).decode("utf-8")
+        prompt = """Dengarkan audio voiceover Bahasa Indonesia ini dengan sangat teliti.
 Buat transkrip SETIAP KATA (word-by-word) dengan timestamp mulai dan selesai yang sangat presisi dalam detik (desimal).
 Format output WAJIB HANYA JSON array valid tanpa teks markdown pembuka/penutup:
 [
   {"word": "Kenapa", "start": 0.08, "end": 0.44}
 ]"""
+        res = client.chat.completions.create(
+            model=audio_model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "input_audio", "input_audio": {"data": audio_b64, "format": "mp3"}},
+                    ],
+                }
+            ],
+        )
+        raw = (res.choices[0].message.content or "").strip()
+        parsed = _extract_json_array(raw)
+        if parsed and isinstance(parsed[0], dict) and "word" in parsed[0] and "start" in parsed[0]:
+            words = parsed
+            print(f"[+] Extracted {len(words)} words via AI audio model ({audio_model}).")
+    except Exception as exc:
+        print(f"[!] AI audio alignment ({audio_model}) dilewati: {str(exc)[:180]}")
 
-    res = client.chat.completions.create(
-        model=CFG.ai_audio_model,
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {"type": "input_audio", "input_audio": {"data": audio_b64, "format": "mp3"}},
-                ],
-            }
-        ],
-    )
+    # Tier 2: OpenAI-compatible Whisper transcriptions endpoint
+    if not words:
+        try:
+            with vo_file.open("rb") as af:
+                tr = client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=af,
+                    response_format="verbose_json",
+                    timestamp_granularities=["word"],
+                )
+            tr_words = getattr(tr, "words", None) or (tr.get("words") if isinstance(tr, dict) else None)
+            if tr_words:
+                words = [
+                    {
+                        "word": str(getattr(w, "word", None) or w.get("word", "")).strip(),
+                        "start": round(float(getattr(w, "start", None) if getattr(w, "start", None) is not None else w.get("start", 0.0)), 3),
+                        "end": round(float(getattr(w, "end", None) if getattr(w, "end", None) is not None else w.get("end", 0.0)), 3),
+                    }
+                    for w in tr_words
+                    if (getattr(w, "word", None) or (isinstance(w, dict) and w.get("word")))
+                ]
+                if words:
+                    print(f"[+] Extracted {len(words)} words via Whisper transcription endpoint.")
+        except Exception as exc:
+            print(f"[!] Whisper transcription endpoint dilewati: {str(exc)[:140]}")
 
-    raw = (res.choices[0].message.content or "").strip()
-    if raw.startswith("```"):
-        raw = re.sub(r"^```(?:json)?\n", "", raw)
-        raw = re.sub(r"\n```$", "", raw)
+    # Tier 3: Deterministic FFmpeg acoustic speech-envelope alignment from naskah.md
+    if not words:
+        print("[*] Fallback ke FFmpeg Acoustic Speech-Envelope Word Aligner...")
+        words = _align_words_acoustic_fallback(assets_dir, vo_file, cfg)
+        print(f"[+] Aligned {len(words)} words via FFmpeg acoustic speech-envelope fallback.")
 
-    words = json.loads(raw)
     cache_file.write_text(json.dumps(words, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"[+] Extracted {len(words)} words with precision timestamps.")
     return words
 
 
 def _describe_clip_multiframe(clip_p: Path, assets_dir: Path, idx: int, client) -> str:
     """Inspect 3 frames (25%, 50%, 75%) of a video clip via Vision AI for accurate action + cleanliness."""
+    cfg = get_config()
+    vision_model = resolve_ai_model("vision", cfg)
     if clip_p.suffix.lower() in PHOTO_EXTS:
         b64 = base64.b64encode(clip_p.read_bytes()).decode("utf-8")
         res = client.chat.completions.create(
-            model=CFG.ai_vision_model,
+            model=vision_model,
             messages=[
                 {
                     "role": "user",
@@ -210,7 +365,7 @@ def _describe_clip_multiframe(clip_p: Path, assets_dir: Path, idx: int, client) 
     for r_idx, ratio in enumerate(ratios):
         thumb_p = assets_dir / f"_temp_thumb_{idx:02d}_{r_idx}.jpg"
         subprocess.run(
-            [CFG.ffmpeg_cmd(), "-y", "-ss", f"{dur * ratio:.2f}", "-i", str(clip_p), "-vframes", "1", "-vf", "scale=360:-2", str(thumb_p)],
+            [cfg.ffmpeg_cmd(), "-y", "-ss", f"{dur * ratio:.2f}", "-i", str(clip_p), "-vframes", "1", "-vf", "scale=360:-2", str(thumb_p)],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
@@ -223,7 +378,7 @@ def _describe_clip_multiframe(clip_p: Path, assets_dir: Path, idx: int, client) 
     if img_blocks:
         try:
             res = client.chat.completions.create(
-                model=CFG.ai_vision_model,
+                model=vision_model,
                 messages=[
                     {
                         "role": "user",
@@ -264,7 +419,9 @@ def match_scenes_to_clips(
         except Exception:
             pass
 
-    print("[*] Running Multi-Frame Vision AI to match scene briefs with clean clips...")
+    cfg = get_config()
+    text_model = resolve_ai_model("text", cfg)
+    print(f"[*] Running Multi-Frame Vision & Scene Matching ({text_model})...")
     client = get_local_ai_client()
     clean_meta = get_cleanliness_map(assets_dir)
 
@@ -273,7 +430,10 @@ def match_scenes_to_clips(
         if clip_p.name in clean_meta and clean_meta[clip_p.name].get("subject_action"):
             desc = f"{clean_meta[clip_p.name]['subject_action']} (status: {clean_meta[clip_p.name].get('status', 'OK')})"
         else:
-            desc = _describe_clip_multiframe(clip_p, assets_dir, i, client)
+            try:
+                desc = _describe_clip_multiframe(clip_p, assets_dir, i, client)
+            except Exception:
+                desc = clip_p.stem.replace("_", " ").replace("-", " ")
         clip_descriptions.append({"index": i, "filename": clip_p.name, "desc": desc})
 
     scene_prompts = [{"scene_index": sc["index"], "desc": f"{sc['visual_desc']} | VO: {sc['vo']}"} for sc in scenes]
@@ -287,21 +447,36 @@ Berikut daftar klip video BERSIH yang tersedia di folder assets:
 ATURAN:
 1. Tugaskan 1 klip yang PALING COCOK secara visual dan aksi untuk setiap adegan.
 2. Usahakan memaksimalkan variasi klip (hindari memakai klip yang sama berturut-turut).
+3. Jika deskripsi adegan sudah menyebut nama file klip yang ada di daftar, prioritaskan klip tersebut.
 Format output WAJIB HANYA JSON array:
 [
   {{"scene_index": 1, "filename": "nama_file.mp4"}}
 ]"""
 
-    res = client.chat.completions.create(
-        model=CFG.ai_vision_model,
-        messages=[{"role": "user", "content": match_prompt}],
-    )
-    raw = (res.choices[0].message.content or "").strip()
-    if raw.startswith("```"):
-        raw = re.sub(r"^```(?:json)?\n", "", raw)
-        raw = re.sub(r"\n```$", "", raw)
+    mapping_list = None
+    try:
+        res = client.chat.completions.create(
+            model=text_model,
+            messages=[{"role": "user", "content": match_prompt}],
+        )
+        raw = (res.choices[0].message.content or "").strip()
+        mapping_list = _extract_json_array(raw)
+    except Exception as exc:
+        print(f"[!] Scene matching LLM gagal ({str(exc)[:140]}), fallback ke deterministic filename/round-robin.")
 
-    mapping_list = json.loads(raw)
+    if not mapping_list:
+        mapping_list = []
+        for idx_i, sc in enumerate(scenes):
+            matched_name = None
+            vdesc = str(sc.get("visual_desc") or "")
+            for c in clean_clips:
+                if c.name in vdesc:
+                    matched_name = c.name
+                    break
+            if not matched_name:
+                matched_name = clean_clips[idx_i % len(clean_clips)].name
+            mapping_list.append({"scene_index": int(sc["index"]), "filename": matched_name})
+
     cache_file.write_text(json.dumps(mapping_list, indent=2, ensure_ascii=False), encoding="utf-8")
 
     result: Dict[int, Path] = {}
@@ -784,9 +959,28 @@ def render_ffmpeg_direct(
     _prog(22, "Memindai Golden Moments, Proof/Payoff Hold 1.0x & Intra-Unit Splitting...")
     golden_moments = compute_scene_golden_moments(assets_dir, scenes, clip_mapping, CFG)
     if getattr(profile.visual, "adaptive_proof_pacing", True):
-        scenes = apply_adaptive_proof_pacing(scenes, golden_moments, clip_mapping, max_proof_s=4.4)
-    # Drop any 0-duration ghost tail scene produced after acoustic tightening
-    scenes = [sc for sc in scenes if (float(sc["end_s"]) - float(sc["start_s"])) >= 0.20]
+        scenes = apply_adaptive_proof_pacing(
+            scenes,
+            golden_moments,
+            clip_mapping,
+            max_proof_s=float(getattr(profile.visual, "max_proof_hold_s", 2.80)),
+            require_motion_proof=True,
+        )
+    # Sub-0.20s ghost beats (produced after acoustic tightening) are ABSORBED into the previous
+    # scene instead of being dropped: dropping left an unmatched hole in the visual timeline, so
+    # every following cut played ~0.16s ahead of its VO (008 00:09.96 vs 00:10.12).
+    _absorbed: List[dict] = []
+    for sc in scenes:
+        span = float(sc["end_s"]) - float(sc["start_s"])
+        if span < 0.20 and _absorbed:
+            prev = _absorbed[-1]
+            prev["end_s"] = sc["end_s"]
+            prev["duration_s"] = round(float(prev["end_s"]) - float(prev["start_s"]), 3)
+            prev["vo"] = (str(prev.get("vo", "")) + " " + str(sc.get("vo", ""))).strip()
+            prev["words"] = list(prev.get("words", [])) + list(sc.get("words", []))
+            continue
+        _absorbed.append(sc)
+    scenes = _absorbed
     protect_payoff = bool(getattr(profile.visual, "protect_payoff_hold", True))
     if getattr(profile.visual, "intra_unit_split", True):
         scenes = apply_intra_unit_clip_splitting(
@@ -801,6 +995,13 @@ def render_ffmpeg_direct(
             sc.setdefault("unit_id", f"U{pos + 1}")
             sc.setdefault("scene_role", classify_scene_role(sc, pos, len(scenes), cta_window))
             sc.setdefault("is_intra_unit_cut", False)
+
+    # v3.8 Hook Pattern-Interrupt: first visual change <= 1.20s (benchmarks: 00:00.36-00:01.48)
+    if getattr(profile.visual, "intra_unit_split", True):
+        scenes = enforce_hook_max_first_shot(
+            scenes,
+            max_first_shot_s=float(getattr(profile.visual, "hook_max_first_shot_s", 1.20)),
+        )
 
     if cta_style_override in ("heart_pill", "gamified_321", "reward_pop"):
         profile = profile.model_copy(
@@ -890,8 +1091,16 @@ def render_ffmpeg_direct(
         else:
             cut_pad = tail_safety_s if i == len(scenes) - 1 else 0.0
         seg_dur = float(sc["duration_s"]) + cut_pad
-        c_status = str(clean_meta.get(clip_path.name, {}).get("status", "BERSIH")).upper()
-        allow_flip = (c_status == "BERSIH") and bool(gm.get("allow_flip", True) if gm else True)
+        c_status = str(clean_meta.get(clip_path.name, {}).get("status", "TIDAK_DIKETAHUI")).upper()
+        # v3.8 fail-closed: flip is opt-in from a vision-verified golden moment. v3.7 defaulted to True
+        # and mirrored burned-in TikTok captions / "Ducks in a row" watermarks (007 00:03.20, 011 00:02.91).
+        gm_vision = (gm or {}).get("vision") or {}
+        has_burned = bool((gm or {}).get("has_burned_text", False)) or bool(gm_vision.get("has_burned_text", False))
+        allow_flip = (
+            c_status == "BERSIH"
+            and bool(gm.get("allow_flip", False) if gm else False)
+            and not has_burned
+        )
         sc_role = str(sc.get("scene_role", "balanced"))
 
         seg_out = temp_dir / f"seg_{i:02d}.mp4"
@@ -959,7 +1168,13 @@ def render_ffmpeg_direct(
         )
 
     # 3. Compute v3.7 Pre-Pivot Acoustic & Visual Vacuum Windows + Generate ASS Subtitles
-    hook_end_s = float(scenes[0]["end_s"]) if scenes else 0.0
+    # The hook may now be split into several sub-shots (v3.8 hook cap); the hook ends where its
+    # last sub-shot ends, not where the first one does.
+    hook_unit = scenes[0].get("unit_id") if scenes else None
+    hook_end_s = (
+        max((float(s["end_s"]) for s in scenes if s.get("unit_id") == hook_unit), default=0.0)
+        if scenes else 0.0
+    )
     bgm_vacuum_wins = detect_bgm_vacuum_windows(
         words=words,
         scenes=scenes,
@@ -978,6 +1193,11 @@ def render_ffmpeg_direct(
             curr_st = float(words[wi]["start"]) - lead_vis
             if wtok in pivot_set and (curr_st - prev_en) >= 0.14:
                 rsvp_blank_wins.append((round(prev_en + 0.01, 3), round(curr_st - 0.01, 3)))
+    # v3.8: clear the captions for the last 8 frames before the payoff reveal (Squooshify blanks 36-48f).
+    if scenes and bool(getattr(profile.visual, "suppress_rsvp_on_overlay", True)):
+        payoff_start = float(scenes[-1]["start_s"])
+        if payoff_start >= 0.35:
+            rsvp_blank_wins.append((round(payoff_start - 0.133, 3), round(payoff_start - 0.005, 3)))
 
     ass_file = temp_dir / "captions.ass"
     subj_guess = next((s for s in profile.focus_subjects if s.lower() in package_name.lower()), "KUCING")
@@ -1041,6 +1261,8 @@ def render_ffmpeg_direct(
         cta_style=active_cta_style,
         subject_label=subj_guess,
         bgm_vacuum_windows=bgm_vacuum_wins,
+        max_events=int(getattr(profile.visual, "sfx_max_events", 6)),
+        min_spacing_s=float(getattr(profile.visual, "sfx_min_spacing_s", 1.10)),
     )
     sfx_inputs = []
     for trigger_s, sfx_p, gain in sfx_entries:
@@ -1093,7 +1315,11 @@ def render_ffmpeg_direct(
         sfx_inputs=sfx_inputs,
         hook_audio_start_s=hook_audio_start_s,
         bgm_drop_window=None,
-        bgm_start_s=hook_end_s,
+        # v3.8: BGM enters at 00:00.00 (v3.7 muted it for the entire hook, leaving the first second
+        # 2.6-7.0 dB below program level). Legacy behavior remains available via bgm_from_start=false.
+        bgm_start_s=(
+            0.0 if bool(getattr(profile.visual, "bgm_from_start", True)) else hook_end_s
+        ),
         bgm_mute_window=bgm_mute_win,
         bgm_vacuum_windows=bgm_vacuum_wins,
     )
@@ -1127,12 +1353,19 @@ def render_ffmpeg_direct(
         f"{vo_duration:.3f}",
         str(output_path),
     ]
-    _prog(86, "Mastering final MP4 60fps, subtitle 3D, Vector Heart CTA & audio -10.8 LUFS...")
+    _prog(
+        86,
+        f"Mastering final MP4 60fps, subtitle 3D, Vector Heart CTA & audio {float(profile.visual.target_lufs):.1f} LUFS...",
+    )
     res = subprocess.run(cmd_final, cwd=str(temp_dir), capture_output=True, text=True)
     if res.returncode != 0:
         raise RuntimeError(f"FFmpeg final render gagal:\n{res.stderr[-1200:]}")
 
     shutil.rmtree(temp_dir, ignore_errors=True)
+
+    # 5b. v3.8 Measured two-pass loudness master (fixes the -2.3 dB single-pass deficit)
+    _prog(90, "Mastering pass 2: mengukur LUFS nyata & menyeimbangkan ke target...")
+    mastering_info = apply_mastering_pass(Path(output_path), profile, CFG)
 
     # 6. Write render report + optional visual QC contact sheet
     _prog(95, "Membuat Visual QC Contact Sheet 3x3...")
@@ -1171,7 +1404,7 @@ def render_ffmpeg_direct(
     }
 
     report = {
-        "engine_version": "3.7.0",
+        "engine_version": "3.8.1",
         "channel_id": profile.channel_id,
         "package_name": package_name,
         "output_file": str(out_p),
@@ -1182,6 +1415,15 @@ def render_ffmpeg_direct(
         "highlights": sorted(highlights),
         "cta_window": cta_window,
         "cta_style": active_cta_style,
+        "mastering": mastering_info,
+        "retention_policy": {
+            "hook_max_first_shot_s": float(getattr(profile.visual, "hook_max_first_shot_s", 1.20)),
+            "max_proof_hold_s": float(getattr(profile.visual, "max_proof_hold_s", 2.80)),
+            "rsvp_min_hold_s": float(getattr(profile.visual, "rsvp_min_hold_s", 0.34)),
+            "sfx_max_events": int(getattr(profile.visual, "sfx_max_events", 6)),
+            "bgm_from_start": bool(getattr(profile.visual, "bgm_from_start", True)),
+            "blur_canvas_max_ar": float(getattr(profile.visual, "blur_canvas_max_ar", 1.15)),
+        },
         "transition_style": t_style,
         "opening_radial_blur": bool(getattr(profile.visual, "opening_radial_blur", True)),
         "adaptive_proof_pacing": bool(getattr(profile.visual, "adaptive_proof_pacing", True)),

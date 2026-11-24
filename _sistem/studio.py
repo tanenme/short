@@ -223,7 +223,7 @@ def cmd_render(args: argparse.Namespace) -> int:
             enforce_preflight=args.strict_gate,
             cta_style_override=getattr(args, "cta_style", None),
         )
-        print(f"[+] Render MP4 v3.7 selesai: {mp4}")
+        print(f"[+] Render MP4 v3.8 selesai: {mp4}")
     return 0
 
 

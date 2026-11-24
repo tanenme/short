@@ -154,17 +154,49 @@ def synchronize_scenes_fuzzy(
                 proposed = min(sc["words"][-1]["end"] + 0.15, total_duration - min(rem_brief, 1.4))
                 sc["end_s"] = max(sc["start_s"] + min_scene_dur, proposed)
             else:
-                # Current has no words: use proportional brief duration
+                # Current has no words (e.g. "(jeda elipsis...)" beat): use proportional brief duration,
+                # but NEVER delay the next spoken unit. v3.8 fix: 008's silent beat was granted 1.699s
+                # and pushed every following scene +1.67s off the VO timeline.
                 b_dur = max(min_scene_dur, (sc.get("brief_end_s", 0.0) - sc.get("brief_start_s", 0.0)) * (total_duration / brief_total))
+                if next_sc.get("words"):
+                    next_onset = float(next_sc["words"][0]["start"])
+                    # Never delay the next spoken unit: the beat may run shorter than min_scene_dur
+                    # (a 0.8s floor here would start the next visual 0.6s after its word).
+                    b_dur = min(b_dur, max(0.10, next_onset - float(sc["start_s"])))
                 sc["end_s"] = min(total_duration - min_scene_dur, sc["start_s"] + b_dur)
 
         sc["start_s"] = round(sc["start_s"], 3)
         sc["end_s"] = round(sc["end_s"], 3)
-        sc["duration_s"] = round(max(0.4, sc["end_s"] - sc["start_s"]), 3)
+        sc["duration_s"] = round(max(0.05, sc["end_s"] - sc["start_s"]), 3)
 
     # Final pass: guarantee exact end alignment with total_duration
     scenes[-1]["end_s"] = round(total_duration, 3)
-    scenes[-1]["duration_s"] = round(max(0.4, scenes[-1]["end_s"] - scenes[-1]["start_s"]), 3)
+    scenes[-1]["duration_s"] = round(max(0.05, scenes[-1]["end_s"] - scenes[-1]["start_s"]), 3)
+
+    # v3.8 Payoff Floor: the final beat must breathe >= 1.20s. 008 shipped a 0.38s payoff.
+    # v3.8.1: pull the time from as many preceding scenes as needed (each keeps min_scene_dur and
+    # its own duration), instead of only the neighbour -- which was usually already at the floor.
+    min_payoff_s = 1.20
+    if len(scenes) >= 2:
+        last_sc = scenes[-1]
+        needed = round(min_payoff_s - (float(last_sc["end_s"]) - float(last_sc["start_s"])), 3)
+        k = len(scenes) - 2
+        while needed > 0.001 and k >= 0:
+            s_k = scenes[k]
+            slack = max(0.0, float(s_k["end_s"]) - float(s_k["start_s"]) - min_scene_dur)
+            take = min(needed, round(slack, 3))
+            if take > 0.001:
+                s_k["end_s"] = round(float(s_k["end_s"]) - take, 3)
+                s_k["duration_s"] = round(s_k["end_s"] - s_k["start_s"], 3)
+                for j in range(k + 1, len(scenes)):
+                    scenes[j]["start_s"] = round(float(scenes[j]["start_s"]) - take, 3)
+                    if j < len(scenes) - 1:
+                        scenes[j]["end_s"] = round(float(scenes[j]["end_s"]) - take, 3)
+                    scenes[j]["duration_s"] = round(
+                        float(scenes[j]["end_s"]) - float(scenes[j]["start_s"]), 3
+                    )
+                needed = round(needed - take, 3)
+            k -= 1
     return scenes
 
 
@@ -198,12 +230,16 @@ def apply_adaptive_proof_pacing(
     scenes: List[dict],
     golden_moments: dict,
     clip_mapping: dict,
-    max_proof_s: float = 4.4,
+    max_proof_s: float = 2.80,
+    require_motion_proof: bool = False,
 ) -> List[dict]:
-    """Squooshify 5/5 DNA: keep Hook crisp & fast, hold physical proof shots uninterrupted (3.0-4.4s).
+    """v3.8: hold a physical proof shot only up to 2.80s AND only when the source actually moves.
 
-    Merges adjacent body/mechanism scenes that share the same clip filename (up to max_proof_s <= 4.4s,
-    safely within YPP's 5.0s max source clip rule) so physical evidence breathes without a jump-cut.
+    Merging adjacent body/mechanism scenes that share the same clip gives proof shots room to breathe,
+    but v3.7 merged up to 4.4s and produced 3.2-4.1s frozen frames (007 00:07.05-00:11.11,
+    009 00:08.60-00:12.23). `require_motion_proof` blocks the merge unless the golden-moment vision
+    pass verified motion, so a held shot is always visibly alive (fail-closed: a missing vision
+    pass means no merge).
     """
     if len(scenes) < 5:
         return scenes
@@ -229,7 +265,17 @@ def apply_adaptive_proof_pacing(
         ):
             nxt = scenes[i + 1]
             comb_dur = round(float(nxt["end_s"]) - float(cur["start_s"]), 3)
-            if comb_dur <= max_proof_s:
+            motion_ok = True
+            if require_motion_proof:
+                # Fail closed: only a vision pass that actually saw motion may hold a shot this long.
+                # `metric_score` is a sharpness/exposure score (a frozen clip still scores 74-87), so it
+                # cannot substitute for motion evidence.
+                for idx in (cur.get("index"), nxt.get("index")):
+                    vis = (golden_moments.get(idx) or {}).get("vision") or {}
+                    if not bool(vis.get("motion_verified", False)):
+                        motion_ok = False
+                        break
+            if comb_dur <= max_proof_s and motion_ok:
                 cur["end_s"] = nxt["end_s"]
                 cur["duration_s"] = comb_dur
                 cur["vo"] = (cur.get("vo", "") + " " + nxt.get("vo", "")).strip()
@@ -438,3 +484,59 @@ def apply_intra_unit_clip_splitting(
         out.append(right_sc)
 
     return out
+
+
+def enforce_hook_max_first_shot(
+    scenes: List[dict],
+    max_first_shot_s: float = 1.20,
+    min_subclip_s: float = 0.55,
+    cut_word_offset_s: float = -0.05,
+) -> List[dict]:
+    """v3.8 Hook Pattern-Interrupt: guarantee the first visual change lands <= 1.20s.
+
+    Squooshify's five benchmarks cut their opening shot at 00:00.36-00:01.48, while v3.7 renders held
+    the hook for 2.20-3.33s because `min_unit_split_s=2.30` never split the first unit. This pass runs
+    after intra-unit splitting and splits ONLY the first scene, at the word onset closest to the target.
+    """
+    if not scenes:
+        return scenes
+    first = dict(scenes[0])
+    st = float(first["start_s"])
+    en = float(first["end_s"])
+    dur = en - st
+    if dur <= max_first_shot_s + 0.05:
+        return scenes
+    words = list(first.get("words") or [])
+    target = st + max_first_shot_s
+    best_wi = None
+    best_d = 1e9
+    for wi in range(1, len(words)):
+        cut_t = round(float(words[wi]["start"]) + cut_word_offset_s, 3)
+        if cut_t - st < min_subclip_s or en - cut_t < min_subclip_s:
+            continue
+        d = abs(cut_t - target)
+        if d < best_d:
+            best_d = d
+            best_wi = wi
+    if best_wi is None:
+        return scenes
+
+    cut_t = round(float(words[best_wi]["start"]) + cut_word_offset_s, 3)
+    left = dict(first)
+    left["end_s"] = cut_t
+    left["duration_s"] = round(cut_t - st, 3)
+    left["words"] = words[:best_wi]
+    left["vo"] = " ".join(w.get("word", "") for w in left["words"]).strip() or first.get("vo", "")
+    left["sub_clip_part"] = 1
+
+    right = dict(first)
+    right["start_s"] = cut_t
+    right["duration_s"] = round(en - cut_t, 3)
+    right["words"] = words[best_wi:]
+    right["vo"] = " ".join(w.get("word", "") for w in right["words"]).strip() or first.get("vo", "")
+    right["is_intra_unit_cut"] = True
+    right["sub_clip_part"] = 2
+    right["split_trigger_word"] = words[best_wi].get("word", "")
+    right["unit_id"] = left.get("unit_id", "U1")
+    right["scene_role"] = left.get("scene_role", "hook")
+    return [left, right] + list(scenes[1:])

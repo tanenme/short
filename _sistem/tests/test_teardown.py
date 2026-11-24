@@ -44,9 +44,11 @@ class TestForensicTeardown(unittest.TestCase):
         c1 = self.cfg.get_channel("C1-fakta")
         self.assertEqual(c1.visual.subtitle_mode, "squooshify_white_3d")
         self.assertEqual(c1.visual.framing_mode, "auto_blur_canvas")
+        # Both words are spoken long enough to stand alone (>= rsvp_min_hold_s); sub-min-hold words
+        # are intentionally merged by v3.8.1 readability rescue, covered by test_editor.
         words = [
-            {"word": "di", "start": 0.1, "end": 0.25},
-            {"word": "tembok", "start": 0.27, "end": 0.7},
+            {"word": "di", "start": 0.1, "end": 0.45},
+            {"word": "tembok", "start": 0.47, "end": 0.9},
         ]
         with tempfile.TemporaryDirectory() as tmp:
             ass_p = Path(tmp) / "rsvp.ass"

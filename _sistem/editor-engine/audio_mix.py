@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import json
 import math
+import re
+import subprocess
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
+from core.config import StudioConfig
 from core.models import ChannelProfile
 
 
@@ -157,8 +160,14 @@ def compute_sfx_entries(
     cta_style: str = "heart_pill",
     subject_label: str = "",
     bgm_vacuum_windows: Optional[List[Tuple[float, float]]] = None,
+    max_events: int = 6,
+    min_spacing_s: float = 1.10,
 ) -> List[Tuple[float, Path, float]]:
-    """Compute dense, rotating, auto-calibrated micro-SFX + CTA choreography + mid-shot foley re-anchors."""
+    """Compute sparse, high-signal micro-SFX + CTA choreography + mid-shot foley re-anchors.
+
+    v3.8: cap at 6 events with 1.10s refractory spacing (v3.7 packed 9-12 generic cues and buried
+    the diegetic foley -- Squooshify uses only 5 semantic hits per video).
+    """
     catalog = load_soundboard_catalog(sfx_dir)
     candidates: List[Tuple[float, Path, float, int]] = []  # (time, path, gain, priority)
     cue_words = {"subscribe", "bukan", "salah"} | {h.lower() for h in highlights if len(h) >= 4}
@@ -315,12 +324,12 @@ def compute_sfx_entries(
         prio = 6 if sfx_path.name != "clean-whoosh.mp3" else 3
         candidates.append((round(max(0.0, trigger_s), 3), sfx_path, _gain_for(sfx_path), prio))
 
-    # Select up to 13 dense, varied micro-SFX (>= 0.90s spacing, NEVER same file twice in a row!)
+    # Select up to `max_events` high-priority micro-SFX (>= min_spacing_s, NEVER same file twice in a row!)
     candidates.sort(key=lambda x: (-x[3], x[0]))
     for t_s, sp, g, _ in candidates:
-        if len(selected) >= 13:
+        if len(selected) >= max(1, int(max_events)):
             break
-        if any(abs(t_s - ex_t) < 0.90 for ex_t, _, _ in selected):
+        if any(abs(t_s - ex_t) < float(min_spacing_s) for ex_t, _, _ in selected):
             continue
         # Ensure variety: don't use the same SFX filename more than 2 times in 1 video
         if used_counts.get(sp.name, 0) >= 2:
@@ -358,10 +367,13 @@ def build_audio_filtergraph(
     vo_out = "[vo_clean]" if bgm_input_idx is not None else "[vo_mix]"
     use_presence = getattr(profile.visual, "vo_presence_eq", True)
     eq_chain = "equalizer=f=3600:t=q:w=1.2:g=3.0,treble=g=2.0:f=10000," if use_presence else ""
+    # v3.8 Hook Loudness Ramp: +2.7 dB at frame 0 fading to 0 by 1.5s so the first second
+    # matches the program level (5/5 v3.7 hooks sat 2.6-7.0 dB below the body).
+    hook_ramp = "volume=volume='if(lt(t,1.5),1.0+0.35*(1.5-t)/1.5,1.0)':eval=frame,"
     parts.append(
         f"[{vo_input_idx}:a]highpass=f=85,{eq_chain}"
         f"acompressor=threshold=-22dB:ratio=3.5:attack=6:release=70:makeup=2.2,"
-        f"volume=1.55,apad=pad_dur=0.6,atrim=0:{vo_duration:.3f},asetpts=PTS-STARTPTS{vo_out}"
+        f"volume=1.55,{hook_ramp}apad=pad_dur=0.6,atrim=0:{vo_duration:.3f},asetpts=PTS-STARTPTS{vo_out}"
     )
     if bgm_input_idx is not None:
         parts.append("[vo_clean]asplit=2[vo_mix][vo_sc]")
@@ -380,11 +392,12 @@ def build_audio_filtergraph(
                 drop_op += f",volume=enable='between(t,{ds:.3f},{de:.3f})':volume=0.35"
         for vs, ve in (bgm_vacuum_windows or []):
             if ve > vs + 0.12:
-                drop_op += f",volume=enable='between(t,{vs:.3f},{ve:.3f})':volume=0.04"
+                # v3.8: duck to 12% instead of 4% -- the old near-silence made momentary LUFS crash to -16.4.
+                drop_op += f",volume=enable='between(t,{vs:.3f},{ve:.3f})':volume=0.12"
         if bgm_mute_window is not None:
             ms, me = bgm_mute_window
             if me > ms + 0.25:
-                drop_op += f",volume=enable='between(t,{ms:.3f},{me:.3f})':volume=0.05"
+                drop_op += f",volume=enable='between(t,{ms:.3f},{me:.3f})':volume=0.10"
 
         delay_ms = int(round(bgm_st * 1000))
         delay_chain = f"adelay={delay_ms}|{delay_ms}," if delay_ms > 0 else ""
@@ -442,10 +455,204 @@ def build_audio_filtergraph(
         mix_labels.append(f"[{lbl}]")
 
     # 5. Master mix + commercial loudness mastering
+    # v3.8: TP=-1.0 dBFS and LRA=2.5 (v3.7's TP=-0.5 still shipped +0.6 dBFS on 008).
+    # Single-pass loudnorm is only the first stage; builder runs a measured two-pass master afterwards.
     target_i = profile.visual.target_lufs
-    tp_ceil = -0.5 if target_i >= -11.5 else -1.0
+    tp_ceil = float(getattr(profile.visual, "master_true_peak_db", -1.0))
     parts.append(
         f"{''.join(mix_labels)}amix=inputs={len(mix_labels)}:duration=first:dropout_transition=0:normalize=0,"
-        f"loudnorm=I={target_i:.1f}:TP={tp_ceil:.1f}:LRA=3.0[aout]"
+        f"loudnorm=I={target_i:.1f}:TP={tp_ceil:.1f}:LRA=2.5[aout]"
     )
     return ";".join(parts)
+
+
+def measure_integrated_loudness(media_path: Path, cfg: StudioConfig) -> Dict[str, float]:
+    """Measure EBU R128 integrated loudness / true peak of a finished media file."""
+    proc = subprocess.run(
+        [
+            cfg.ffmpeg_cmd(),
+            "-hide_banner",
+            "-nostats",
+            "-i",
+            str(media_path),
+            "-map",
+            "0:a:0",
+            "-af",
+            "ebur128=peak=true",
+            "-f",
+            "null",
+            "-",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=180,
+    )
+    i_vals = re.findall(r"I:\s*(-?\d+(?:\.\d+)?)\s*LUFS", proc.stderr)
+    tp_vals = re.findall(r"Peak:\s*(-?\d+(?:\.\d+)?)\s*dBFS", proc.stderr)
+    out: Dict[str, float] = {}
+    if i_vals:
+        out["integrated_lufs"] = float(i_vals[-1])
+    if tp_vals:
+        out["true_peak_dbfs"] = float(tp_vals[-1])
+    return out
+
+
+def _measure_wav_loudness(wav_path: Path, cfg: StudioConfig) -> Dict[str, float]:
+    """Fast ebur128 measurement of a raw WAV (no container decode overhead)."""
+    proc = subprocess.run(
+        [
+            cfg.ffmpeg_cmd(),
+            "-hide_banner",
+            "-nostats",
+            "-i",
+            str(wav_path),
+            "-af",
+            "ebur128=peak=true",
+            "-f",
+            "null",
+            "-",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    i_vals = re.findall(r"I:\s*(-?\d+(?:\.\d+)?)\s*LUFS", proc.stderr)
+    tp_vals = re.findall(r"Peak:\s*(-?\d+(?:\.\d+)?)\s*dBFS", proc.stderr)
+    out: Dict[str, float] = {}
+    if i_vals:
+        out["integrated_lufs"] = float(i_vals[-1])
+    if tp_vals:
+        out["true_peak_dbfs"] = float(tp_vals[-1])
+    return out
+
+
+def apply_mastering_pass(
+    video_path: Path,
+    profile: ChannelProfile,
+    cfg: StudioConfig,
+    tolerance_db: float = 0.30,
+    max_gain_db: float = 6.0,
+    max_passes: int = 4,
+) -> Dict[str, object]:
+    """Measured loudness master on the finished MP4, iterated until it lands on target.
+
+    v3.8.1: a single linear gain cannot reach -10 LUFS when the pre-master true peak is already hot --
+    the alimiter takes back ~1.5-2 dB of the added gain. So the audio is extracted to WAV once, a
+    *cumulative* gain + limiter is re-evaluated against the ORIGINAL wav each pass (no stacked limiting),
+    and the winning candidate is encoded to AAC exactly once and muxed back with `-c:v copy`.
+    """
+    target = float(profile.visual.target_lufs)
+    tp_limit = float(getattr(profile.visual, "master_true_peak_db", -1.0))
+    stem = video_path.stem
+    src_wav = video_path.with_name(stem + "_master_src.wav")
+    cand_wav = video_path.with_name(stem + "_master_cand.wav")
+    tmp_path = video_path.with_name(stem + "_master_tmp.mp4")
+
+    try:
+        before = measure_integrated_loudness(video_path, cfg)
+    except Exception as exc:
+        return {"applied": False, "status": f"measure_failed: {str(exc)[:120]}"}
+    if "integrated_lufs" not in before:
+        return {"applied": False, "status": "no_audio_or_unreadable"}
+    current = float(before["integrated_lufs"])
+    tp_before = before.get("true_peak_dbfs")
+    if abs(target - current) <= tolerance_db and (
+        tp_before is None or float(tp_before) <= tp_limit + 0.10
+    ):
+        return {"applied": False, "status": "within_tolerance", "gain_db": 0.0, **before}
+
+    try:
+        subprocess.check_call(
+            [cfg.ffmpeg_cmd(), "-y", "-hide_banner", "-i", str(video_path),
+             "-vn", "-c:a", "pcm_s16le", "-ar", "48000", str(src_wav)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+    except Exception as exc:
+        return {"applied": False, "status": f"audio_extract_failed: {str(exc)[:120]}", **before}
+
+    passes = 0
+    # True-peak-safe limiting: run the limiter at 192 kHz so the inter-sample peaks it has to
+    # control are visible to it. At 48 kHz a flat-topped limited signal reconstructs ~2-3 dB
+    # above its sample ceiling (measured: ceiling -1.0 -> true peak +1.9), which is why the
+    # v3.8 single-pass master could not gain loudness without breaking the -1 dBTP rule.
+    def _master_af(gain_db: float, ceil_lin: float) -> str:
+        return (
+            f"volume={gain_db:.2f}dB,aresample=192000,"
+            f"alimiter=limit={ceil_lin:.4f}:attack=1:release=40:level=false,aresample=48000"
+        )
+
+    ceiling_db = tp_limit - 0.5  # headroom for the final AAC encode
+    best = {"gain_db": 0.0, "integrated_lufs": current,
+            "true_peak_dbfs": float(before.get("true_peak_dbfs", 0.0))}
+    after: Dict[str, float] = {}
+    try:
+        for _round in range(2):
+            ceil_lin = min(0.999, math.pow(10.0, ceiling_db / 20.0))
+            best = {"gain_db": 0.0, "integrated_lufs": current,
+                    "true_peak_dbfs": float(before.get("true_peak_dbfs", 0.0))}
+            cumulative = 0.0
+            for _ in range(max(1, max_passes)):
+                err = target - float(best["integrated_lufs"])
+                if abs(err) <= tolerance_db:
+                    break
+                step = max(-max_gain_db, min(max_gain_db, err))
+                cumulative = round(cumulative + step, 2)
+                subprocess.check_call(
+                    [cfg.ffmpeg_cmd(), "-y", "-hide_banner", "-i", str(src_wav),
+                     "-af", _master_af(cumulative, ceil_lin), "-c:a", "pcm_s16le", str(cand_wav)],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                )
+                passes += 1
+                got = _measure_wav_loudness(cand_wav, cfg)
+                if "integrated_lufs" not in got:
+                    break
+                prev = float(best["integrated_lufs"])
+                best = {"gain_db": cumulative, **got}
+                if abs(float(got["integrated_lufs"]) - prev) < 0.10:
+                    break  # limiter wall: the last candidate on disk is the best we have
+            if abs(float(best["gain_db"])) < 0.05:
+                return {"applied": False, "status": "limiter_wall", "passes": passes,
+                        "gain_db": 0.0, **before}
+            subprocess.check_call(
+                [cfg.ffmpeg_cmd(), "-y", "-hide_banner", "-i", str(video_path), "-i", str(cand_wav),
+                 "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy",
+                 "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", str(tmp_path)],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+            tmp_path.replace(video_path)
+            try:
+                after = measure_integrated_loudness(video_path, cfg)
+            except Exception:
+                after = {}
+            tp_got = after.get("true_peak_dbfs")
+            # AAC rebuilds inter-sample peaks on a hard-limited waveform: if the delivered file
+            # still exceeds the ceiling, re-cut from the untouched source wav with a lower ceiling.
+            if tp_got is None or float(tp_got) <= tp_limit + 0.10:
+                break
+            ceiling_db -= float(tp_got) - tp_limit + 0.25
+    except Exception as exc:
+        if tmp_path.exists():
+            tmp_path.unlink(missing_ok=True)
+        return {"applied": False, "status": f"encode_failed: {str(exc)[:120]}",
+                "passes": passes, "gain_db": best["gain_db"], **before}
+    finally:
+        src_wav.unlink(missing_ok=True)
+        cand_wav.unlink(missing_ok=True)
+
+    final_err = abs(target - float(after.get("integrated_lufs", target)))
+    if final_err <= tolerance_db:
+        status = "mastered"
+    elif float(after.get("integrated_lufs", target)) < target:
+        status = "clamped_short"
+    else:
+        status = "clamped_hot"
+    if float(after.get("true_peak_dbfs", tp_limit)) > tp_limit + 0.10:
+        status += "_peak_over"
+    return {
+        "applied": True,
+        "status": status,
+        "passes": passes,
+        "gain_db": best["gain_db"],
+        "before": before,
+        "after": after,
+    }
