@@ -2,52 +2,75 @@
   {
     "scene_index": 1,
     "filename": "@winnietheminischnoodle_7481657118110780718_hd.mp4",
-    "start_s": 1.17,
-    "mode": "v23_signal_action",
-    "metric_score": 71.51,
+    "start_s": 2.29,
+    "crop_x_norm": 0.4,
+    "mode": "v24_triplet_action",
+    "metric_score": 76.96,
     "use_clip_audio": false,
     "allow_flip": true,
     "signals": {
       "clip_dur_s": 9.8,
       "internal_cuts": 0,
+      "shot_count": 1,
       "top_candidates": [
         {
           "start_s": 2.0,
           "end_s": 4.81,
-          "score": 71.51,
+          "score": 76.96,
           "motion": 81.9,
-          "sharpness": 33.4,
+          "sharpness": 52.9,
           "exposure": 95.1,
+          "semantic_bonus": 0.0,
           "crosses_cut": false,
-          "overlaps_claimed": false
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        },
+        {
+          "start_s": 6.67,
+          "end_s": 9.48,
+          "score": 62.74,
+          "motion": 63.8,
+          "sharpness": 54.2,
+          "exposure": 95.6,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
         },
         {
           "start_s": 0.0,
           "end_s": 2.81,
-          "score": 57.23,
+          "score": 62.44,
           "motion": 64.9,
-          "sharpness": 33.0,
+          "sharpness": 51.6,
           "exposure": 95.1,
+          "semantic_bonus": 0.0,
           "crosses_cut": false,
-          "overlaps_claimed": false
-        },
-        {
-          "start_s": 6.0,
-          "end_s": 8.81,
-          "score": 57.2,
-          "motion": 51.5,
-          "sharpness": 34.1,
-          "exposure": 95.6,
-          "crosses_cut": false,
-          "overlaps_claimed": false
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
         }
       ]
+    },
+    "vision": {
+      "start_s": 2.0,
+      "semantic_score": 8,
+      "motion_verified": true,
+      "cleanliness_score": 9,
+      "allow_flip": true,
+      "has_burned_text": false,
+      "caption_zone_clean": true,
+      "subject_x_norm": 0.4,
+      "reason": "Anjing di kolom #1 melayangkan kaki belakang dan tendang tanah ke belakang di T1 lalu mendarat di T2, cocok aksi naskah, subjek utuh dan zona caption bawah bersih."
     },
     "refinement": {
       "refined": true,
       "coarse_start_s": 2.0,
-      "shift_s": -0.83,
-      "method": "action_onset_dYDIF_4fps"
+      "shift_s": 0.29,
+      "lead_s": 1.06,
+      "method": "peak_to_word_onset_4fps"
     }
   },
   {
@@ -108,7 +131,8 @@
       "coarse_start_s": 10.0,
       "shift_s": 0.6,
       "method": "sharpness_lock_4fps"
-    }
+    },
+    "crop_x_norm": 0.5
   },
   {
     "scene_index": 3,
@@ -168,7 +192,8 @@
       "coarse_start_s": 7.7,
       "shift_s": -0.65,
       "method": "sharpness_lock_4fps"
-    }
+    },
+    "crop_x_norm": 0.48
   },
   {
     "scene_index": 4,
@@ -228,7 +253,8 @@
       "coarse_start_s": 1.33,
       "shift_s": 0.6,
       "method": "sharpness_lock_4fps"
-    }
+    },
+    "crop_x_norm": 0.5
   },
   {
     "scene_index": 5,
@@ -288,7 +314,8 @@
       "coarse_start_s": 6.0,
       "shift_s": 0.6,
       "method": "sharpness_lock_4fps"
-    }
+    },
+    "crop_x_norm": 0.54
   },
   {
     "scene_index": 6,
@@ -348,7 +375,8 @@
       "coarse_start_s": 5.33,
       "shift_s": -0.83,
       "method": "action_onset_dYDIF_4fps"
-    }
+    },
+    "crop_x_norm": 0.52
   },
   {
     "scene_index": 7,
@@ -408,7 +436,8 @@
       "coarse_start_s": 11.7,
       "shift_s": -0.65,
       "method": "sharpness_lock_4fps"
-    }
+    },
+    "crop_x_norm": 0.51
   },
   {
     "scene_index": 8,
@@ -468,7 +497,8 @@
       "coarse_start_s": 2.67,
       "shift_s": -0.65,
       "method": "sharpness_lock_4fps"
-    }
+    },
+    "crop_x_norm": 0.56
   },
   {
     "scene_index": 9,
@@ -528,7 +558,8 @@
       "coarse_start_s": 3.33,
       "shift_s": -0.83,
       "method": "action_onset_dYDIF_4fps"
-    }
+    },
+    "crop_x_norm": 0.5
   },
   {
     "scene_index": 10,
@@ -588,6 +619,7 @@
       "coarse_start_s": 3.33,
       "shift_s": -0.65,
       "method": "sharpness_lock_4fps"
-    }
+    },
+    "crop_x_norm": 0.5
   }
 ]

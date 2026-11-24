@@ -92,6 +92,42 @@ def probe_media_info(file_path: Path, cfg: StudioConfig) -> dict:
         return {"duration": 0.0, "width": 0, "height": 0, "has_audio": False}
 
 
+def compute_selective_speed(
+    scene_role: str,
+    clip_dur: float,
+    target_dur: float,
+    selective_speed: bool = True,
+    max_animal_speed: float = 1.35,
+) -> float:
+    """Squooshify v3.6 Selective Speed-Up by Narrative Role (never uniform speed-up!).
+
+    - proof / cta: strictly 1.0x so physical evidence and facial expressions stay 100% natural.
+    - process: 1.25x micro speed-up (capped at max_animal_speed <= 1.35x for live animals).
+    - hook: 1.12x crisp opening energy.
+    - balanced / payoff: 1.05x subtle fingerprint break.
+    """
+    if not selective_speed:
+        return 1.05 if clip_dur >= (target_dur * 1.12 + 0.4) else 1.0
+
+    role = (scene_role or "balanced").lower()
+    if role in ("proof", "cta"):
+        return 1.0
+
+    cap = max(1.0, min(1.50, float(max_animal_speed)))
+    if role == "process":
+        desired = min(1.25, cap)
+    elif role == "hook":
+        desired = min(1.12, cap)
+    else:
+        desired = min(1.05, cap)
+
+    if clip_dur >= (target_dur * desired + 0.35):
+        return round(desired, 2)
+    if desired > 1.08 and clip_dur >= (target_dur * 1.08 + 0.35):
+        return 1.08
+    return 1.0
+
+
 def render_cinematic_segment(
     clip_path: Path,
     seg_out: Path,
@@ -102,14 +138,19 @@ def render_cinematic_segment(
     allow_flip: bool = True,
     usage_offset: int = 0,
     forced_start_s: Optional[float] = None,
+    scene_role: str = "balanced",
+    crop_x_norm: float = 0.50,
 ) -> dict:
-    """Render one Shorts scene with anti-reused transforms + dynamic micro-motion.
+    """Render one Shorts scene with anti-reused transforms + dynamic micro-motion + v2.4 Subject Spatial Focus (`crop_x_norm`).
 
     Returns transform audit metadata for sources/episode manifest.
     """
     vis = profile.visual
     W, H, FPS = vis.width, vis.height, vis.fps
+    cx = max(0.15, min(0.85, float(crop_x_norm if crop_x_norm is not None else 0.50)))
     transforms: List[str] = ["crop_9_16"]
+    if abs(cx - 0.50) >= 0.04:
+        transforms.append(f"subject_focus_x_{cx:.2f}")
 
     is_photo = clip_path.suffix.lower() in PHOTO_EXTS
     z_min = vis.zoom_punch_min
@@ -158,8 +199,14 @@ def render_cinematic_segment(
     info = probe_media_info(clip_path, cfg)
     clip_dur = info["duration"]
 
-    # Subtle speed boost (1.05x) when clip has headroom -> breaks source timing fingerprint
-    speed = 1.05 if clip_dur >= (target_dur * 1.12 + 0.4) else 1.0
+    # Squooshify v3.6 Selective Speed-Up (proof & cta strictly 1.0x; process up to 1.25x, capped <= 1.35x)
+    speed = compute_selective_speed(
+        scene_role=scene_role,
+        clip_dur=clip_dur,
+        target_dur=target_dur,
+        selective_speed=bool(getattr(vis, "selective_speed_up", True)),
+        max_animal_speed=float(getattr(vis, "max_animal_speed", 1.35)),
+    )
     needed_src_dur = target_dur * speed
 
     # Golden Moment trim window (uses exact forced_start_s when available, else smart inner window)
@@ -208,9 +255,9 @@ def render_cinematic_segment(
             f"[0:v]split=2[bg_in][fg_in];"
             f"[bg_in]scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},boxblur=28:4,"
             f"eq=brightness=0.01:saturation=1.02[bg];"
-            f"[fg_in]scale={W}:{fg_h}:force_original_aspect_ratio=increase,crop={W}:{fg_h},"
+            f"[fg_in]scale={W}:{fg_h}:force_original_aspect_ratio=increase,crop={W}:{fg_h}:(iw-{W})*{cx:.2f}:(ih-{fg_h})/2,"
             f"scale=w='trunc(iw*({zoom_expr})/2)*2':h='trunc(ih*({zoom_expr})/2)*2':eval=frame,"
-            f"crop={W}:{fg_h}:(iw-{W})/2:(ih-{fg_h})/2{flip_op},"
+            f"crop={W}:{fg_h}:(iw-{W})*{cx:.2f}:(ih-{fg_h})/2{flip_op},"
             f"eq=contrast=1.06:saturation=1.08:brightness=0.01[fg];"
             f"[bg][fg]overlay=0:(H-h)/2{spd_op},fps={FPS},setsar=1,format=yuv420p[v]"
         )
@@ -243,6 +290,7 @@ def render_cinematic_segment(
         return {
             "transforms": transforms,
             "start_trim": round(start_trim, 3),
+            "crop_x_norm": round(cx, 2),
             "speed": speed,
             "is_photo": False,
             "has_audio": info["has_audio"],
@@ -250,9 +298,9 @@ def render_cinematic_segment(
 
     vf_parts = [
         f"scale={W}:{H}:force_original_aspect_ratio=increase",
-        f"crop={W}:{H}",
+        f"crop={W}:{H}:(iw-{W})*{cx:.2f}:(ih-{H})/2",
         f"scale=w='trunc(iw*({zoom_expr})/2)*2':h='trunc(ih*({zoom_expr})/2)*2':eval=frame",
-        f"crop={W}:{H}:(iw-{W})/2:(ih-{H})/2",
+        f"crop={W}:{H}:(iw-{W})*{cx:.2f}:(ih-{H})/2",
     ]
     transforms.append(f"dynamic_zoom_{z0:.2f}_to_{z1:.2f}")
 
@@ -279,9 +327,9 @@ def render_cinematic_segment(
         open_zoom = f"(1.34-0.34*min(t/0.28\\,1))*({zoom_expr})"
         vf_open = [
             f"scale={W}:{H}:force_original_aspect_ratio=increase",
-            f"crop={W}:{H}",
+            f"crop={W}:{H}:(iw-{W})*{cx:.2f}:(ih-{H})/2",
             f"scale=w='trunc(iw*({open_zoom})/2)*2':h='trunc(ih*({open_zoom})/2)*2':eval=frame",
-            f"crop={W}:{H}:(iw-{W})/2:(ih-{H})/2",
+            f"crop={W}:{H}:(iw-{W})*{cx:.2f}:(ih-{H})/2",
             "avgblur=sizeX=24:sizeY=8:enable='between(t,0,0.12)'",
             "avgblur=sizeX=10:sizeY=4:enable='between(t,0.12,0.22)'",
         ]
@@ -349,19 +397,22 @@ def render_cinematic_segment(
     return {
         "transforms": transforms,
         "start_trim": round(start_trim, 3),
+        "crop_x_norm": round(cx, 2),
         "speed": speed,
         "is_photo": False,
         "has_audio": info["has_audio"],
     }
 
 
-def get_v33_transition_spec(cut_index: int) -> Tuple[str, float]:
-    """Forensic dVlZFNF8NU8 transition recipe @ 60fps (safe >=3-frame xfade minimum).
-
-    - Cut #3 (Act change: Hook/CTA -> Mechanism): 5-frame Radial Zoom-In (0.085s)
-    - Cuts #1, #5, #7, #8 (Entry & Climax/Payoff): 3-4 frame White Exposure Bloom (0.060s)
-    - Intra-beat Match Cuts (#2, #4, #6, #9+): 3-frame snappy cut (0.050s)
+def get_v33_transition_spec(cut_index: int, is_intra_unit: bool = False) -> Tuple[str, float]:
+    """Forensic v3.6 transition recipe @ 60fps:
+    - Intra-Unit Cuts (same narrative idea): ALWAYS crisp minimal cut (0.050s fade, zero flash/zoom!)
+    - Inter-Unit Cut #3 (Act change Hook/CTA -> Mechanism): 5-frame Radial Zoom-In (0.085s)
+    - Inter-Unit Cuts #1, #5, #7, #8 (Entry & Climax/Payoff): 3-4 frame White Exposure Bloom (0.060s)
+    - Other Inter-Unit Cuts: 3-frame snappy cut (0.050s)
     """
+    if is_intra_unit:
+        return ("fade", 0.050)
     if cut_index == 3:
         return ("zoomin", 0.085)
     if cut_index in (1, 5, 7, 8):
@@ -377,8 +428,9 @@ def concat_with_transitions(
     trans_dur: float = 0.12,
     fps: int = 30,
     transition_style: str = "squooshify_v33",
+    intra_unit_cut_indices: Optional[set] = None,
 ) -> Path:
-    """Join rendered video segments using v3.3 forensic transitions (hard cut + 5f zoom + 3f flash) or classic xfade."""
+    """Join rendered video segments separating Intra-Unit hard cuts from Inter-Unit zoom/flash transitions."""
     if not segments:
         raise ValueError("No video segments to concatenate.")
     if len(segments) == 1:
@@ -392,12 +444,13 @@ def concat_with_transitions(
 
     # Normalize timebase across inputs before xfade
     filters = [f"[{i}:v]settb=AVTB,fps={fps}[v{i}]" for i in range(len(segments))]
+    intra_set = intra_unit_cut_indices or set()
 
     prev_label = "v0"
     running_dur = segment_durations[0]
     for i in range(1, len(segments)):
         if transition_style == "squooshify_v33":
-            trans_name, raw_td = get_v33_transition_spec(i)
+            trans_name, raw_td = get_v33_transition_spec(i, is_intra_unit=(i in intra_set))
             eff_td = min(raw_td, max(0.017, segment_durations[i - 1] * 0.2), max(0.017, segment_durations[i] * 0.2))
         else:
             trans_name = XFADE_CYCLE[(i - 1) % len(XFADE_CYCLE)]

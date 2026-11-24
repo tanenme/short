@@ -233,3 +233,109 @@ def apply_adaptive_proof_pacing(
         merged.append(cur)
         i += 1
     return merged
+
+
+def classify_scene_role(scene: dict, pos_idx: int, total_scenes: int, cta_window: Optional[Tuple[float, float]] = None) -> str:
+    """Classify each scene into a Squooshify pacing/speed role: hook, cta, proof, process, or payoff."""
+    if pos_idx == 0 or int(scene.get("index", 0)) == 1:
+        return "hook"
+    if scene.get("is_proof_shot"):
+        return "proof"
+    blob = f"{scene.get('visual_desc', '')} {scene.get('vo', '')} {scene.get('screen_text', '')}".lower()
+    if any(k in blob for k in ("subscribe", "like", "cta")):
+        return "cta"
+    if cta_window is not None:
+        st, en = float(scene.get("start_s", 0.0)), float(scene.get("end_s", 0.0))
+        ov = max(0.0, min(en, cta_window[1]) - max(st, cta_window[0]))
+        if ov >= 0.4 * max(0.1, en - st):
+            return "cta"
+    if pos_idx >= total_scenes - 1:
+        return "payoff"
+    if any(k in blob for k in ("kabur", "lari", "tendang", "garuk", "dorong", "menerkam", "cabut", "potong", "geser", "bergetar", "bergerak")):
+        return "process"
+    return "balanced"
+
+
+def apply_intra_unit_clip_splitting(
+    scenes: List[dict],
+    cta_window: Optional[Tuple[float, float]] = None,
+    min_unit_split_s: float = 2.30,
+    min_subclip_s: float = 0.85,
+    cut_word_offset_s: float = -0.05,
+) -> List[dict]:
+    """Squooshify v3.6 Intra-Unit Clip Splitter:
+    Splits long non-proof, non-CTA narrative units (>= 2.65s) into 2 visual sub-clips snapped to
+    VO keyword/clause boundaries (word_start - 0.05s), strictly enforcing the >= 0.85s (25f) cognitive floor.
+    Marks `unit_id`, `scene_role`, and `is_intra_unit_cut` for downstream transition & speed control.
+    """
+    clause_triggers = {
+        "tapi", "bukan", "salah", "saat", "pas", "karena", "sambil", "lihat",
+        "mulai", "langsung", "ternyata", "makanya", "sampai", "ketika", "padahal",
+    }
+    out: List[dict] = []
+    total = len(scenes)
+
+    for pos, raw_sc in enumerate(scenes):
+        sc = dict(raw_sc)
+        role = classify_scene_role(sc, pos, total, cta_window)
+        unit_id = f"U{pos + 1}"
+        sc["unit_id"] = unit_id
+        sc["scene_role"] = role
+        sc["is_intra_unit_cut"] = False
+
+        dur = float(sc.get("duration_s", float(sc["end_s"]) - float(sc["start_s"])))
+        sc_words = list(sc.get("words") or [])
+
+        # Never split proof shots (held 3.0-4.4s @ 1.0x), CTA overlays, or short units (< 2.65s)
+        if role in ("proof", "cta") or dur < min_unit_split_s or len(sc_words) < 4:
+            out.append(sc)
+            continue
+
+        st_u = float(sc["start_s"])
+        en_u = float(sc["end_s"])
+        mid_u = (st_u + en_u) / 2.0
+
+        # Pick best split word whose onset keeps BOTH halves >= min_subclip_s (25f cognitive guardrail)
+        best_wi = None
+        best_score = -999.0
+        for wi in range(1, len(sc_words) - 1):
+            w_st = float(sc_words[wi]["start"])
+            cut_t = round(w_st + cut_word_offset_s, 3)
+            left_d = cut_t - st_u
+            right_d = en_u - cut_t
+            if left_d < min_subclip_s or right_d < min_subclip_s:
+                continue
+            tok = "".join(ch for ch in (sc_words[wi].get("word") or "").lower() if ch.isalnum())
+            # Prefer clause/action keywords near the midpoint
+            dist_pen = abs(cut_t - mid_u) * 2.0
+            kw_bonus = 3.0 if tok in clause_triggers else (1.2 if len(tok) >= 6 else 0.0)
+            score = kw_bonus - dist_pen
+            if score > best_score:
+                best_score = score
+                best_wi = wi
+
+        if best_wi is None:
+            out.append(sc)
+            continue
+
+        cut_t = round(float(sc_words[best_wi]["start"]) + cut_word_offset_s, 3)
+        left_sc = dict(sc)
+        left_sc["end_s"] = cut_t
+        left_sc["duration_s"] = round(cut_t - st_u, 3)
+        left_sc["words"] = sc_words[:best_wi]
+        left_sc["vo"] = " ".join(w.get("word", "") for w in left_sc["words"]).strip() or sc.get("vo", "")
+        left_sc["sub_clip_part"] = 1
+
+        right_sc = dict(sc)
+        right_sc["start_s"] = cut_t
+        right_sc["duration_s"] = round(en_u - cut_t, 3)
+        right_sc["words"] = sc_words[best_wi:]
+        right_sc["vo"] = " ".join(w.get("word", "") for w in right_sc["words"]).strip() or sc.get("vo", "")
+        right_sc["is_intra_unit_cut"] = True
+        right_sc["sub_clip_part"] = 2
+        right_sc["split_trigger_word"] = sc_words[best_wi].get("word", "")
+
+        out.append(left_sc)
+        out.append(right_sc)
+
+    return out

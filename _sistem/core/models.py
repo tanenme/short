@@ -73,6 +73,9 @@ class VisualStyle(BaseModel):
     opening_radial_blur: bool = True
     cta_style: Literal["heart_pill", "gamified_321"] = "heart_pill"
     adaptive_proof_pacing: bool = True
+    intra_unit_split: bool = True
+    selective_speed_up: bool = True
+    max_animal_speed: float = 1.35
     vo_zero_gap: bool = True
     vo_tempo_boost: float = 1.07
     vo_silence_db: float = -32.0

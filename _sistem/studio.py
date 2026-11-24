@@ -221,7 +221,7 @@ def cmd_render(args: argparse.Namespace) -> int:
             enforce_preflight=args.strict_gate,
             cta_style_override=getattr(args, "cta_style", None),
         )
-        print(f"[+] Render MP4 v3.5 selesai: {mp4}")
+        print(f"[+] Render MP4 v3.6 selesai: {mp4}")
     return 0
 
 
@@ -516,9 +516,9 @@ def cmd_golden_moments(args: argparse.Namespace) -> int:
         force_rescan=args.force,
         use_vision=args.vision,
     )
-    print(f"\n=== GOLDEN MOMENTS v2.3 ({args.channel}/{args.episode}) [vision={args.vision}] ===")
-    print(f"{'SC':>2} {'START':>6} {'SHIFT':>6} {'MODE':<21} {'VIS':>5} {'CLIP':<24} ALASAN")
-    print("-" * 116)
+    print(f"\n=== GOLDEN MOMENTS v2.4 ({args.channel}/{args.episode}) [vision={args.vision}] ===")
+    print(f"{'SC':>2} {'START':>6} {'SHIFT':>6} {'CROPX':>5} {'MODE':<21} {'VIS':>5} {'CLIP':<24} ALASAN")
+    print("-" * 122)
     for idx in sorted(moments):
         m = moments[idx]
         vis = m.get("vision") or {}
@@ -526,11 +526,12 @@ def cmd_golden_moments(args: argparse.Namespace) -> int:
         v_sc = f"{vis.get('semantic_score', '-')}/10" if vis else "-"
         sh = float(ref.get("shift_s", 0.0))
         sh_s = f"{sh:+.2f}s" if abs(sh) >= 0.01 else " 0.00s"
-        reason = vis.get("reason", "") if vis else f"cuts={m.get('signals', {}).get('internal_cuts', 0)}"
+        cx_s = f"{float(m.get('crop_x_norm', 0.50)):.2f}"
+        reason = vis.get("reason", "") if vis else f"shots={m.get('signals', {}).get('shot_count', 1)}"
         if m.get("rescued_from"):
             reason = f"[RESCUED] {reason}"
         print(
-            f"{idx:>2} {m['start_s']:>5.2f}s {sh_s:>6} {str(m.get('mode', ''))[:20]:<21} "
+            f"{idx:>2} {m['start_s']:>5.2f}s {sh_s:>6} {cx_s:>5} {str(m.get('mode', ''))[:20]:<21} "
             f"{v_sc:>5} {str(m.get('filename', ''))[:23]:<24} {reason[:42]}"
         )
     print(f"\n[+] Disimpan ke: {ctx['assets_dir'] / 'golden_moments.json'}")

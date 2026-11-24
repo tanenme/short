@@ -14,12 +14,24 @@ for p in (str(SISTEM_DIR), str(EDITOR_DIR)):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from aligner import apply_adaptive_proof_pacing, detect_cta_window, extract_dynamic_highlights, synchronize_scenes_fuzzy
+from aligner import (
+    apply_adaptive_proof_pacing,
+    apply_intra_unit_clip_splitting,
+    detect_cta_window,
+    extract_dynamic_highlights,
+    synchronize_scenes_fuzzy,
+)
 from audio_mix import build_audio_filtergraph, compute_sfx_entries
 from core.config import get_config
-from moment_finder import pick_best_cross_clip_rescue, score_candidate_windows
+from moment_finder import (
+    compute_semantic_match_score,
+    pick_best_cross_clip_rescue,
+    score_candidate_windows,
+    select_subclip2_golden_moment,
+    split_clip_into_shots,
+)
 from subtitles import generate_ass_subtitles, hex_to_ass_bgr
-from video_fx import filter_clean_clips, get_v33_transition_spec
+from video_fx import compute_selective_speed, filter_clean_clips, get_v33_transition_spec
 from vo_tightener import build_speech_segments, parse_silencedetect_output, remap_timestamp
 
 
@@ -298,6 +310,124 @@ class TestEditorEngineV3(unittest.TestCase):
             rescued = pick_best_cross_clip_rescue(sc, "dirty_text.mp4", v_index, td, {})
             self.assertIsNotNone(rescued)
             self.assertEqual(rescued.name, "clean_kucing_dorong.mp4")
+
+    def test_v36_intra_unit_split_selective_speed_and_transitions(self) -> None:
+        # 1. Selective speed-up: proof & cta MUST stay 1.0x; process gets 1.25x (<=1.35x cap); hook gets 1.12x
+        self.assertEqual(compute_selective_speed("proof", clip_dur=10.0, target_dur=3.5), 1.0)
+        self.assertEqual(compute_selective_speed("cta", clip_dur=10.0, target_dur=2.0), 1.0)
+        self.assertEqual(compute_selective_speed("process", clip_dur=10.0, target_dur=2.0, max_animal_speed=1.35), 1.25)
+        self.assertEqual(compute_selective_speed("hook", clip_dur=10.0, target_dur=2.0), 1.12)
+
+        # 2. Intra-unit transition MUST be clean fade (0.050s), NEVER zoomin/fadewhite!
+        self.assertEqual(get_v33_transition_spec(3, is_intra_unit=True), ("fade", 0.050))
+        self.assertEqual(get_v33_transition_spec(3, is_intra_unit=False), ("zoomin", 0.085))
+
+        # 3. Intra-unit splitting splits a 3.2s process unit on VO keyword while preserving proof & CTA intact
+        scenes = [
+            {
+                "index": 1, "start_s": 0.0, "end_s": 3.2, "duration_s": 3.2,
+                "visual_desc": "Anjing menendang tanah cepat", "vo": "Banyak orang pikir tapi bukan begitu",
+                "words": [
+                    {"word": "Banyak", "start": 0.1, "end": 0.5},
+                    {"word": "orang", "start": 0.55, "end": 0.9},
+                    {"word": "pikir", "start": 0.95, "end": 1.4},
+                    {"word": "tapi", "start": 1.55, "end": 1.9},
+                    {"word": "bukan", "start": 1.95, "end": 2.4},
+                    {"word": "begitu", "start": 2.45, "end": 3.1},
+                ],
+            },
+            {
+                "index": 2, "start_s": 3.2, "end_s": 6.9, "duration_s": 3.7,
+                "is_proof_shot": True, "visual_desc": "Bukti fisik", "vo": "Ini bukti aslinya",
+                "words": [{"word": "Ini", "start": 3.3, "end": 4.0}, {"word": "bukti", "start": 4.1, "end": 5.0},
+                          {"word": "aslinya", "start": 5.1, "end": 6.0}, {"word": "jelas", "start": 6.1, "end": 6.8}],
+            },
+        ]
+        split_out = apply_intra_unit_clip_splitting(scenes, min_unit_split_s=2.65, min_subclip_s=0.85)
+        self.assertEqual(len(split_out), 3)
+        self.assertEqual(split_out[0]["unit_id"], split_out[1]["unit_id"])
+        self.assertTrue(split_out[1]["is_intra_unit_cut"])
+        self.assertEqual(split_out[1]["split_trigger_word"], "tapi")
+        self.assertGreaterEqual(split_out[0]["duration_s"], 0.85)
+        self.assertGreaterEqual(split_out[1]["duration_s"], 0.85)
+        # Proof shot stayed intact (NOT split!)
+        self.assertEqual(split_out[2]["scene_role"], "proof")
+        self.assertAlmostEqual(split_out[2]["duration_s"], 3.7, places=2)
+
+    def test_golden_moment_v24_synonym_matching_shot_splitting_and_subclip2(self) -> None:
+        # 1. Per-shot atomic segmentation
+        shots = split_clip_into_shots(12.0, [3.2, 7.8])
+        self.assertEqual(len(shots), 3)
+        self.assertAlmostEqual(shots[0]["end_s"], 3.2, places=2)
+        self.assertAlmostEqual(shots[1]["start_s"], 3.2, places=2)
+        self.assertAlmostEqual(shots[2]["start_s"], 7.8, places=2)
+
+        # 2. Bilingual synonym concept matching: zero exact word overlap ("pupil melebar" vs "mata membesar") still matches!
+        syn_sc = compute_semantic_match_score("Pupil melebar saat mengincar", "Close up mata membesar fokus")
+        unrelated_sc = compute_semantic_match_score("Pupil melebar saat mengincar", "Burung terbang di awan biru")
+        self.assertGreater(syn_sc, 25.0)
+        self.assertEqual(unrelated_sc, 0.0)
+
+        # 3. Cross-clip rescue uses per-shot synonym matching AND respects caption_zone_clean gate
+        with tempfile.TemporaryDirectory() as tmp:
+            td = Path(tmp)
+            for name in ("cluttered_caption.mp4", "synonym_shot_match.mp4"):
+                (td / name).write_bytes(b"0")
+            v_index = {
+                "cluttered_caption.mp4": {
+                    "tags": ["pupil", "melebar"],
+                    "summary": "pupil melebar",
+                    "has_burned_text": False,
+                    "caption_zone_clean": False,
+                    "cleanliness": 9,
+                },
+                "synonym_shot_match.mp4": {
+                    "tags": ["hewan"],
+                    "summary": "klip kompilasi",
+                    "has_burned_text": False,
+                    "caption_zone_clean": True,
+                    "cleanliness": 9,
+                    "shots": [
+                        {"shot_id": 1, "start_s": 0.0, "end_s": 3.0, "summary": "tidur santai", "tags": ["tidur"]},
+                        {"shot_id": 2, "start_s": 3.0, "end_s": 7.0, "summary": "mata kucing membesar fokus", "tags": ["mata", "fokus"]},
+                    ],
+                },
+            }
+            sc = {"index": 4, "visual_desc": "Pupil melebar tajam", "vo": "Pupilnya langsung melebar"}
+            rescued = pick_best_cross_clip_rescue(sc, "orig.mp4", v_index, td, {})
+            self.assertIsNotNone(rescued)
+            self.assertEqual(rescued.name, "synonym_shot_match.mp4")
+
+        # 4. Script-aware Intra-Unit Sub-Clip #2 picks the high-motion non-overlapping candidate when VO shifts to action
+        parent_gm = {
+            "start_s": 1.0,
+            "crop_x_norm": 0.62,
+            "signals": {
+                "clip_dur_s": 10.0,
+                "top_candidates": [
+                    {"start_s": 1.0, "end_s": 2.5, "score": 78.0, "motion": 40.0, "sharpness": 80.0, "exposure": 90.0},
+                    {"start_s": 3.5, "end_s": 5.0, "score": 74.0, "motion": 30.0, "sharpness": 85.0, "exposure": 90.0},
+                    {"start_s": 6.5, "end_s": 8.0, "score": 72.0, "motion": 95.0, "sharpness": 78.0, "exposure": 90.0},
+                ],
+            },
+        }
+        sub2_sc = {
+            "index": 2,
+            "duration_s": 1.4,
+            "vo": "tapi langsung kabur lari cepat",
+            "split_trigger_word": "tapi",
+            "visual_desc": "Cicak kabur",
+        }
+        sub2_res = select_subclip2_golden_moment(
+            subclip2_scene=sub2_sc,
+            parent_gm=parent_gm,
+            assets_dir=Path("."),
+            default_clip_path=Path("gecko.mp4"),
+            clips=[Path("gecko.mp4")],
+        )
+        self.assertEqual(sub2_res["start_s"], 6.5)
+        self.assertEqual(sub2_res["crop_x_norm"], 0.62)
+        self.assertEqual(sub2_res["mode"], "v24_subclip2_action")
 
 
 if __name__ == "__main__":

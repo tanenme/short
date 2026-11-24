@@ -35,6 +35,8 @@ for p in (str(SISTEM_DIR), str(ENGINE_DIR)):
 
 from aligner import (
     apply_adaptive_proof_pacing,
+    apply_intra_unit_clip_splitting,
+    classify_scene_role,
     detect_cta_window,
     extract_dynamic_highlights,
     strip_audio_tags,
@@ -50,7 +52,7 @@ from audio_mix import (
 from core.config import get_config, load_config
 from core.models import ChannelProfile
 from core.validator import extract_vo_section
-from moment_finder import compute_scene_golden_moments
+from moment_finder import compute_scene_golden_moments, select_subclip2_golden_moment
 from subtitles import generate_ass_subtitles
 from vo_tightener import tighten_vo_and_alignment
 from video_fx import (
@@ -763,18 +765,29 @@ def render_ffmpeg_direct(
             scenes = synchronize_scenes_fuzzy(scenes, words, vo_duration)
             cta_window = detect_cta_window(scenes, words)
 
-    # 1. Locate Golden Moments + apply Squooshify Adaptive Proof Shot Pacing (holds uninterrupted proof shots 3.0-4.4s)
-    _prog(22, "Memindai Golden Moments & menerapkan Adaptive Proof Shot Pacing...")
+    # 1. Locate Golden Moments + Adaptive Proof Shot Pacing + v3.6 Intra-Unit VO-Keyword Clip Splitting
+    _prog(22, "Memindai Golden Moments, Proof Pacing & Intra-Unit Splitting...")
     golden_moments = compute_scene_golden_moments(assets_dir, scenes, clip_mapping, CFG)
     if getattr(profile.visual, "adaptive_proof_pacing", True):
         scenes = apply_adaptive_proof_pacing(scenes, golden_moments, clip_mapping, max_proof_s=4.4)
+    # Drop any 0-duration ghost tail scene produced after acoustic tightening
+    scenes = [sc for sc in scenes if (float(sc["end_s"]) - float(sc["start_s"])) >= 0.20]
+    if getattr(profile.visual, "intra_unit_split", True):
+        scenes = apply_intra_unit_clip_splitting(scenes, cta_window=cta_window)
+    else:
+        for pos, sc in enumerate(scenes):
+            sc.setdefault("unit_id", f"U{pos + 1}")
+            sc.setdefault("scene_role", classify_scene_role(sc, pos, len(scenes), cta_window))
+            sc.setdefault("is_intra_unit_cut", False)
+
     if cta_style_override in ("heart_pill", "gamified_321"):
         profile = profile.model_copy(
             update={"visual": profile.visual.model_copy(update={"cta_style": cta_style_override})}
         )
 
-    # Render each scene with anti-reused transforms & dynamic zoom-punch at its exact Golden Moment
+    # Render each visual clip with role-based selective speed-up & anti-repeat sub-clip selection
     t_style = getattr(profile.visual, "transition_style", "squooshify_v33")
+    intra_unit_cut_indices = {idx for idx, sc in enumerate(scenes) if sc.get("is_intra_unit_cut")}
     processed_segments: List[Path] = []
     segment_durations: List[float] = []
     usage_counts: Dict[str, int] = {}
@@ -782,18 +795,44 @@ def render_ffmpeg_direct(
     hook_clip_path: Optional[Path] = None
     hook_clip_has_audio = False
     hook_audio_start_s = 0.0
+    visual_index_map: Dict[str, dict] = {}
+    v_idx_path = assets_dir / "_clip_visual_index.json"
+    if v_idx_path.exists():
+        try:
+            visual_index_map = json.loads(v_idx_path.read_text(encoding="utf-8")) or {}
+        except Exception:
+            visual_index_map = {}
 
     for i, sc in enumerate(scenes):
         gm = golden_moments.get(sc["index"])
         clip_path = (assets_dir / gm["filename"]) if (gm and (assets_dir / gm["filename"]).exists()) else clip_mapping.get(sc["index"], clips[i % len(clips)])
         forced_st = gm.get("start_s") if gm else None
+        crop_x_norm = float(gm.get("crop_x_norm", 0.50)) if gm else 0.50
+        gm_mode = str(gm.get("mode", "default")) if gm else "default"
+
+        # v2.4 Script-Aware Intra-Unit 2nd Sub-Clip selector (matches sub-clip #2's VO text & intent)
+        if sc.get("is_intra_unit_cut"):
+            sub2_info = select_subclip2_golden_moment(
+                subclip2_scene=sc,
+                parent_gm=gm,
+                assets_dir=assets_dir,
+                default_clip_path=clip_path,
+                clips=clips,
+                visual_index=visual_index_map,
+                used_counts=usage_counts,
+            )
+            clip_path = sub2_info["clip_path"]
+            forced_st = sub2_info["start_s"]
+            crop_x_norm = float(sub2_info.get("crop_x_norm", crop_x_norm))
+            gm_mode = str(sub2_info.get("mode", gm_mode))
+
         u_idx = usage_counts.get(clip_path.name, 0)
         usage_counts[clip_path.name] = u_idx + 1
 
-        # Exact overlap compensation per cut so total duration stays millisecond-locked to VO
+        # Exact overlap compensation per cut (separating intra-unit hard cuts from inter-unit transitions!)
         if enable_transitions and i < len(scenes) - 1:
             if t_style == "squooshify_v33":
-                _, cut_pad = get_v33_transition_spec(i + 1)
+                _, cut_pad = get_v33_transition_spec(i + 1, is_intra_unit=((i + 1) in intra_unit_cut_indices))
             elif t_style == "hard_cut":
                 cut_pad = 0.0
             else:
@@ -803,29 +842,37 @@ def render_ffmpeg_direct(
         seg_dur = float(sc["duration_s"]) + cut_pad
         c_status = str(clean_meta.get(clip_path.name, {}).get("status", "BERSIH")).upper()
         allow_flip = (c_status == "BERSIH") and bool(gm.get("allow_flip", True) if gm else True)
+        sc_role = str(sc.get("scene_role", "balanced"))
 
         seg_out = temp_dir / f"seg_{i:02d}.mp4"
-        _prog(26 + int((i / max(1, len(scenes))) * 42), f"Merender adegan {i + 1}/{len(scenes)} ({clip_path.name[:24]})...")
+        _prog(26 + int((i / max(1, len(scenes))) * 42), f"Merender klip {i + 1}/{len(scenes)} [{sc_role}] ({clip_path.name[:20]})...")
         seg_info = render_cinematic_segment(
             clip_path=clip_path,
             seg_out=seg_out,
             target_dur=seg_dur,
-            scene_idx=sc["index"],
+            scene_idx=sc["index"] if not sc.get("is_intra_unit_cut") else (sc["index"] + 100),
             profile=profile,
             cfg=CFG,
             allow_flip=allow_flip,
             usage_offset=u_idx,
             forced_start_s=forced_st,
+            scene_role=sc_role,
+            crop_x_norm=crop_x_norm,
         )
         processed_segments.append(seg_out)
         segment_durations.append(seg_dur)
         scene_render_log.append(
             {
                 "scene_index": sc["index"],
+                "unit_id": sc.get("unit_id", f"U{i + 1}"),
+                "scene_role": sc_role,
+                "is_intra_unit_cut": bool(sc.get("is_intra_unit_cut", False)),
+                "split_trigger_word": sc.get("split_trigger_word", ""),
                 "start_s": sc["start_s"],
                 "end_s": sc["end_s"],
+                "dur_f30": int(round((float(sc["end_s"]) - float(sc["start_s"])) * 30)),
                 "clip": clip_path.name,
-                "golden_moment_mode": gm.get("mode") if gm else "default",
+                "golden_moment_mode": gm_mode,
                 **seg_info,
             }
         )
@@ -834,8 +881,8 @@ def render_ffmpeg_direct(
             hook_clip_has_audio = bool(seg_info.get("has_audio", False))
             hook_audio_start_s = float(seg_info.get("start_trim", 0.0))
 
-    # 2. Join segments with v3.3 forensic transitions (5f zoom-blur on act change + 3f exposure flash + hard cuts)
-    _prog(74, "Menggabungkan transisi v3.3 (zoom-blur & exposure flash)...")
+    # 2. Join segments separating Intra-Unit hard cuts from Inter-Unit zoom/flash transitions
+    _prog(74, "Menggabungkan transisi v3.6 (intra-unit hard cut + inter-unit zoom/flash)...")
     joined_video = temp_dir / "joined_video.mp4"
     if enable_transitions and len(processed_segments) > 1 and t_style != "hard_cut":
         concat_with_transitions(
@@ -846,6 +893,7 @@ def render_ffmpeg_direct(
             trans_dur=0.12,
             fps=profile.visual.fps,
             transition_style=t_style,
+            intra_unit_cut_indices=intra_unit_cut_indices,
         )
     else:
         concat_list = temp_dir / "concat_list.txt"
@@ -1029,8 +1077,25 @@ def render_ffmpeg_direct(
             print(f"[WARN] QC contact sheet gagal dibuat: {e}")
 
     final_info = probe_media_info(out_p, CFG)
+
+    # Compute Bagian-4 Empirical Pacing & Sync Validation Metrics
+    unit_ids = {s.get("unit_id") for s in scene_render_log}
+    valid_clips = [s for s in scene_render_log if s.get("dur_f30", 0) > 0]
+    avg_f30 = round(sum(s["dur_f30"] for s in valid_clips) / max(1, len(valid_clips)), 1)
+    proof_f30 = [s["dur_f30"] for s in valid_clips if s.get("scene_role") == "proof"]
+    cut_starts = [float(s["start_s"]) for s in valid_clips[1:]]
+    aligned_cuts = sum(
+        1 for ct in cut_starts
+        if words and min(abs(ct - float(w["start"])) for w in words) <= 0.13
+    )
+    pct_vo_aligned = round((aligned_cuts / max(1, len(cut_starts))) * 100.0, 1) if cut_starts else 100.0
+    speed_dist = {
+        "normal_1_0x": sum(1 for s in valid_clips if float(s.get("speed", 1.0)) <= 1.01),
+        "micro_speed_up": sum(1 for s in valid_clips if float(s.get("speed", 1.0)) > 1.01),
+    }
+
     report = {
-        "engine_version": "3.5.0",
+        "engine_version": "3.6.0",
         "channel_id": profile.channel_id,
         "package_name": package_name,
         "output_file": str(out_p),
@@ -1043,6 +1108,18 @@ def render_ffmpeg_direct(
         "cta_style": active_cta_style,
         "opening_radial_blur": bool(getattr(profile.visual, "opening_radial_blur", True)),
         "adaptive_proof_pacing": bool(getattr(profile.visual, "adaptive_proof_pacing", True)),
+        "intra_unit_split": bool(getattr(profile.visual, "intra_unit_split", True)),
+        "selective_speed_up": bool(getattr(profile.visual, "selective_speed_up", True)),
+        "pacing_metrics": {
+            "narrative_units": len(unit_ids),
+            "total_visual_clips": len(valid_clips),
+            "avg_clips_per_unit": round(len(valid_clips) / max(1, len(unit_ids)), 2),
+            "intra_unit_cuts_count": sum(1 for s in valid_clips if s.get("is_intra_unit_cut")),
+            "avg_clip_frames_30fps": avg_f30,
+            "proof_shot_frames_30fps": proof_f30,
+            "pct_cuts_aligned_to_vo_keyword": pct_vo_aligned,
+            "speed_distribution": speed_dist,
+        },
         "cta_overlay_used": cta_overlay_path.name if cta_overlay_path else None,
         "hook_audio_used": hook_audio_idx is not None,
         "bgm_used": bgm_file.name if bgm_file else None,
