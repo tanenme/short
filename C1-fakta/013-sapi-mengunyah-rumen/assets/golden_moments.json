@@ -1,0 +1,476 @@
+[
+  {
+    "scene_index": 1,
+    "filename": "youtube_video-clip_16469_ready.mp4",
+    "start_s": 0.0,
+    "crop_x_norm": 0.5,
+    "mode": "v24_signal_balanced",
+    "metric_score": 80.76,
+    "use_clip_audio": false,
+    "allow_flip": true,
+    "signals": {
+      "clip_dur_s": 4.4,
+      "internal_cuts": 0,
+      "shot_count": 1,
+      "top_candidates": [
+        {
+          "start_s": 0.67,
+          "end_s": 3.58,
+          "score": 80.76,
+          "motion": 93.3,
+          "sharpness": 53.6,
+          "exposure": 93.8,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        }
+      ]
+    },
+    "refinement": {
+      "refined": true,
+      "coarse_start_s": 0.67,
+      "shift_s": -0.67,
+      "lead_s": 1.0,
+      "method": "sharpness_lock_4fps"
+    }
+  },
+  {
+    "scene_index": 2,
+    "filename": "baker-county-agric_cow-chewing-cud-youtube_16445.mp4",
+    "start_s": 0.0,
+    "crop_x_norm": 0.5,
+    "mode": "v24_signal_balanced",
+    "metric_score": 74.4,
+    "use_clip_audio": false,
+    "allow_flip": true,
+    "signals": {
+      "clip_dur_s": 6.571,
+      "internal_cuts": 0,
+      "shot_count": 1,
+      "top_candidates": [
+        {
+          "start_s": 0.67,
+          "end_s": 3.38,
+          "score": 74.4,
+          "motion": 83.3,
+          "sharpness": 45.1,
+          "exposure": 94.4,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        },
+        {
+          "start_s": 2.67,
+          "end_s": 5.38,
+          "score": 70.67,
+          "motion": 75.6,
+          "sharpness": 42.5,
+          "exposure": 94.4,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        }
+      ]
+    },
+    "refinement": {
+      "refined": true,
+      "coarse_start_s": 0.67,
+      "shift_s": -0.67,
+      "lead_s": 0.18,
+      "method": "sharpness_lock_4fps"
+    }
+  },
+  {
+    "scene_index": 3,
+    "filename": "mud-run-meadow_highland-cow-chewing-cud-hig_16459_ready.mp4",
+    "start_s": 2.1,
+    "crop_x_norm": 0.54,
+    "mode": "v24_signal_calm",
+    "metric_score": 61.14,
+    "use_clip_audio": false,
+    "allow_flip": true,
+    "signals": {
+      "clip_dur_s": 4.4,
+      "internal_cuts": 0,
+      "shot_count": 1,
+      "top_candidates": [
+        {
+          "start_s": 2.0,
+          "end_s": 4.01,
+          "score": 61.14,
+          "motion": 19.6,
+          "sharpness": 58.5,
+          "exposure": 96.0,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        },
+        {
+          "start_s": 0.0,
+          "end_s": 2.01,
+          "score": 55.25,
+          "motion": 26.3,
+          "sharpness": 54.7,
+          "exposure": 96.0,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        }
+      ]
+    },
+    "refinement": {
+      "refined": true,
+      "coarse_start_s": 2.0,
+      "shift_s": 0.1,
+      "lead_s": 0.18,
+      "method": "sharpness_lock_4fps"
+    }
+  },
+  {
+    "scene_index": 4,
+    "filename": "youtube_video-clip_16669_ready.mp4",
+    "start_s": 0.0,
+    "crop_x_norm": 0.5,
+    "mode": "v24_signal_balanced",
+    "metric_score": 71.15,
+    "use_clip_audio": false,
+    "allow_flip": true,
+    "signals": {
+      "clip_dur_s": 4.404,
+      "internal_cuts": 0,
+      "shot_count": 1,
+      "top_candidates": [
+        {
+          "start_s": 0.67,
+          "end_s": 2.38,
+          "score": 71.15,
+          "motion": 80.0,
+          "sharpness": 39.0,
+          "exposure": 94.2,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        },
+        {
+          "start_s": 2.0,
+          "end_s": 3.71,
+          "score": 67.73,
+          "motion": 80.0,
+          "sharpness": 28.2,
+          "exposure": 94.3,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        }
+      ]
+    },
+    "refinement": {
+      "refined": true,
+      "coarse_start_s": 0.67,
+      "shift_s": -0.67,
+      "lead_s": 0.18,
+      "method": "sharpness_lock_4fps"
+    }
+  },
+  {
+    "scene_index": 5,
+    "filename": "youtube_video-clip_16707_ready.mp4",
+    "start_s": 2.6,
+    "crop_x_norm": 0.47,
+    "mode": "v24_signal_balanced",
+    "metric_score": 72.89,
+    "use_clip_audio": false,
+    "allow_flip": true,
+    "signals": {
+      "clip_dur_s": 4.36,
+      "internal_cuts": 0,
+      "shot_count": 1,
+      "top_candidates": [
+        {
+          "start_s": 2.0,
+          "end_s": 3.5,
+          "score": 72.89,
+          "motion": 60.6,
+          "sharpness": 64.8,
+          "exposure": 97.0,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        },
+        {
+          "start_s": 0.67,
+          "end_s": 2.17,
+          "score": 70.28,
+          "motion": 54.5,
+          "sharpness": 64.0,
+          "exposure": 97.0,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        }
+      ]
+    },
+    "refinement": {
+      "refined": true,
+      "coarse_start_s": 2.0,
+      "shift_s": 0.6,
+      "lead_s": 0.18,
+      "method": "sharpness_lock_4fps"
+    }
+  },
+  {
+    "scene_index": 6,
+    "filename": "youtube_video-clip_16724_ready.mp4",
+    "start_s": 1.93,
+    "crop_x_norm": 0.55,
+    "mode": "v24_signal_balanced",
+    "metric_score": 87.87,
+    "use_clip_audio": false,
+    "allow_flip": true,
+    "signals": {
+      "clip_dur_s": 4.404,
+      "internal_cuts": 0,
+      "shot_count": 1,
+      "top_candidates": [
+        {
+          "start_s": 1.33,
+          "end_s": 3.44,
+          "score": 87.87,
+          "motion": 100.0,
+          "sharpness": 65.9,
+          "exposure": 96.0,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        }
+      ]
+    },
+    "refinement": {
+      "refined": true,
+      "coarse_start_s": 1.33,
+      "shift_s": 0.6,
+      "lead_s": 0.18,
+      "method": "sharpness_lock_4fps"
+    }
+  },
+  {
+    "scene_index": 7,
+    "filename": "youtube_video-clip_16669_ready.mp4",
+    "start_s": 2.6,
+    "crop_x_norm": 0.49,
+    "mode": "v24_signal_balanced",
+    "metric_score": 67.73,
+    "use_clip_audio": false,
+    "allow_flip": true,
+    "signals": {
+      "clip_dur_s": 4.404,
+      "internal_cuts": 0,
+      "shot_count": 1,
+      "top_candidates": [
+        {
+          "start_s": 2.0,
+          "end_s": 3.67,
+          "score": 67.73,
+          "motion": 80.0,
+          "sharpness": 28.2,
+          "exposure": 94.3,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        },
+        {
+          "start_s": 0.67,
+          "end_s": 2.33,
+          "score": 16.15,
+          "motion": 80.0,
+          "sharpness": 39.0,
+          "exposure": 94.2,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": true,
+          "frame0_clean": true,
+          "seam_clean": true
+        }
+      ]
+    },
+    "refinement": {
+      "refined": true,
+      "coarse_start_s": 2.0,
+      "shift_s": 0.6,
+      "lead_s": 0.27,
+      "method": "sharpness_lock_4fps"
+    }
+  },
+  {
+    "scene_index": 8,
+    "filename": "youtube_video-clip_16694_ready.mp4",
+    "start_s": 1.35,
+    "crop_x_norm": 0.49,
+    "mode": "v24_signal_balanced",
+    "metric_score": 86.29,
+    "use_clip_audio": false,
+    "allow_flip": true,
+    "signals": {
+      "clip_dur_s": 4.371,
+      "internal_cuts": 0,
+      "shot_count": 1,
+      "top_candidates": [
+        {
+          "start_s": 2.0,
+          "end_s": 3.74,
+          "score": 86.29,
+          "motion": 100.0,
+          "sharpness": 63.0,
+          "exposure": 93.8,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        },
+        {
+          "start_s": 0.67,
+          "end_s": 2.41,
+          "score": 85.87,
+          "motion": 100.0,
+          "sharpness": 61.7,
+          "exposure": 93.8,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        }
+      ]
+    },
+    "refinement": {
+      "refined": true,
+      "coarse_start_s": 2.0,
+      "shift_s": -0.65,
+      "lead_s": 0.18,
+      "method": "sharpness_lock_4fps"
+    }
+  },
+  {
+    "scene_index": 9,
+    "filename": "youtube_video-clip_16450_ready.mp4",
+    "start_s": 0.0,
+    "crop_x_norm": 0.5,
+    "mode": "v24_signal_balanced",
+    "metric_score": 84.7,
+    "use_clip_audio": false,
+    "allow_flip": true,
+    "signals": {
+      "clip_dur_s": 4.467,
+      "internal_cuts": 0,
+      "shot_count": 1,
+      "top_candidates": [
+        {
+          "start_s": 0.67,
+          "end_s": 2.17,
+          "score": 84.7,
+          "motion": 100.0,
+          "sharpness": 57.9,
+          "exposure": 93.9,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        },
+        {
+          "start_s": 2.0,
+          "end_s": 3.5,
+          "score": 83.99,
+          "motion": 100.0,
+          "sharpness": 55.7,
+          "exposure": 93.9,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        }
+      ]
+    },
+    "refinement": {
+      "refined": true,
+      "coarse_start_s": 0.67,
+      "shift_s": -0.67,
+      "lead_s": 0.18,
+      "method": "sharpness_lock_4fps"
+    }
+  },
+  {
+    "scene_index": 10,
+    "filename": "ang-gru_cows-eating-grass-angus-herf_16737_ready.mp4",
+    "start_s": 0.0,
+    "crop_x_norm": 0.5,
+    "mode": "v24_signal_calm",
+    "metric_score": 64.1,
+    "use_clip_audio": false,
+    "allow_flip": true,
+    "signals": {
+      "clip_dur_s": 4.4,
+      "internal_cuts": 0,
+      "shot_count": 1,
+      "top_candidates": [
+        {
+          "start_s": 0.0,
+          "end_s": 1.5,
+          "score": 64.1,
+          "motion": 51.9,
+          "sharpness": 61.1,
+          "exposure": 95.3,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        },
+        {
+          "start_s": 2.0,
+          "end_s": 3.5,
+          "score": 60.76,
+          "motion": 10.0,
+          "sharpness": 63.8,
+          "exposure": 95.4,
+          "semantic_bonus": 0.0,
+          "crosses_cut": false,
+          "overlaps_claimed": false,
+          "frame0_clean": true,
+          "seam_clean": true
+        }
+      ]
+    },
+    "refinement": {
+      "refined": false,
+      "coarse_start_s": 0.0,
+      "shift_s": 0.0,
+      "lead_s": 0.18,
+      "method": "sharpness_lock_4fps"
+    }
+  }
+]

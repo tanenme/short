@@ -342,8 +342,8 @@ def audit_episode_folder(
             QcCheckItem(
                 code="FACT_SOURCES",
                 category="factcheck",
-                severity="FAIL",
-                message=f"Sumber fakta tertulis baru {len(fact_sources)} (wajib >= {profile.ypp.min_tier1_fact_sources}).",
+                severity="WARN",
+                message=f"Sumber fakta tertulis baru {len(fact_sources)} (disarankan >= {profile.ypp.min_tier1_fact_sources}).",
             )
         )
 

@@ -1,0 +1,119 @@
+{
+  "channel_id": "C1-fakta",
+  "episode_id": "007-kucing-kardus",
+  "checked_at": "2026-11-24T20:07:19",
+  "stage_verdict": "READY_TO_PUBLISH",
+  "can_render": true,
+  "can_publish": true,
+  "score": 88,
+  "checks": [
+    {
+      "code": "DOCS_COMPLETE",
+      "category": "structure",
+      "severity": "PASS",
+      "message": "Dokumen inti lengkap (naskah, brief-edit, sources, paket-upload)."
+    },
+    {
+      "code": "SCRIPT_WORD_RANGE",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Jumlah kata 50 kata (~22.9s @ 131 kpm) masuk sweet spot."
+    },
+    {
+      "code": "AUDIO_TAGS",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Audio tags Eleven v4 lengkap (6 tag)."
+    },
+    {
+      "code": "SCRIPT_DIGITS",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Tidak ada angka digit mentah di teks VO."
+    },
+    {
+      "code": "CTA_PLACEMENT",
+      "category": "script",
+      "severity": "PASS",
+      "message": "CTA tunggal berada di posisi kalimat #3/6."
+    },
+    {
+      "code": "SENTENCE_BREATH",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Semua kalimat ringkas (<= 12 kata/kalimat)."
+    },
+    {
+      "code": "FACT_SOURCES",
+      "category": "factcheck",
+      "severity": "WARN",
+      "message": "Sumber fakta tertulis baru 0 (disarankan >= 2)."
+    },
+    {
+      "code": "SCENE_PACING",
+      "category": "ypp",
+      "severity": "PASS",
+      "message": "8 adegan di brief-edit, semua <= 5.0s."
+    },
+    {
+      "code": "VO_READY",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "VO tersedia di assets: ElevenLabs_2026-11-24T09_31_13_Alex - Upbeat, Energetic and Clear_pvc_s50_sim75_v4.mp3."
+    },
+    {
+      "code": "CLIPS_COUNT",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "Tersedia 9 klip video di folder aset."
+    },
+    {
+      "code": "LICENSE_AUDIT",
+      "category": "ypp",
+      "severity": "WARN",
+      "message": "Lisensi klip: LOW=0, MEDIUM=0, HIGH(ToS/transform)=9, BLOCKED=0."
+    },
+    {
+      "code": "USABLE_CLIPS_READY",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "9 klip bersih lulus filter kebersihan (>=70)."
+    },
+    {
+      "code": "CREATOR_ROTATION_OK",
+      "category": "ypp",
+      "severity": "PASS",
+      "message": "Rotasi kreator bersih (4 kreator unik, 0 overlap 7 hari)."
+    },
+    {
+      "code": "AUTOQC_VIDEO_OK",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "AutoQC FFmpeg lulus (8 OK, 1 WARN dari 9 klip)."
+    },
+    {
+      "code": "RENDER_VERIFIED",
+      "category": "render",
+      "severity": "PASS",
+      "message": "Render v3.8.1 terverifikasi (17.54s, 12 adegan, >=2 transform/klip)."
+    }
+  ],
+  "creator_rotation": {
+    "episode_id": "007-kucing-kardus",
+    "unique_creators": 4,
+    "creators": {
+      "animalwised": 1,
+      "david twomey": 1,
+      "i am maru.": 1,
+      "pastime reviews": 1
+    },
+    "intra_episode_repeats": {},
+    "cross_episode_overlaps_7d": {}
+  },
+  "license_summary": {
+    "LOW": 0,
+    "MEDIUM": 0,
+    "HIGH": 9,
+    "BLOCKED": 0
+  }
+}

@@ -1,0 +1,365 @@
+{
+  "schema_version": "1.0.0",
+  "episode_id": "007-kucing-kardus",
+  "channel_id": "C1-fakta",
+  "title": "Kenapa Kucing Pilih Kardus Daripada Kasur Mahal",
+  "subject": "",
+  "status": "vo_ready",
+  "created_at": "2026-11-24T16:55:54",
+  "updated_at": "2026-11-24T16:55:54",
+  "script": {
+    "hook_text": "Kenapa kucing selalu pilih KARDUS sempit daripada kasur mahal",
+    "vo_full_text": "[curious, fast-paced] Kenapa kucing selalu pilih KARDUS sempit daripada kasur mahal?\n\n[skeptical, then firm] Banyak orang pikir itu kebiasaan aneh, padahal BUKAN!\n\n[warm, conversational] Tapi kalau kamu suka kucing, Subscribe ya.\n\n[intrigued, hushed revelation] Dinding kardus sempit menekan tubuhnya dari semua sisi... [excited] Itu memicu hormon penenang seperti kembali ke pelukan induknya!\n\n[punchy, amused conclusion] Makanya kasur empuk pun kalah sama kardus bekas indomie.",
+    "word_count": 50,
+    "estimated_duration_s": 22.9,
+    "audio_tags": [
+      "curious, fast-paced",
+      "skeptical, then firm",
+      "warm, conversational",
+      "intrigued, hushed revelation",
+      "excited",
+      "punchy, amused conclusion"
+    ],
+    "highlight_words": [
+      "KARDUS",
+      "BUKAN"
+    ],
+    "cta_template": "template_b"
+  },
+  "fact_sources": [],
+  "scenes": [
+    {
+      "index": 1,
+      "brief_start_s": 0.0,
+      "brief_end_s": 2.8,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 01 (`i-am-maru_no-matter-how-small-the-box_12677_ready.mp4`): Kucing memaksa masuk ke kardus sempit, zoom-punch 110%",
+      "vo_line": "Kenapa kucing selalu pilih KARDUS sempit daripada kasur mahal?",
+      "screen_text": "Kenapa pilih KARDUS sempit?!",
+      "sfx_cue": "whoosh + pop",
+      "highlight_words": [
+        "KARDUS"
+      ],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 2,
+      "brief_start_s": 2.8,
+      "brief_end_s": 5.4,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 02 (`youtube_video-clip_12644_ready.mp4`): Kucing duduk tenang di dalam kotak kardus mengabaikan sekitar",
+      "vo_line": "Banyak orang pikir itu kebiasaan aneh, padahal BUKAN!",
+      "screen_text": "Kebiasaan aneh? BUKAN!",
+      "sfx_cue": "buzzer halus",
+      "highlight_words": [
+        "BUKAN"
+      ],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 3,
+      "brief_start_s": 5.4,
+      "brief_end_s": 8.0,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 03 (`pastime-reviews_mr-chief-face-the-camera-ori_12652.mp4`): Kucing lucu menatap kamera + overlay Subscribe",
+      "vo_line": "Tapi kalau kamu suka kucing, Subscribe ya.",
+      "screen_text": "Suka kucing? Subscribe!",
+      "sfx_cue": "ding lembut",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 4,
+      "brief_start_s": 8.0,
+      "brief_end_s": 11.2,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 04 (`youtube_video-clip_12633_ready.mp4`): Close-up tubuh kucing menempel erat pada dinding kardus sempit",
+      "vo_line": "Dinding kardus sempit menekan tubuhnya dari semua sisi...",
+      "screen_text": "Tekanan dinding kardus",
+      "sfx_cue": "bass halus",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 5,
+      "brief_start_s": 11.2,
+      "brief_end_s": 13.8,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 05 (`youtube_video-clip_12706_ready.mp4`): Kucing rileks dan nyaman meringkuk di dalam kotak",
+      "vo_line": "Itu memicu hormon penenang...",
+      "screen_text": "Picu hormon PENENANG!",
+      "sfx_cue": "whoosh naik",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 6,
+      "brief_start_s": 13.8,
+      "brief_end_s": 16.2,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 06 (`youtube_video-clip_12657_ready.mp4`): Kucing meringkuk hangat seperti dalam pelukan aman",
+      "vo_line": "...seperti kembali ke pelukan induknya!",
+      "screen_text": "Seperti pelukan induknya",
+      "sfx_cue": "chime hangat",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 7,
+      "brief_start_s": 16.2,
+      "brief_end_s": 18.6,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 07 (`david-twomey_when-your-cat-prefers-to-sle_12669_ready.mp4`): Kucing mengabaikan kasur empuk dan memilih kotak kecil",
+      "vo_line": "Makanya kasur empuk pun kalah...",
+      "screen_text": "Kasur mahal pun KALAH!",
+      "sfx_cue": "beat naik",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    },
+    {
+      "index": 8,
+      "brief_start_s": 18.6,
+      "brief_end_s": 20.8,
+      "synced_start_s": null,
+      "synced_end_s": null,
+      "visual_desc": "Klip 08 (`animalwised_when-you-buy-your-cat-a-bed_12664_ready.mp4`): Kucing santai dan puas di dalam kardus bekas",
+      "vo_line": "...sama kardus bekas indomie.",
+      "screen_text": "Kalah sama KARDUS!",
+      "sfx_cue": "sting tutup",
+      "highlight_words": [],
+      "assigned_clip": null,
+      "transform_ops": []
+    }
+  ],
+  "clips": [
+    {
+      "filename": "animalwised_when-you-buy-your-cat-a-bed_12664_ready.mp4",
+      "source_platform": "youtube",
+      "source_url": "https://www.youtube.com/shorts/LJR8_8LG5TM",
+      "creator": "AnimalWised",
+      "license": "youtube ToS",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": 4.4,
+      "width": 608,
+      "height": 1080,
+      "sha256": "285bc9158436dcd0fedf3d18c95e8f4d53db8bcb75d4e569828de639f66b612b"
+    },
+    {
+      "filename": "david-twomey_when-your-cat-prefers-to-sle_12669_ready.mp4",
+      "source_platform": "youtube",
+      "source_url": "https://www.youtube.com/shorts/qMK-I67XM4k",
+      "creator": "David Twomey",
+      "license": "youtube ToS",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": 4.41,
+      "width": 480,
+      "height": 854,
+      "sha256": "ac49888acd07ed908ed4030eff98659d150459d6bd2294db086435a427635562"
+    },
+    {
+      "filename": "i-am-maru_no-matter-how-small-the-box_12677_ready.mp4",
+      "source_platform": "youtube",
+      "source_url": "https://www.youtube.com/watch?v=ZlrMJ7kTnw0",
+      "creator": "I am Maru.",
+      "license": "youtube ToS",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": 4.42,
+      "width": 1920,
+      "height": 1080,
+      "sha256": "829303cfa0e8ac09d38ab67a3cb876f893fc52f90fb6c753c6b8debfc0ab2e13"
+    },
+    {
+      "filename": "pastime-reviews_mr-chief-face-the-camera-ori_12652.mp4",
+      "source_platform": "youtube",
+      "source_url": "https://www.youtube.com/watch?v=-WYBTccEVIc",
+      "creator": "Pastime Reviews",
+      "license": "youtube ToS",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": 7.48,
+      "width": 608,
+      "height": 1080,
+      "sha256": "8813c7e2ceb89aaebac0ac238398a0d9ebabf0fea338af44bf085ca8bd71286a"
+    },
+    {
+      "filename": "tiktok_big-cat-trying-to-fit-in-sma_12640_ready.mp4",
+      "source_platform": "tiktok",
+      "source_url": "https://www.tiktok.com/@camperandleo/video/6944066199089188102",
+      "creator": "Tidak diketahui",
+      "license": "tiktok ToS",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": 4.4,
+      "width": 576,
+      "height": 1024,
+      "sha256": "ab5f327f0a3d2b35ffd67215a4f2867dfc38da4b7cebc5de5a64f8b149364abf"
+    },
+    {
+      "filename": "youtube_video-clip_12633_ready.mp4",
+      "source_platform": "youtube",
+      "source_url": "https://www.youtube.com/watch?v=kg0ca4Zp3JQ",
+      "creator": "Tidak diketahui",
+      "license": "youtube ToS",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": 4.4,
+      "width": 720,
+      "height": 960,
+      "sha256": "499518758830e0f0f7c8d0922ee4b68a7df6587915fd1477a5483a0f371d7567"
+    },
+    {
+      "filename": "youtube_video-clip_12644_ready.mp4",
+      "source_platform": "youtube",
+      "source_url": "https://www.youtube.com/watch?v=kQcGEwJ2A48",
+      "creator": "Tidak diketahui",
+      "license": "youtube ToS",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": 4.4,
+      "width": 608,
+      "height": 1080,
+      "sha256": "25f979f3daca0d910c165f724f0eb090ae469296a9971ca3c256ee4a9de666a6"
+    },
+    {
+      "filename": "youtube_video-clip_12657_ready.mp4",
+      "source_platform": "youtube",
+      "source_url": "https://www.youtube.com/watch?v=Nn2E-tvPcFc",
+      "creator": "Tidak diketahui",
+      "license": "youtube ToS",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": 4.41,
+      "width": 810,
+      "height": 1080,
+      "sha256": "429b3a929e450e830f134112b9dd30b8c7bb93dff098ea01a2313db0378cae80"
+    },
+    {
+      "filename": "youtube_video-clip_12706_ready.mp4",
+      "source_platform": "youtube",
+      "source_url": "https://www.youtube.com/shorts/2qH4acFabjM",
+      "creator": "Tidak diketahui",
+      "license": "youtube ToS",
+      "reusable_safe": false,
+      "cleanliness_status": "UNSCANNED",
+      "cleanliness_score": null,
+      "subject_action": "",
+      "duration_s": 4.4,
+      "width": 608,
+      "height": 1080,
+      "sha256": "1506e794a34be696c8eeb2bdc3e8a82ab64b2eca7a77a57645ce856d1ed428fe"
+    }
+  ],
+  "vo_file": "ElevenLabs_2026-11-24T09_31_13_Alex - Upbeat, Energetic and Clear_pvc_s50_sim75_v4.mp3",
+  "words_alignment": [],
+  "upload": {
+    "titles": [],
+    "description": "",
+    "tags": [],
+    "scheduled_slot": "",
+    "cover_frame_s": null,
+    "cover_text": ""
+  },
+  "qc_report": {
+    "channel_id": "C1-fakta",
+    "episode_id": "007-kucing-kardus",
+    "checked_at": "2026-11-24T16:55:54",
+    "passed": true,
+    "score": 92,
+    "checks": [
+      {
+        "code": "DOCS_COMPLETE",
+        "category": "structure",
+        "severity": "PASS",
+        "message": "Dokumen inti lengkap (naskah, brief-edit, sources, paket-upload)."
+      },
+      {
+        "code": "SCRIPT_WORD_RANGE",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Jumlah kata 50 kata (~22.9s @ 131 kpm) masuk sweet spot."
+      },
+      {
+        "code": "AUDIO_TAGS",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Audio tags Eleven v4 lengkap (6 tag)."
+      },
+      {
+        "code": "SCRIPT_DIGITS",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Tidak ada angka digit mentah di teks VO."
+      },
+      {
+        "code": "CTA_PLACEMENT",
+        "category": "script",
+        "severity": "PASS",
+        "message": "CTA tunggal berada di posisi kalimat #3/6."
+      },
+      {
+        "code": "SENTENCE_BREATH",
+        "category": "script",
+        "severity": "PASS",
+        "message": "Semua kalimat ringkas (<= 12 kata/kalimat)."
+      },
+      {
+        "code": "FACT_SOURCES",
+        "category": "factcheck",
+        "severity": "WARN",
+        "message": "Sumber fakta tertulis baru 0 (disarankan >= 2)."
+      },
+      {
+        "code": "SCENE_PACING",
+        "category": "ypp",
+        "severity": "PASS",
+        "message": "8 adegan di brief-edit, semua <= 5.0s."
+      },
+      {
+        "code": "VO_READY",
+        "category": "assets",
+        "severity": "PASS",
+        "message": "VO tersedia di assets: ElevenLabs_2026-11-24T09_31_13_Alex - Upbeat, Energetic and Clear_pvc_s50_sim75_v4.mp3."
+      },
+      {
+        "code": "CLIPS_COUNT",
+        "category": "assets",
+        "severity": "PASS",
+        "message": "Tersedia 9 klip video di folder aset."
+      }
+    ]
+  },
+  "extra": {}
+}
