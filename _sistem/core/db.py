@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import sqlite3
 import uuid
 from contextlib import contextmanager
@@ -15,6 +16,17 @@ from .config import StudioConfig, get_config
 
 def _now_iso() -> str:
     return datetime.now().isoformat(timespec="seconds")
+
+
+def _sanitize_json_value(obj: Any) -> Any:
+    """Recursively replace non-finite floats (NaN/Inf) with None so JSON responses never 500."""
+    if isinstance(obj, float):
+        return obj if math.isfinite(obj) else None
+    if isinstance(obj, dict):
+        return {k: _sanitize_json_value(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize_json_value(v) for v in obj]
+    return obj
 
 
 class StudioDB:
@@ -90,6 +102,28 @@ class StudioDB:
 
                 CREATE INDEX IF NOT EXISTS idx_jobs_created ON jobs(created_at DESC);
                 CREATE INDEX IF NOT EXISTS idx_metrics_ep ON metrics(channel_id, episode_id, recorded_at DESC);
+
+                CREATE TABLE IF NOT EXISTS broll_vault (
+                    clip_id TEXT PRIMARY KEY,
+                    channel_id TEXT NOT NULL,
+                    episode_id TEXT NOT NULL,
+                    filename TEXT NOT NULL,
+                    filepath TEXT NOT NULL,
+                    creator TEXT NOT NULL DEFAULT '',
+                    platform TEXT NOT NULL DEFAULT 'local',
+                    license TEXT NOT NULL DEFAULT 'UNKNOWN',
+                    risk_level TEXT NOT NULL DEFAULT 'HIGH',
+                    monetization_safe INTEGER NOT NULL DEFAULT 0,
+                    width INTEGER NOT NULL DEFAULT 0,
+                    height INTEGER NOT NULL DEFAULT 0,
+                    duration_s REAL NOT NULL DEFAULT 0.0,
+                    cleanliness_score INTEGER NOT NULL DEFAULT 80,
+                    caption_zone_clean INTEGER NOT NULL DEFAULT 1,
+                    tags_text TEXT NOT NULL DEFAULT '',
+                    summary_text TEXT NOT NULL DEFAULT '',
+                    indexed_at TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_vault_ep ON broll_vault(channel_id, episode_id);
                 """
             )
             # Safe migration for existing studio.db without progress_pct column
@@ -261,7 +295,7 @@ class StudioDB:
             params.append(progress_msg)
         if result is not None:
             fields.append("result_json = ?")
-            params.append(json.dumps(result, ensure_ascii=False))
+            params.append(json.dumps(_sanitize_json_value(result), ensure_ascii=False, allow_nan=False))
         if error is not None:
             fields.append("error = ?")
             params.append(error)
@@ -278,7 +312,7 @@ class StudioDB:
             return None
         d = dict(r)
         try:
-            d["result"] = json.loads(d.pop("result_json") or "{}")
+            d["result"] = _sanitize_json_value(json.loads(d.pop("result_json") or "{}"))
         except Exception:
             d["result"] = {}
         return d
@@ -290,7 +324,7 @@ class StudioDB:
         for r in rows:
             d = dict(r)
             try:
-                d["result"] = json.loads(d.pop("result_json") or "{}")
+                d["result"] = _sanitize_json_value(json.loads(d.pop("result_json") or "{}"))
             except Exception:
                 d["result"] = {}
             out.append(d)
@@ -316,3 +350,130 @@ class StudioDB:
                 """,
                 (channel_id, episode_id, _now_iso(), views, likes, comments, subs_gained, avg_view_pct, swipe_away_pct),
             )
+
+    # --- Local Semantic B-Roll Vault (Sourcing & Vision v4.0) ---
+    def sync_broll_vault(self, channel_id: Optional[str] = None) -> int:
+        """Index clean video clips across channel episodes into SQLite broll_vault for <10ms local reuse."""
+        import re
+
+        channels_to_scan = [self.cfg.get_channel(channel_id).channel_id] if channel_id else list(self.cfg.channels.keys())
+        now = _now_iso()
+        indexed = 0
+        rows_to_upsert: List[tuple] = []
+
+        for cid in channels_to_scan:
+            ch_dir = self.cfg.channel_dir(cid)
+            if not ch_dir.exists():
+                continue
+            for ep_dir in sorted(ch_dir.iterdir()):
+                if not ep_dir.is_dir() or ep_dir.name.startswith("_"):
+                    continue
+                assets_dir = self.cfg.episode_assets_dir(ep_dir.name, cid)
+                if not assets_dir.exists():
+                    continue
+
+                meta_map: Dict[str, dict] = {}
+                v_index: Dict[str, dict] = {}
+                clean_map: Dict[str, dict] = {}
+                for fname, target in (
+                    ("_metadata.json", meta_map),
+                    ("_clip_visual_index.json", v_index),
+                    ("cleanliness_report.json", clean_map),
+                ):
+                    fp = assets_dir / fname
+                    if fp.exists():
+                        try:
+                            loaded = json.loads(fp.read_text(encoding="utf-8"))
+                            if isinstance(loaded, dict):
+                                if fname == "cleanliness_report.json" and "clips" in loaded and isinstance(loaded["clips"], dict):
+                                    target.update(loaded["clips"])
+                                else:
+                                    target.update(loaded)
+                        except Exception:
+                            pass
+
+                for mp4 in sorted(assets_dir.glob("*.mp4")):
+                    if mp4.name.startswith("_"):
+                        continue
+                    c_info = clean_map.get(mp4.name, {})
+                    vi_info = v_index.get(mp4.name, {})
+                    m_info = meta_map.get(mp4.name, {})
+
+                    clean_score = int(
+                        c_info.get("score")
+                        or (int(vi_info.get("cleanliness", 8)) * 10 if vi_info.get("cleanliness") is not None else 82)
+                    )
+                    if clean_score < 70 or bool(vi_info.get("has_burned_text", False)):
+                        continue
+
+                    creator = str(m_info.get("creator") or "")
+                    if not creator and mp4.name.startswith("@"):
+                        creator = mp4.name.split("_")[0]
+                    tags_list = vi_info.get("tags") or []
+                    shots_list = vi_info.get("shots") or []
+                    shot_summaries = " ".join(str(s.get("summary", "")) for s in shots_list if isinstance(s, dict))
+                    stem_words = re.sub(r"[@0-9_\-]+", " ", mp4.stem).strip()
+                    tags_str = " ".join([*(str(t) for t in tags_list), ep_dir.name.replace("-", " "), stem_words]).strip()
+                    summary_str = " ".join(
+                        filter(None, [str(vi_info.get("summary") or ""), str(m_info.get("title") or ""), shot_summaries])
+                    ).strip()
+
+                    clip_id = f"{cid}:{ep_dir.name}:{mp4.name}"
+                    rows_to_upsert.append(
+                        (
+                            clip_id,
+                            cid,
+                            ep_dir.name,
+                            mp4.name,
+                            str(mp4.resolve()),
+                            creator[:80],
+                            str(m_info.get("source") or "local_vault"),
+                            str(m_info.get("license") or "SOCIAL_TRANSFORMATIVE"),
+                            str(m_info.get("license_risk") or "HIGH"),
+                            int(bool(m_info.get("publikasi_aman", False))),
+                            int(m_info.get("width") or 0),
+                            int(m_info.get("height") or 0),
+                            float(m_info.get("duration") or 0.0),
+                            clean_score,
+                            int(bool(vi_info.get("caption_zone_clean", True))),
+                            tags_str[:500],
+                            summary_str[:600],
+                            now,
+                        )
+                    )
+                    indexed += 1
+
+        if rows_to_upsert:
+            with self._conn() as conn:
+                conn.executemany(
+                    """
+                    INSERT INTO broll_vault (
+                        clip_id, channel_id, episode_id, filename, filepath,
+                        creator, platform, license, risk_level, monetization_safe,
+                        width, height, duration_s, cleanliness_score, caption_zone_clean,
+                        tags_text, summary_text, indexed_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(clip_id) DO UPDATE SET
+                        filepath=excluded.filepath,
+                        creator=excluded.creator,
+                        cleanliness_score=excluded.cleanliness_score,
+                        caption_zone_clean=excluded.caption_zone_clean,
+                        tags_text=excluded.tags_text,
+                        summary_text=excluded.summary_text,
+                        indexed_at=excluded.indexed_at
+                    """,
+                    rows_to_upsert,
+                )
+        return indexed
+
+    def list_broll_vault(self, exclude_episode_id: str = "") -> List[Dict[str, Any]]:
+        with self._conn() as conn:
+            if exclude_episode_id:
+                rows = conn.execute(
+                    "SELECT * FROM broll_vault WHERE episode_id != ? ORDER BY cleanliness_score DESC",
+                    (exclude_episode_id,),
+                ).fetchall()
+            else:
+                rows = conn.execute("SELECT * FROM broll_vault ORDER BY cleanliness_score DESC").fetchall()
+        return [dict(r) for r in rows]
+

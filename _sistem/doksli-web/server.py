@@ -24,7 +24,15 @@ for p in (str(SISTEM_DIR), str(EDITOR_ENGINE_DIR)):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from core.config import get_config, load_config
+from core.config import (
+    fetch_provider_models,
+    get_ai_provider_settings,
+    get_config,
+    load_config,
+    resolve_ai_model,
+    save_ai_provider_settings,
+    test_ai_provider_connection,
+)
 from core.db import StudioDB
 from core.models import EpisodeManifest, EpisodeStatus
 from core.tts import generate_episode_voiceover, list_elevenlabs_voices
@@ -33,8 +41,10 @@ from analytics.engine import compute_channel_analytics, generate_weekly_report
 from analytics.scaler import provision_channel
 from sourcing.licensing import generate_credits_markdown
 from sourcing.preflight import run_preflight_gate
-from sourcing.providers import download_to_episode, search_unified
+from sourcing.providers import SourcedCandidate, download_to_episode, search_smart_routed, search_unified
 from sourcing.qc_video import run_episode_autoqc
+from sourcing.query_planner import plan_visual_queries
+from sourcing.vision_gate import evaluate_candidates_batch
 
 try:
     import builder
@@ -54,7 +64,8 @@ app = FastAPI(title="Enterprise Shorts Studio", version="3.0.0")
 
 
 def get_local_vision_client():
-    return openai.OpenAI(base_url=CFG.ai_base_url, api_key=CFG.ai_api_key or "local")
+    cfg = get_config()
+    return openai.OpenAI(base_url=cfg.ai_base_url, api_key=cfg.ai_api_key or "local", timeout=25.0, max_retries=0)
 
 
 def _submit_background_job(
@@ -128,6 +139,8 @@ BEHAVIOR_EN = {
 class ExtractRequest(BaseModel):
     naskah: str
     pkg_id: Optional[str] = None
+    subject_hint: str = ""
+    use_llm: bool = True
 
 
 class SearchRequest(BaseModel):
@@ -169,7 +182,37 @@ class UnifiedSearchRequest(BaseModel):
     limit: int = 12
     cc_only: bool = False
     raw_mode: bool = True
+    negative_terms: Optional[List[str]] = None
+    episode_id: str = ""
+    channel_id: Optional[str] = None
     api_key: Optional[str] = None
+
+
+class SmartSearchRequest(BaseModel):
+    conceptual_queries: List[str] = []
+    literal_queries: List[str] = []
+    metaphorical_queries: List[str] = []
+    fallback_query: str = ""
+    providers: Optional[List[str]] = None
+    negative_terms: List[str] = []
+    cc_only: bool = False
+    raw_mode: bool = True
+    min_ready_score: float = 58.0
+    vision_top_n: int = 0
+    scenario: str = ""
+    episode_id: str = ""
+    channel_id: Optional[str] = None
+    limit: int = 16
+    api_key: Optional[str] = None
+
+
+class VisionBatchRequest(BaseModel):
+    candidates: List[dict]
+    scenario: str
+    negative_terms: List[str] = []
+    episode_id: str = ""
+    channel_id: Optional[str] = None
+    max_eval: int = 5
 
 
 class DownloadClipRequest(BaseModel):
@@ -182,6 +225,11 @@ class DownloadClipRequest(BaseModel):
     license: str = ""
     license_url: str = ""
     page_url: str = ""
+    auto_trim: bool = False
+    beat_index: Optional[int] = None
+    scenario: str = ""
+    crop_x_norm: float = 0.50
+    local_path: str = ""
 
 
 class CreateEpisodeRequest(BaseModel):
@@ -226,20 +274,110 @@ class ProvisionChannelRequest(BaseModel):
     activate: bool = True
 
 
+class AiProviderSettingsRequest(BaseModel):
+    provider_preset: str = "custom"
+    provider_name: str = ""
+    ai_base_url: str
+    ai_api_key: Optional[str] = None
+    clear_api_key: bool = False
+    ai_text_model: str = ""
+    ai_vision_model: str = ""
+    ai_audio_model: str = ""
+    auto_fallback: bool = True
+
+
+class AiProviderModelsRequest(BaseModel):
+    ai_base_url: str = ""
+    ai_api_key: Optional[str] = None
+
+
+class AiProviderTestRequest(BaseModel):
+    ai_base_url: str = ""
+    ai_api_key: Optional[str] = None
+    model: str = ""
+    run_chat_ping: bool = True
+
+
 # ---------------- Studio Control Plane (Multi-Channel + SQLite) ----------------
 @app.get("/api/studio/health")
 def api_studio_health():
+    cfg = get_config()
     return {
         "status": "ok",
         "version": app.version,
-        "ffmpeg_ready": CFG.ffmpeg_bin is not None,
-        "ffprobe_ready": CFG.ffprobe_bin is not None,
-        "ytdlp_ready": CFG.ytdlp_bin is not None,
-        "exa_configured": bool(CFG.exa_api_key),
-        "ai_configured": bool(CFG.ai_api_key),
-        "elevenlabs_configured": bool(CFG.elevenlabs_api_key),
-        "channels_count": len(CFG.channels),
+        "ffmpeg_ready": cfg.ffmpeg_bin is not None,
+        "ffprobe_ready": cfg.ffprobe_bin is not None,
+        "ytdlp_ready": cfg.ytdlp_bin is not None,
+        "exa_configured": bool(cfg.exa_api_key),
+        "pexels_configured": bool(cfg.pexels_api_key),
+        "pixabay_configured": bool(cfg.pixabay_api_key),
+        "ai_configured": bool(cfg.ai_api_key or cfg.ai_base_url),
+        "ai_provider_preset": cfg.ai_provider_preset,
+        "ai_provider_name": cfg.ai_provider_name,
+        "ai_base_url": cfg.ai_base_url,
+        "ai_text_model": cfg.ai_text_model,
+        "ai_vision_model": cfg.ai_vision_model,
+        "ai_audio_model": cfg.ai_audio_model,
+        "resolved_text_model": resolve_ai_model("text", cfg),
+        "resolved_vision_model": resolve_ai_model("vision", cfg),
+        "elevenlabs_configured": bool(cfg.elevenlabs_api_key),
+        "channels_count": len(cfg.channels),
     }
+
+
+def _effective_probe_key(base_url: str, incoming_key: Optional[str]) -> str:
+    if incoming_key is not None and incoming_key.strip():
+        return incoming_key.strip()
+    cfg = get_config()
+    # Reuse saved server-side key when user tests/fetches models on the currently saved base URL
+    if not base_url.strip() or base_url.strip().rstrip("/") == (cfg.ai_base_url or "").strip().rstrip("/"):
+        return cfg.ai_api_key
+    return ""
+
+
+@app.get("/api/settings/ai")
+def api_get_ai_settings():
+    return {"success": True, "settings": get_ai_provider_settings(get_config())}
+
+
+@app.post("/api/settings/ai")
+def api_save_ai_settings(req: AiProviderSettingsRequest):
+    global CFG
+    try:
+        updated = save_ai_provider_settings(req.model_dump())
+        CFG = get_config()
+        if builder is not None:
+            builder.CFG = CFG
+        return {"success": True, "settings": updated}
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Gagal menyimpan konfigurasi AI: {exc}")
+
+
+@app.post("/api/settings/ai/models")
+def api_fetch_ai_models(req: AiProviderModelsRequest):
+    cfg = get_config()
+    base_url = (req.ai_base_url or cfg.ai_base_url or "").strip()
+    api_key = _effective_probe_key(base_url, req.ai_api_key)
+    res = fetch_provider_models(base_url, api_key, timeout_s=6.0)
+    return {"success": bool(res.get("ok")), **res}
+
+
+@app.post("/api/settings/ai/test")
+def api_test_ai_provider(req: AiProviderTestRequest):
+    cfg = get_config()
+    base_url = (req.ai_base_url or cfg.ai_base_url or "").strip()
+    api_key = _effective_probe_key(base_url, req.ai_api_key)
+    model = (req.model or "").strip()
+    res = test_ai_provider_connection(
+        base_url=base_url,
+        api_key=api_key,
+        model=model,
+        run_chat_ping=req.run_chat_ping,
+        timeout_s=12.0,
+    )
+    return {"success": bool(res.get("ok")), **res}
 
 
 @app.get("/api/channels")
@@ -420,52 +558,24 @@ def list_packages(channel_id: Optional[str] = None):
 
 
 @app.post("/api/extract-keywords")
+@app.post("/api/sourcing/plan-queries")
 def extract_keywords(req: ExtractRequest):
-    text = req.naskah.lower()
-    detected_animals = [(id_a, en_list[0]) for id_a, en_list in ANIMAL_EN.items() if id_a in text]
-    detected_behaviors = [(id_b, en_list[0]) for id_b, en_list in BEHAVIOR_EN.items() if id_b in text]
-
-    queries = []
-    clean_lines = [
-        l.strip()
-        for l in req.naskah.splitlines()
-        if l.strip() and not l.startswith(("#", "-", "*", "Status", "Spesies", "Engine", "Batch", "Keputusan"))
-    ]
-    hook_line = ""
-    for l in clean_lines:
-        if any(h in l.lower() for h in ["kenapa", "pernah", "stop", "jangan", "[hook"]):
-            hook_line = re.sub(r"\[.*?\]", "", l).strip()
-            break
-
-    if detected_animals and detected_behaviors:
-        prim_a = detected_animals[0]
-        b_en = " ".join(b[1] for b in detected_behaviors[:3])
-        b_id = " ".join(b[0] for b in detected_behaviors[:3])
-        queries.extend(
-            [
-                f"{prim_a[1]} {b_en}",
-                f"raw footage {prim_a[1]} {b_en}",
-                f"cute {prim_a[1]} {b_en} close up",
-                f"pet camera {prim_a[1]} {b_en}",
-                f"{prim_a[0]} {b_id}",
-            ]
-        )
-        if hook_line:
-            queries.append(re.sub(r"[?!.,]", "", hook_line))
-    elif hook_line:
-        queries.append(re.sub(r"[?!.,]", "", hook_line))
-    else:
-        words = [
-            w
-            for w in re.findall(r"\b[a-z]{4,}\b", text)
-            if w not in ("banyak", "orang", "pikir", "kalau", "kamu", "suka", "subscribe", "makanya", "ternyata")
-        ]
-        queries.append(" ".join(words[:4]))
-
+    plan = plan_visual_queries(
+        naskah=req.naskah,
+        subject_hint=req.subject_hint or (req.pkg_id or ""),
+        use_llm=req.use_llm,
+        config=get_config(),
+    )
     return {
-        "detected_animals": detected_animals,
-        "detected_behaviors": detected_behaviors,
-        "recommended_queries": list(dict.fromkeys(queries))[:6],
+        "success": True,
+        "planner_mode": plan.planner_mode,
+        "planner_model": plan.planner_model,
+        "primary_subject": plan.primary_subject,
+        "primary_intent": plan.primary_intent.model_dump(),
+        "queries": plan.queries.model_dump(),
+        "negative_terms": plan.negative_terms,
+        "beats": [b.model_dump() for b in plan.beats],
+        "recommended_queries": plan.recommended_queries,
     }
 
 
@@ -579,9 +689,10 @@ Jawab HANYA JSON valid:
 }}"""
 
     try:
+        cfg = get_config()
         client = get_local_vision_client()
         resp = client.chat.completions.create(
-            model=CFG.ai_vision_model,
+            model=resolve_ai_model("vision", cfg),
             messages=[{"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": thumb_url}}]}],
             max_tokens=250,
             temperature=0.1,
@@ -634,9 +745,10 @@ async def scan_cleanliness(req: CleanlinessRequest):
         'Jawab HANYA JSON: {"status": "BERSIH" | "OVERLAY_PINGGIR" | "KOTOR", "score": <0-100>, "details": "<1 kalimat>"}'
     )
     try:
+        cfg = get_config()
         client = get_local_vision_client()
         resp = client.chat.completions.create(
-            model=CFG.ai_vision_model,
+            model=resolve_ai_model("vision", cfg),
             messages=[{"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": thumb_url}}]}],
             max_tokens=200,
         )
@@ -657,9 +769,83 @@ def api_unified_search(req: UnifiedSearchRequest):
         cc_only=req.cc_only,
         raw_mode=req.raw_mode,
         api_key=req.api_key,
+        negative_terms=req.negative_terms,
+        episode_id=req.episode_id,
+        channel_id=req.channel_id,
         config=CFG,
     )
     return {"success": True, "count": len(hits), "results": [h.model_dump() for h in hits]}
+
+
+@app.post("/api/sourcing/smart-search")
+def api_smart_search(req: SmartSearchRequest):
+    cfg = get_config()
+    partitioned = search_smart_routed(
+        conceptual_queries=req.conceptual_queries,
+        literal_queries=req.literal_queries,
+        metaphorical_queries=req.metaphorical_queries,
+        fallback_query=req.fallback_query,
+        providers=req.providers,
+        negative_terms=req.negative_terms,
+        cc_only=req.cc_only,
+        raw_mode=req.raw_mode,
+        min_ready_score=req.min_ready_score,
+        limit=req.limit,
+        episode_id=req.episode_id,
+        channel_id=req.channel_id,
+        api_key=req.api_key,
+        config=cfg,
+    )
+    accepted = partitioned["accepted"]
+    rejected = partitioned["rejected"]
+    if req.vision_top_n > 0 and accepted:
+        scen = req.scenario or (req.conceptual_queries[0] if req.conceptual_queries else req.fallback_query)
+        v_res = evaluate_candidates_batch(
+            accepted,
+            scenario=scen,
+            negative_terms=req.negative_terms,
+            episode_id=req.episode_id,
+            channel_id=req.channel_id,
+            max_eval=req.vision_top_n,
+            cfg=cfg,
+        )
+        accepted = v_res["accepted"]
+        rejected = [*v_res["rejected"], *rejected][:15]
+
+    return {
+        "success": True,
+        "count": len(accepted),
+        "rejected_count": len(rejected),
+        "results": [c.model_dump() for c in accepted],
+        "rejected": [c.model_dump() for c in rejected],
+    }
+
+
+@app.post("/api/sourcing/vision-batch")
+def api_vision_batch(req: VisionBatchRequest):
+    cands = [SourcedCandidate.model_validate(c) for c in req.candidates]
+    v_res = evaluate_candidates_batch(
+        cands,
+        scenario=req.scenario,
+        negative_terms=req.negative_terms,
+        episode_id=req.episode_id,
+        channel_id=req.channel_id,
+        max_eval=req.max_eval,
+        cfg=get_config(),
+    )
+    return {
+        "success": True,
+        "count": len(v_res["accepted"]),
+        "rejected_count": len(v_res["rejected"]),
+        "results": [c.model_dump() for c in v_res["accepted"]],
+        "rejected": [c.model_dump() for c in v_res["rejected"]],
+    }
+
+
+@app.post("/api/sourcing/vault-sync")
+def api_vault_sync(channel_id: Optional[str] = None):
+    indexed = DB.sync_broll_vault(channel_id=channel_id)
+    return {"success": True, "indexed_clips": indexed}
 
 
 @app.post("/api/sourcing/download")
@@ -675,9 +861,15 @@ def api_download_clip(req: DownloadClipRequest):
             license_str=req.license,
             license_url=req.license_url,
             page_url=req.page_url,
+            auto_trim=req.auto_trim,
+            beat_index=req.beat_index,
+            scenario=req.scenario,
+            crop_x_norm=req.crop_x_norm,
+            local_path=req.local_path,
             config=CFG,
         )
         DB.sync_channel(req.channel_id)
+        DB.sync_broll_vault(req.channel_id)
         return res
     except Exception as e:
         return {"success": False, "error": str(e)}

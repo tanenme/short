@@ -16,17 +16,17 @@ E:\YT\short\
 │   │   ├── config.py             # Konfigurasi terpusat, .env loader, auto-discover ffmpeg/yt-dlp
 │   │   ├── models.py             # Kontrak data Pydantic v2 (ChannelProfile, EpisodeManifest)
 │   │   ├── validator.py          # Automated Creative DNA & YPP Safety Gate
-│   │   ├── db.py                 # SQLite state store (_sistem/state/studio.db): episodes, jobs, metrics
+│   │   ├── db.py                 # SQLite state store (_sistem/state/studio.db): episodes, jobs, metrics, broll_vault
 │   │   └── tts.py                # ElevenLabs v4 API + native character-to-word alignment
 │   ├── channels\
 │   │   ├── C1-fakta.toml         # Profil validasi utama (Fakta Hewan ID)
 │   │   ├── C2-momen.toml         # Profil clone (Momen Hewan Terekam Kamera)
 │   │   └── C3-reddit.toml        # Profil clone (Misteri / Horor Hewan & Reddit)
-│   ├── sourcing\                 # Unified sourcing, licensing, FFmpeg autoqc, YPP preflight gate
+│   ├── sourcing\                 # Sourcing & Vision v4.0 (3-Tier Query Planner, Native Pexels/Pixabay + Vault, 3-Frame Strip Vision, Auto-Trim <=4.8s, YPP Preflight)
 │   ├── analytics\                # Growth analytics, Kill/Scale 30-day engine, multi-channel scaler
 │   ├── teardown\                 # Forensic 8-dimensi reverse-engineering video & channel referensi
 │   ├── editor-engine\            # Engine render v3.7 (60fps, Onset-Locked Hard Cuts + Single-Flash, Pre-Pivot BGM Vacuum & RSVP Blank, 1.0x Payoff Hold & Reward Pop CTA, GM v2.4)
-│   ├── doksli-web\               # FastAPI + Web UI kurasi Exa & Vision Pro
+│   ├── doksli-web\               # FastAPI + Web UI Sourcing & Vision v4.0 + Studio Kanban
 │   ├── tools\dokli.py            # CLI sourcing CC/Commons/iNaturalist/YT + autoqc + CREDITS.md
 │   ├── tests\test_core.py        # Unit test fondasi core & validator
 │   └── *.md / template-*         # SOP kreatif (`voice.md`, `CTA-bank.md`, `checklist-risiko.md`)
@@ -97,7 +97,7 @@ python -m unittest discover -s _sistem/tests -v
 
 ## Standar Non-Negotiable (Kualitas & Keamanan)
 
-1. **Zero Hardcoded Secrets/Paths:** Semua API key (`EXA_API_KEY`, `AI_API_KEY`, `ELEVENLABS_API_KEY`) wajib dari `.env` / environment backend. Jangan pernah menanam key di HTML/JS atau kode Python.
+1. **Zero Hardcoded Secrets/Paths:** Semua API key (`EXA_API_KEY`, `AI_API_KEY`, `ELEVENLABS_API_KEY`, `PEXELS_API_KEY`, `PIXABAY_API_KEY`) wajib dari `.env` / environment backend. Jangan pernah menanam key di HTML/JS atau kode Python.
 2. **Konfigurasi Terpusat:** Semua skrip di `_sistem/` harus membaca path, binary (`ffmpeg`, `ffprobe`, `yt-dlp`), model AI, dan profil channel dari `core.config.get_config()`.
 3. **DNA Kreatif C1 (`_sistem/voice.md`):**
    - Durasi sweet spot **19–25 detik** (**40–55 kata**, batas keras 60 kata) @ ~131 kpm.

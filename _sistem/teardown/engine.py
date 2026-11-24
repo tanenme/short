@@ -28,7 +28,7 @@ from typing import Dict, List, Literal, Optional, Tuple
 import openai
 from pydantic import BaseModel, Field
 
-from core.config import StudioConfig, get_config
+from core.config import StudioConfig, get_config, resolve_ai_model
 
 
 class CutSegment(BaseModel):
@@ -541,7 +541,7 @@ Jawab HANYA JSON valid sesuai schema:
   "why_it_retains_viewers": ["...", "..."]
 }}"""
         resp = client.chat.completions.create(
-            model=cfg.ai_vision_model,
+            model=resolve_ai_model("vision", cfg),
             messages=[
                 {
                     "role": "user",

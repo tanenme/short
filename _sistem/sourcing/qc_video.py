@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import subprocess
 from pathlib import Path
 from typing import Dict, List, Literal, Optional
@@ -102,7 +103,9 @@ def inspect_clip_metrics(clip_path: Path, cfg: StudioConfig, sample_seconds: flo
             short_k = k.split(".")[-1]
             if short_k in ("YAVG", "YDIF", "SATAVG"):
                 try:
-                    vals.setdefault(short_k, []).append(float(v))
+                    fv = float(v)
+                    if math.isfinite(fv):
+                        vals.setdefault(short_k, []).append(fv)
                 except ValueError:
                     pass
 
@@ -132,7 +135,9 @@ def inspect_clip_metrics(clip_path: Path, cfg: StudioConfig, sample_seconds: flo
     for line in r_blur.stderr.splitlines():
         if "blur mean:" in line:
             try:
-                blurs.append(float(line.split("blur mean:")[1].split()[0]))
+                bv = float(line.split("blur mean:")[1].split()[0])
+                if math.isfinite(bv):
+                    blurs.append(bv)
             except Exception:
                 pass
     blur_mean = round(sum(blurs) / len(blurs), 2) if blurs else None

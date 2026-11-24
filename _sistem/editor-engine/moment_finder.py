@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
-from core.config import StudioConfig, get_config
+from core.config import StudioConfig, get_config, resolve_ai_model
 
 # Bilingual (ID + EN) animal behavior & anatomy concept clusters for synonym-aware semantic matching
 CONCEPT_SYNONYM_CLUSTERS: List[Set[str]] = [
@@ -644,8 +644,10 @@ def _extract_scene_emphasis_offset(scene: dict) -> Optional[float]:
 
 def _call_vision_json(client: object, cfg: StudioConfig, prompt: str, b64: str) -> Optional[dict]:
     """Call multimodal Vision endpoint with automatic provider failover and list-content parsing."""
+    live_cfg = get_config()
+    resolved = resolve_ai_model("vision", live_cfg)
     models_to_try: List[str] = []
-    for m in (cfg.ai_vision_model, "oc/nemotron-3.5-super-vl-free", "claude", "mistral/mistral-large-latest"):
+    for m in (resolved, live_cfg.ai_vision_model, "mistral/deepseek-v4-1-flash-1017", "claude", "mistral/mistral-large-latest"):
         if m and m not in models_to_try:
             models_to_try.append(m)
 
@@ -735,8 +737,9 @@ def rerank_candidates_with_vision(
         '"reason": "alasan singkat 1 kalimat tentang aksi yang terlihat"}'
     )
 
-    client = openai.OpenAI(base_url=cfg.ai_base_url, api_key=cfg.ai_api_key or "local")
-    parsed = _call_vision_json(client, cfg, prompt, b64)
+    live_cfg = get_config()
+    client = openai.OpenAI(base_url=live_cfg.ai_base_url, api_key=live_cfg.ai_api_key or "local")
+    parsed = _call_vision_json(client, live_cfg, prompt, b64)
     if not parsed:
         return None
     idx = max(0, min(len(starts) - 1, int(parsed.get("best_candidate_index", 1)) - 1))
@@ -860,7 +863,8 @@ def build_clip_visual_index(
     if not vid_files:
         return {}
 
-    client = openai.OpenAI(base_url=cfg.ai_base_url, api_key=cfg.ai_api_key or "local")
+    live_cfg = get_config()
+    client = openai.OpenAI(base_url=live_cfg.ai_base_url, api_key=live_cfg.ai_api_key or "local")
     sig_map = signal_cache or {}
 
     def _index_one(vp: Path) -> Tuple[str, dict]:

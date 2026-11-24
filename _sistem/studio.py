@@ -46,6 +46,8 @@ def cmd_doctor(_args: argparse.Namespace) -> int:
     print()
     print("[Credentials & AI]")
     print(f"  EXA_API_KEY        : {_mask(cfg.exa_api_key)}")
+    print(f"  PEXELS_API_KEY     : {_mask(cfg.pexels_api_key)}")
+    print(f"  PIXABAY_API_KEY    : {_mask(cfg.pixabay_api_key)}")
     print(f"  AI_BASE_URL        : {cfg.ai_base_url}")
     print(f"  AI_API_KEY         : {_mask(cfg.ai_api_key)}")
     print(f"  ELEVENLABS_API_KEY : {_mask(cfg.elevenlabs_api_key)}")

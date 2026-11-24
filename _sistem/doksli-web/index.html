@@ -51,6 +51,38 @@
       <button onclick="syncBoard(true)" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-lg border border-zinc-700 transition">
         Sync DB
       </button>
+      <button onclick="openAiSettingsModal()" id="btnAiSettings" class="text-xs bg-zinc-900 hover:bg-zinc-800 text-zinc-200 px-3 py-1.5 rounded-lg border border-zinc-700 flex items-center gap-1.5 transition" title="Pengaturan Custom AI Provider, Test Koneksi & Pilihan Model">
+        <span id="aiStatusDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span>AI Provider</span>
+        <span id="aiActiveModelPill" class="hidden sm:inline text-[10px] font-mono text-indigo-300 bg-indigo-500/15 px-1.5 py-0.5 rounded max-w-[120px] truncate">...</span>
+      </button>
+
+      <!-- Global Top-Right Job Queue Notification -->
+      <div class="relative" id="jobNotifWrapper">
+        <button onclick="toggleJobNotifPopover(event)" id="btnJobNotif" class="relative text-xs bg-zinc-900 hover:bg-zinc-800 text-zinc-200 px-2.5 py-1.5 rounded-lg border border-zinc-700 flex items-center gap-1.5 transition" title="Notifikasi Antrean Job & Progres Render">
+          <svg class="w-4 h-4 text-zinc-300" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+          </svg>
+          <span id="jobNotifMiniText" class="hidden md:inline text-[11px] font-mono text-zinc-300">Jobs</span>
+          <span id="jobNotifBadge" class="hidden min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-mono font-bold flex items-center justify-center bg-indigo-500 text-white">0</span>
+        </button>
+
+        <div id="jobNotifPopover" class="hidden fixed sm:absolute right-3 sm:right-0 top-14 sm:top-full sm:mt-2 w-[calc(100vw-1.5rem)] sm:w-96 bg-zinc-900/95 backdrop-blur-xl border border-zinc-700 rounded-2xl shadow-2xl z-50 overflow-hidden">
+          <div class="px-4 py-3 border-b border-zinc-800 flex items-center justify-between bg-zinc-950/60">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-white">Antrean Job</span>
+              <span id="jobNotifSummaryPill" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300">Idle</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="refreshJobs()" class="text-[11px] text-indigo-400 hover:text-indigo-300">Refresh</button>
+              <button onclick="closeJobNotifPopover()" class="text-zinc-400 hover:text-white text-xs px-1">✕</button>
+            </div>
+          </div>
+          <div id="jobNotifList" class="p-3 space-y-2 max-h-[65vh] overflow-y-auto text-xs">
+            <p class="text-zinc-500 italic text-center py-6">Belum ada job dijalankan.</p>
+          </div>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -122,70 +154,136 @@
 
     <!-- ==================== TAB 2: SOURCING & VISION ==================== -->
     <section id="view-sourcing" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-5">
-      <!-- Left: Script & Queries -->
+      <!-- Left: Beat Decomposition, 3-Tier Queries & Smart Basket -->
       <div class="lg:col-span-4 space-y-4">
         <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 space-y-3">
-          <h2 class="text-sm font-semibold text-zinc-100">1. Target Episode & Naskah</h2>
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-zinc-100">1. Target Episode &amp; Naskah</h2>
+            <span id="plannerModeBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300">v4.0 INTENT</span>
+          </div>
           <select id="sourcingPackageSelect" onchange="onSourcingPackageChange()" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 outline-none focus:border-indigo-500"></select>
-          <textarea id="naskahInput" rows="5" placeholder="Isi VO final..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-200 outline-none focus:border-indigo-500 resize-none"></textarea>
-          <button onclick="extractKeywords()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium py-2 rounded-xl transition">
-            Ekstrak Query Otomatis
-          </button>
+          <textarea id="naskahInput" rows="4" placeholder="Isi VO final (kata HURUF KAPITAL diprioritaskan sebagai fokus visual)..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-200 outline-none focus:border-indigo-500 resize-none"></textarea>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="extractKeywords()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs font-medium py-2 px-3 rounded-xl transition">
+              Bedah Beat &amp; Query
+            </button>
+            <button onclick="runSmartRoutedSearch()" id="btnSmartSearchLeft" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2 px-3 rounded-xl transition">
+              ⚡ Smart Search 3-Tier
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-zinc-100">2. Beat Adegan (<span id="beatCountLabel">0</span>)</h2>
+            <span id="activeBeatBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300">Semua Beat</span>
+          </div>
+          <div id="beatListBox" class="max-h-48 overflow-y-auto space-y-1.5 text-xs text-zinc-500">
+            Pilih episode atau klik Bedah Beat &amp; Query.
+          </div>
         </div>
 
         <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 space-y-3">
-          <h2 class="text-sm font-semibold text-zinc-100">2. Rekomendasi Query</h2>
-          <div id="queryList" class="space-y-1.5 text-xs text-zinc-500">Pilih episode lalu klik Ekstrak Query.</div>
+          <h2 class="text-sm font-semibold text-zinc-100">3. Matriks Query 3-Tier &amp; Negative Filter</h2>
+          <div id="intentSummaryBox" class="hidden text-[11px] bg-zinc-950 border border-zinc-800/90 rounded-xl p-2.5 text-zinc-300 space-y-1"></div>
+          <div id="queryList" class="space-y-2 text-xs text-zinc-500">Pilih episode lalu klik Bedah Beat &amp; Query.</div>
+          <div class="pt-2 border-t border-zinc-800/70 space-y-1.5">
+            <div class="flex items-center justify-between text-[11px]">
+              <span class="text-rose-300 font-medium">Negative Action Blocker:</span>
+              <div class="flex gap-1">
+                <input id="addNegInput" type="text" placeholder="+ kata salah (mis: eating)" onkeydown="if(event.key==='Enter')addNegativeTerm()" class="w-36 bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-0.5 text-[11px] text-zinc-200 outline-none focus:border-rose-500">
+                <button onclick="addNegativeTerm()" class="px-2 py-0.5 bg-rose-500/20 text-rose-300 rounded-lg text-[11px]">+</button>
+              </div>
+            </div>
+            <div id="negativeChipsBox" class="flex flex-wrap gap-1.5 text-[11px] text-zinc-500">Belum ada filter negatif.</div>
+          </div>
         </div>
 
-        <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 space-y-2">
-          <div class="flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-zinc-100">Keranjang Link (<span id="savedCount">0</span>)</h2>
-            <button onclick="copySourcesTable()" class="text-[11px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-1 rounded-lg">Salin sources.md</button>
+        <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 space-y-2.5">
+          <div class="flex items-center justify-between gap-1">
+            <h2 class="text-sm font-semibold text-zinc-100">Keranjang Beat (<span id="savedCount">0</span>)</h2>
+            <div class="flex items-center gap-1.5">
+              <button onclick="downloadAllBasket()" id="btnBatchBasket" class="text-[11px] bg-emerald-600/25 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-lg">Unduh Semua</button>
+              <button onclick="copySourcesTable()" class="text-[11px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-1 rounded-lg">Salin sources.md</button>
+            </div>
           </div>
-          <div id="savedList" class="max-h-48 overflow-y-auto space-y-1.5 text-xs text-zinc-500">Belum ada klip disimpan.</div>
+          <div id="savedList" class="max-h-52 overflow-y-auto space-y-1.5 text-xs text-zinc-500">Belum ada klip disimpan.</div>
         </div>
       </div>
 
-      <!-- Right: Unified Search + Direct Download -->
+      <!-- Right: Smart Routed Search + 3-Frame Vision Gate + Auto-Trim -->
       <div class="lg:col-span-8 space-y-4">
         <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-4 space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <h2 class="text-sm font-semibold text-zinc-100">3. Pencarian Terpadu (CC + Stock + Sosial)</h2>
-            <div class="flex items-center gap-3 text-xs">
+            <h2 class="text-sm font-semibold text-zinc-100">4. Sourcing &amp; Vision Engine (Vault + Native Stock + Sosial)</h2>
+            <div class="flex flex-wrap items-center gap-3 text-xs">
+              <label class="flex items-center gap-1.5 cursor-pointer text-amber-300 font-medium" title="Potong otomatis klip panjang menjadi <=4.8s puncak aksi & kunci golden_moments.json">
+                <input type="checkbox" id="autoTrimToggle" checked class="rounded bg-zinc-950 border-zinc-700">
+                <span>Auto-Trim &le;4.8s</span>
+              </label>
+              <label class="flex items-center gap-1.5 cursor-pointer text-sky-300 font-medium" title="Tampilkan garis batas aman Callout atas (18%) & Caption RSVP bawah (22%)">
+                <input type="checkbox" id="safeZoneToggle" onchange="toggleSafeZoneGuides()" class="rounded bg-zinc-950 border-zinc-700">
+                <span>Safe-Zone 9:16</span>
+              </label>
               <label class="flex items-center gap-1.5 cursor-pointer text-emerald-400 font-medium">
                 <input type="checkbox" id="ccOnlyToggle" class="rounded bg-zinc-950 border-zinc-700">
-                <span>Hanya CC / Aman Monetisasi</span>
+                <span>Hanya CC/Stock</span>
               </label>
               <label class="flex items-center gap-1.5 cursor-pointer text-indigo-300 font-medium">
                 <input type="checkbox" id="rawModeToggle" checked class="rounded bg-zinc-950 border-zinc-700">
-                <span>Raw Only</span>
+                <span>Raw UGC</span>
               </label>
             </div>
           </div>
 
-          <div class="flex gap-2">
-            <input type="text" id="searchQueryInput" placeholder="Contoh: cat chattering at gecko / chicken head stabilization" class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 outline-none focus:border-indigo-500">
-            <button onclick="runUnifiedSearch()" id="btnUnifiedSearch" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition whitespace-nowrap">
-              Cari Klip
+          <div class="flex flex-wrap gap-2">
+            <input type="text" id="searchQueryInput" onkeydown="if(event.key==='Enter')runUnifiedSearch()" placeholder="Contoh: dog digging dirt / cat chattering at gecko" class="flex-1 min-w-[220px] bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-zinc-100 outline-none focus:border-indigo-500">
+            <button onclick="runUnifiedSearch()" id="btnUnifiedSearch" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs font-semibold px-4 py-2.5 rounded-xl transition whitespace-nowrap">
+              Cari Query Ini
+            </button>
+            <button onclick="runSmartRoutedSearch()" id="btnSmartSearchRight" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition whitespace-nowrap">
+              ⚡ Smart 3-Tier
+            </button>
+            <button onclick="runVisionJudgeTop5()" id="btnVisionBatch" class="bg-fuchsia-600/80 hover:bg-fuchsia-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition whitespace-nowrap" title="Evaluasi 3-Frame Temporal Strip dengan AI Vision untuk Top 5 kandidat">
+              👁 Vision Judge Top 5
             </button>
           </div>
 
-          <div class="flex flex-wrap items-center gap-3 text-xs text-zinc-300 pt-1">
-            <span class="text-zinc-500">Provider:</span>
-            <label class="flex items-center gap-1"><input type="checkbox" class="prov-cb" value="wikimedia" checked> Wikimedia CC</label>
-            <label class="flex items-center gap-1"><input type="checkbox" class="prov-cb" value="inaturalist" checked> iNaturalist CC</label>
-            <label class="flex items-center gap-1"><input type="checkbox" class="prov-cb" value="pexels" checked> Pexels</label>
-            <label class="flex items-center gap-1"><input type="checkbox" class="prov-cb" value="youtube" checked> YouTube</label>
-            <label class="flex items-center gap-1"><input type="checkbox" class="prov-cb" value="tiktok" checked> TikTok</label>
-            <label class="flex items-center gap-1"><input type="checkbox" class="prov-cb" value="reddit" checked> Reddit</label>
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-300 pt-1">
+            <div class="flex flex-wrap items-center gap-2.5">
+              <span class="text-zinc-500">Provider:</span>
+              <label class="flex items-center gap-1 text-emerald-300"><input type="checkbox" class="prov-cb" value="vault" checked> Vault Lokal</label>
+              <label class="flex items-center gap-1"><input type="checkbox" class="prov-cb" value="pexels" checked> Pexels API</label>
+              <label class="flex items-center gap-1"><input type="checkbox" class="prov-cb" value="pixabay" checked> Pixabay</label>
+              <label class="flex items-center gap-1"><input type="checkbox" class="prov-cb" value="wikimedia" checked> Wikimedia CC</label>
+              <label class="flex items-center gap-1"><input type="checkbox" class="prov-cb" value="inaturalist" checked> iNaturalist</label>
+              <label class="flex items-center gap-1"><input type="checkbox" class="prov-cb" value="youtube" checked> YouTube</label>
+              <label class="flex items-center gap-1"><input type="checkbox" class="prov-cb" value="tiktok" checked> TikTok</label>
+              <label class="flex items-center gap-1"><input type="checkbox" class="prov-cb" value="reddit" checked> Reddit</label>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-zinc-500">Min Skor:</span>
+              <select id="minReadyScoreSelect" class="bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1 text-[11px] text-zinc-200">
+                <option value="58" selected>&ge; 58 (Ready + Review)</option>
+                <option value="78">&ge; 78 (Hanya Ready)</option>
+                <option value="0">Semua Kandidat</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div id="searchResultsBox" class="space-y-3 max-h-[680px] overflow-y-auto pr-1">
+        <div id="searchResultsBox" class="space-y-3 max-h-[700px] overflow-y-auto pr-1">
           <div class="bg-zinc-900/30 border border-dashed border-zinc-800 rounded-2xl p-10 text-center text-xs text-zinc-500">
-            Ketik kata kunci di atas untuk mencari footage lintas Wikimedia CC, iNaturalist, Pexels, YouTube, TikTok, dan Reddit. Klik <strong>Unduh ke Assets</strong> untuk langsung masuk folder episode + tercatat otomatis di <code>_metadata.json</code> &amp; <code>CREDITS.md</code>.
+            Pilih episode di kiri lalu klik <strong>⚡ Smart Search 3-Tier</strong> untuk mencari footage kinematik lintas Vault Lokal, Native Pexels/Pixabay, Wikimedia CC, dan UGC dengan filter negatif otomatis &amp; <strong>Auto-Trim &le;4.8s</strong>.
           </div>
+        </div>
+
+        <div id="rejectedDrawerWrap" class="hidden bg-zinc-950/70 border border-rose-900/40 rounded-2xl p-3 space-y-2">
+          <button onclick="document.getElementById('rejectedItemsBox').classList.toggle('hidden')" class="w-full flex items-center justify-between text-xs text-rose-300 font-medium">
+            <span>🛡 Disembunyikan oleh Negative &amp; Quality Gate (<span id="rejectedCountLabel">0</span> klip tidak relevan/kotor)</span>
+            <span class="text-[11px] text-zinc-500">Klik untuk lihat alasan &blacktriangledown;</span>
+          </button>
+          <div id="rejectedItemsBox" class="hidden space-y-1.5 pt-2 border-t border-zinc-800/70 max-h-52 overflow-y-auto"></div>
         </div>
       </div>
     </section>
@@ -414,6 +512,114 @@
     </div>
   </div>
 
+  <!-- Modal: AI Provider, Connection Test & Model Picker -->
+  <div id="aiSettingsModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-zinc-900 border border-zinc-700 rounded-2xl p-5 w-full max-w-2xl space-y-4 my-auto shadow-2xl">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+        <div>
+          <h3 class="text-sm font-bold text-white flex items-center gap-2">
+            <span>Pengaturan Custom AI Provider &amp; Model</span>
+            <span id="aiModalResolvedBadge" class="text-[10px] font-mono bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full">Live</span>
+          </h3>
+          <p class="text-[11px] text-zinc-400 mt-0.5">Mendukung semua endpoint OpenAI-compatible (Proxy Lokal, OpenAI, OpenRouter, Gemini, Groq, DeepSeek, Mistral, Ollama, Custom).</p>
+        </div>
+        <button onclick="closeAiSettingsModal()" class="text-zinc-400 hover:text-white text-sm px-2 py-1">✕</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+        <div>
+          <label class="block text-zinc-400 mb-1">Preset Provider</label>
+          <select id="aiPresetSelect" onchange="onAiPresetChange()" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 outline-none focus:border-indigo-500"></select>
+        </div>
+        <div>
+          <label class="block text-zinc-400 mb-1">Label Provider</label>
+          <input id="aiProviderNameInput" type="text" placeholder="mis. My Custom Gateway" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 outline-none focus:border-indigo-500">
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-zinc-400 mb-1">Base URL (OpenAI-Compatible <code class="text-indigo-300">/v1</code>)</label>
+          <input id="aiBaseUrlInput" type="text" placeholder="https://api.openai.com/v1 atau http://localhost:20128/v1" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 font-mono text-[11px] outline-none focus:border-indigo-500">
+        </div>
+        <div class="md:col-span-2">
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-zinc-400">API Key</label>
+            <span id="aiSavedKeyBadge" class="text-[10px] font-mono text-zinc-400">Belum diset</span>
+          </div>
+          <div class="flex gap-2">
+            <input id="aiApiKeyInput" type="password" autocomplete="off" placeholder="Kosongkan jika tetap pakai API key tersimpan di server" class="flex-1 bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 font-mono text-[11px] outline-none focus:border-indigo-500">
+            <button type="button" onclick="toggleAiKeyVisibility()" id="btnToggleAiKey" class="px-2.5 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-[11px] text-zinc-300">Lihat</button>
+          </div>
+          <label class="inline-flex items-center gap-1.5 mt-1.5 text-[11px] text-zinc-400 cursor-pointer">
+            <input id="aiClearKeyChk" type="checkbox" class="rounded bg-zinc-950 border-zinc-700">
+            <span>Kosongkan API key (untuk server lokal tanpa auth seperti Ollama)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Connection Test & Live Model Discovery Bar -->
+      <div class="bg-zinc-950/80 border border-zinc-800 rounded-xl p-3 space-y-2.5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="fetchAiModelsList()" id="btnFetchModels" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-100 rounded-lg text-xs font-medium transition">
+              ↻ Ambil Daftar Model
+            </button>
+            <button type="button" onclick="runAiConnectionTest()" id="btnTestAiConn" class="px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 rounded-lg text-xs font-semibold transition">
+              ⚡ Test Koneksi
+            </button>
+          </div>
+          <span id="aiModelsCountBadge" class="text-[11px] font-mono text-zinc-400">0 model dimuat</span>
+        </div>
+        <div id="aiTestResultBox" class="hidden rounded-lg px-3 py-2 text-[11px] font-mono border"></div>
+      </div>
+
+      <!-- Model Pickers (Dropdown + Custom ID Input) -->
+      <div class="space-y-3 text-xs">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="block text-zinc-300 font-medium">Model Text / Query Planner / Scene Match</label>
+            <select id="aiTextModelSelect" onchange="syncModelSelectToInput('Text')" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-zinc-200 outline-none focus:border-indigo-500">
+              <option value="">-- Pilih dari daftar model --</option>
+            </select>
+            <input id="aiTextModelInput" type="text" placeholder="Ketik manual ID model text (mis. claude / gpt-4o-mini)" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-indigo-200 outline-none focus:border-indigo-500">
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-zinc-300 font-medium">Model Vision / QC Strip / Golden Moment</label>
+            <select id="aiVisionModelSelect" onchange="syncModelSelectToInput('Vision')" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-zinc-200 outline-none focus:border-indigo-500">
+              <option value="">-- Pilih dari daftar model --</option>
+            </select>
+            <input id="aiVisionModelInput" type="text" placeholder="Ketik manual ID model vision" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-indigo-200 outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <div class="flex items-center justify-between">
+            <label class="text-zinc-300 font-medium">Model Audio / Word Alignment (VO)</label>
+            <span class="text-[10px] text-zinc-500">Fallback otomatis ke Whisper / Acoustic Aligner jika model tidak mendukung audio</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <select id="aiAudioModelSelect" onchange="syncModelSelectToInput('Audio')" class="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-zinc-200 outline-none focus:border-indigo-500">
+              <option value="">-- Pilih dari daftar model --</option>
+            </select>
+            <input id="aiAudioModelInput" type="text" placeholder="Ketik manual ID model audio" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-[11px] font-mono text-indigo-200 outline-none focus:border-indigo-500">
+          </div>
+        </div>
+
+        <label class="flex items-center gap-2 pt-1 text-[11px] text-zinc-300 cursor-pointer">
+          <input id="aiAutoFallbackChk" type="checkbox" checked class="rounded bg-zinc-950 border-zinc-700">
+          <span>Auto-fallback ke model aktif dari provider jika model pilihan sedang mati / 404</span>
+        </label>
+      </div>
+
+      <div class="flex items-center justify-between border-t border-zinc-800 pt-3">
+        <span id="aiSaveHint" class="text-[11px] text-zinc-500">Disimpan ke <code>_sistem/state/ai_provider.json</code> (gitignored).</span>
+        <div class="flex gap-2">
+          <button type="button" onclick="closeAiSettingsModal()" class="px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs">Tutup</button>
+          <button type="button" onclick="saveAiProviderConfig()" id="btnSaveAiSettings" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">Simpan &amp; Terapkan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="fixed bottom-5 right-5 bg-zinc-900 border border-zinc-700 text-zinc-100 text-xs px-4 py-3 rounded-xl shadow-2xl opacity-0 pointer-events-none transition-all z-50">
     <span id="toastMsg"></span>
@@ -424,6 +630,8 @@
     let packagesCache = [];
     let savedClips = [];
     let pollTimer = null;
+    let lastJobStates = {};
+    let unreadJobNotifs = 0;
 
     document.addEventListener("DOMContentLoaded", async () => {
       await loadHealth();
@@ -431,6 +639,20 @@
       await syncBoard(true);
       await loadPackagesForChannel();
       startJobPolling();
+    });
+
+    document.addEventListener("click", (ev) => {
+      const wrap = document.getElementById("jobNotifWrapper");
+      const pop = document.getElementById("jobNotifPopover");
+      if (wrap && pop && !pop.classList.contains("hidden") && !wrap.contains(ev.target)) {
+        pop.classList.add("hidden");
+      }
+    });
+
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape") {
+        closeJobNotifPopover();
+      }
     });
 
     function switchTab(tab) {
@@ -453,8 +675,13 @@
       try {
         const d = await (await fetch("/api/studio/health")).json();
         const dot = ok => ok ? "OK" : "OFF";
+        const activeModel = (d.resolved_text_model || d.ai_text_model || "AI").split("/").pop();
         document.getElementById("healthStrip").textContent =
-          `FFmpeg:${dot(d.ffmpeg_ready)} • yt-dlp:${dot(d.ytdlp_ready)} • Exa:${dot(d.exa_configured)} • AI:${dot(d.ai_configured)} • ElevenLabs:${dot(d.elevenlabs_configured)}`;
+          `FFmpeg:${dot(d.ffmpeg_ready)} • yt-dlp:${dot(d.ytdlp_ready)} • Exa:${dot(d.exa_configured)} • AI:${dot(d.ai_configured)} (${activeModel}) • ElevenLabs:${dot(d.elevenlabs_configured)}`;
+        const pill = document.getElementById("aiActiveModelPill");
+        if (pill) pill.textContent = activeModel;
+        const sDot = document.getElementById("aiStatusDot");
+        if (sDot) sDot.className = "w-2 h-2 rounded-full " + (d.ai_configured ? "bg-emerald-400" : "bg-amber-400");
       } catch (e) {
         document.getElementById("healthStrip").textContent = "Offline / gagal terhubung ke server.";
       }
@@ -553,34 +780,331 @@
       });
     }
 
+    let currentPlan = null;
+    let activeBeatIndex = null;
+    let activeNegativeTerms = [];
+    let currentSearchResults = [];
+    let filledBeats = new Set();
+
     function onSourcingPackageChange() {
       const id = document.getElementById("sourcingPackageSelect").value;
       const pkg = packagesCache.find(p => p.id === id);
       if (!pkg) return;
       const m = (pkg.content || "").match(/## (?:VO final|Naskah)[^\n]*\n+([\s\S]*?)(?:\n## |$)/i);
       document.getElementById("naskahInput").value = m ? m[1].trim() : (pkg.content || "");
+      activeBeatIndex = null;
+      filledBeats = new Set();
       extractKeywords();
     }
 
     async function extractKeywords() {
       const text = document.getElementById("naskahInput").value.trim();
+      const pkgId = document.getElementById("sourcingPackageSelect").value || "";
       if (!text) return showToast("Isi naskah terlebih dahulu.");
-      const d = await (await fetch("/api/extract-keywords", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ naskah: text })
+      const badge = document.getElementById("plannerModeBadge");
+      badge.textContent = "MENGANALISIS...";
+      const d = await (await fetch("/api/sourcing/plan-queries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ naskah: text, pkg_id: pkgId, use_llm: true })
       })).json();
+      currentPlan = d;
+      activeNegativeTerms = Array.from(new Set(d.negative_terms || []));
+      const shortModel = (d.planner_model || "").split("/").pop();
+      badge.textContent = d.planner_mode === "llm_structured"
+        ? `LLM • ${shortModel || "AI"}`
+        : "KINEMATIC v4";
+      renderBeatsList();
+      renderTieredQueries(d.queries || {}, d.primary_intent || null);
+      renderNegativeChips();
+    }
+
+    function renderBeatsList() {
+      const beats = (currentPlan && currentPlan.beats) ? currentPlan.beats : [];
+      document.getElementById("beatCountLabel").textContent = beats.length;
+      const box = document.getElementById("beatListBox");
+      if (!beats.length) {
+        box.innerHTML = `<div class="text-zinc-500">Tidak ada beat terdeteksi.</div>`;
+        return;
+      }
+      const roleColors = {
+        hook: "bg-rose-500/20 text-rose-300",
+        contrast: "bg-amber-500/20 text-amber-300",
+        cta: "bg-fuchsia-500/20 text-fuchsia-300",
+        proof: "bg-emerald-500/20 text-emerald-300",
+        payoff: "bg-sky-500/20 text-sky-300",
+        process: "bg-zinc-800 text-zinc-300"
+      };
+      box.innerHTML = beats.map(b => {
+        const isAct = activeBeatIndex === b.beat_index;
+        const isDone = filledBeats.has(b.beat_index);
+        const rCls = roleColors[b.role] || roleColors.process;
+        return `
+          <button onclick="selectBeat(${b.beat_index})" class="w-full text-left p-2 rounded-xl border transition ${isAct ? 'bg-indigo-950/60 border-indigo-500' : 'bg-zinc-950/80 hover:bg-zinc-900 border-zinc-800'}">
+            <div class="flex items-center justify-between gap-1 mb-0.5">
+              <div class="flex items-center gap-1.5">
+                <span class="font-mono font-bold text-[10px] text-zinc-300">${escapeHtml(b.beat_id)}</span>
+                <span class="px-1.5 py-0.2 rounded text-[10px] font-semibold uppercase ${rCls}">${escapeHtml(b.role)}</span>
+              </div>
+              <span class="text-[10px] font-mono ${isDone ? 'text-emerald-400 font-semibold' : 'text-zinc-500'}">${isDone ? '✓ Klip Siap' : '0/1 slot'}</span>
+            </div>
+            <div class="text-[11px] text-zinc-300 line-clamp-1">${escapeHtml(b.vo_line)}</div>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function selectBeat(bIdx) {
+      if (!currentPlan || !currentPlan.beats) return;
+      if (activeBeatIndex === bIdx) {
+        activeBeatIndex = null;
+        document.getElementById("activeBeatBadge").textContent = "Semua Beat";
+        activeNegativeTerms = Array.from(new Set(currentPlan.negative_terms || []));
+        renderBeatsList();
+        renderTieredQueries(currentPlan.queries || {}, currentPlan.primary_intent || null);
+        renderNegativeChips();
+        return;
+      }
+      const beat = currentPlan.beats.find(x => x.beat_index === bIdx);
+      if (!beat) return;
+      activeBeatIndex = bIdx;
+      document.getElementById("activeBeatBadge").textContent = `Beat U${bIdx} (${beat.role.toUpperCase()})`;
+      activeNegativeTerms = Array.from(new Set((beat.visual_intent && beat.visual_intent.negative_terms) || currentPlan.negative_terms || []));
+      renderBeatsList();
+      renderTieredQueries(beat.queries || {}, beat.visual_intent || null);
+      renderNegativeChips();
+      runSmartRoutedSearch();
+    }
+
+    function renderTieredQueries(qObj, intentObj) {
+      const sumBox = document.getElementById("intentSummaryBox");
+      if (intentObj && intentObj.kinematic_action) {
+        sumBox.classList.remove("hidden");
+        const strippedTxt = (intentObj.stripped_clauses && intentObj.stripped_clauses.length)
+          ? `<div class="text-[10px] text-amber-300/90">✂ Konteks non-visual dibuang: <code>${escapeHtml(intentObj.stripped_clauses.join(", "))}</code></div>`
+          : "";
+        sumBox.innerHTML = `
+          <div><span class="text-zinc-500">Aksi Fisik:</span> <strong class="text-emerald-300">${escapeHtml(intentObj.kinematic_action)}</strong></div>
+          <div><span class="text-zinc-500">Objek &amp; Shot:</span> ${escapeHtml(intentObj.target_object || "-")} • <span class="font-mono text-indigo-300">${escapeHtml(intentObj.recommended_shot || "medium_full")}</span></div>
+          ${strippedTxt}
+        `;
+      } else {
+        sumBox.classList.add("hidden");
+      }
+
+      const tiers = [
+        { key: "conceptual_stock", label: "Kinematic Stock (Pexels/Wikimedia)", cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200 hover:bg-emerald-500/20" },
+        { key: "literal_ugc", label: "Literal UGC (Shorts/TikTok/Reddit)", cls: "border-sky-500/30 bg-sky-500/10 text-sky-200 hover:bg-sky-500/20" },
+        { key: "metaphorical_broll", label: "Metaphor / Cutaway B-Roll", cls: "border-violet-500/30 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20" }
+      ];
       const box = document.getElementById("queryList");
-      const qs = d.recommended_queries || [];
-      box.innerHTML = qs.map(q => `
-        <button onclick="pickQuery('${escapeHtml(q).replace(/'/g, "\\'")}')" class="w-full text-left px-3 py-2 rounded-lg bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 transition">
-          ${escapeHtml(q)}
-        </button>
-      `).join("") || "Tidak ada query terdeteksi.";
-      if (qs[0]) document.getElementById("searchQueryInput").value = qs[0];
+      let firstQ = "";
+      const htmlParts = [];
+      for (const t of tiers) {
+        const arr = (qObj && qObj[t.key]) ? qObj[t.key] : [];
+        if (!arr.length) continue;
+        if (!firstQ) firstQ = arr[0];
+        htmlParts.push(`
+          <div class="space-y-1">
+            <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">${t.label}</div>
+            <div class="flex flex-wrap gap-1.5">
+              ${arr.map(q => `
+                <button onclick="pickQuery('${escapeHtml(q).replace(/'/g, "\\'")}')" class="text-left px-2.5 py-1 rounded-lg border text-[11px] transition ${t.cls}">
+                  ${escapeHtml(q)}
+                </button>
+              `).join("")}
+            </div>
+          </div>
+        `);
+      }
+      box.innerHTML = htmlParts.join("") || "Tidak ada query terdeteksi.";
+      if (firstQ) document.getElementById("searchQueryInput").value = firstQ;
+    }
+
+    function renderNegativeChips() {
+      const box = document.getElementById("negativeChipsBox");
+      if (!activeNegativeTerms.length) {
+        box.innerHTML = `<span class="text-zinc-500 text-[11px]">Tidak ada blokir kata aktif.</span>`;
+        return;
+      }
+      box.innerHTML = activeNegativeTerms.map((neg, i) => `
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/15 border border-rose-500/30 text-rose-300 font-mono text-[10px]">
+          -${escapeHtml(neg)}
+          <button onclick="removeNegativeTerm(${i})" class="hover:text-white font-bold">&times;</button>
+        </span>
+      `).join("");
+    }
+
+    function addNegativeTerm() {
+      const el = document.getElementById("addNegInput");
+      const v = (el.value || "").trim().toLowerCase().replace(/^-+/, "");
+      if (!v) return;
+      if (!activeNegativeTerms.includes(v)) activeNegativeTerms.push(v);
+      el.value = "";
+      renderNegativeChips();
+    }
+
+    function removeNegativeTerm(idx) {
+      activeNegativeTerms.splice(idx, 1);
+      renderNegativeChips();
     }
 
     function pickQuery(q) {
       document.getElementById("searchQueryInput").value = q;
       runUnifiedSearch();
+    }
+
+    function getActiveScenarioText() {
+      if (activeBeatIndex && currentPlan && currentPlan.beats) {
+        const b = currentPlan.beats.find(x => x.beat_index === activeBeatIndex);
+        if (b && b.visual_intent) return `${b.visual_intent.subject} ${b.visual_intent.kinematic_action}`;
+      }
+      if (currentPlan && currentPlan.primary_intent && currentPlan.primary_intent.kinematic_action) {
+        return `${currentPlan.primary_intent.subject} ${currentPlan.primary_intent.kinematic_action}`;
+      }
+      return document.getElementById("searchQueryInput").value.trim();
+    }
+
+    function toggleSafeZoneGuides() {
+      const show = document.getElementById("safeZoneToggle").checked;
+      document.querySelectorAll(".safe-zone-overlay").forEach(el => {
+        el.classList.toggle("hidden", !show);
+      });
+    }
+
+    function renderSearchResults(items, rejected) {
+      currentSearchResults = items || [];
+      const box = document.getElementById("searchResultsBox");
+      const showSafe = document.getElementById("safeZoneToggle").checked;
+
+      const rejWrap = document.getElementById("rejectedDrawerWrap");
+      const rejList = document.getElementById("rejectedItemsBox");
+      if (rejected && rejected.length) {
+        rejWrap.classList.remove("hidden");
+        document.getElementById("rejectedCountLabel").textContent = rejected.length;
+        rejList.innerHTML = rejected.map(r => `
+          <div class="flex items-center justify-between gap-2 bg-zinc-900/70 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-[11px]">
+            <div class="truncate text-zinc-400">
+              <span class="font-mono text-rose-400 mr-1.5">[${r.negative_hit ? 'BLOKIR -' + escapeHtml(r.negative_hit) : 'SKOR ' + Math.round(r.score)}]</span>
+              ${escapeHtml(r.title)} <span class="text-zinc-600">(${escapeHtml(r.platform)})</span>
+            </div>
+            <a href="${escapeHtml(r.page_url || r.url)}" target="_blank" class="text-zinc-500 hover:text-zinc-300 whitespace-nowrap">Cek</a>
+          </div>
+        `).join("");
+      } else {
+        rejWrap.classList.add("hidden");
+      }
+
+      if (!currentSearchResults.length) {
+        box.innerHTML = `<div class="p-10 text-center text-xs text-zinc-500">Tidak ada kandidat yang lolos filter ReadyScore. Turunkan Min Skor ke "Semua Kandidat" atau sesuaikan kata kunci.</div>`;
+        return;
+      }
+
+      box.innerHTML = currentSearchResults.map((c) => {
+        const sc = Math.round(c.score || 0);
+        const statusCls = c.ready_status === "READY"
+          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+          : (c.ready_status === "REVIEW" ? "bg-amber-500/20 text-amber-300 border-amber-500/40" : "bg-rose-500/20 text-rose-300 border-rose-500/40");
+        const riskCls = c.risk_level === "LOW" ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+          : c.risk_level === "MEDIUM" ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
+          : "bg-rose-500/15 text-rose-300 border-rose-500/30";
+        const bd = c.score_breakdown || {};
+        const frames = (c.preview_frames || []).filter(Boolean);
+        const dimLabel = (c.width && c.height) ? `${c.width}x${c.height}` : (c.url.includes("shorts/") ? "9:16 Short" : "Auto-Crop");
+        const durLabel = c.duration_s ? `${Number(c.duration_s).toFixed(1)}s` : "";
+        const trimLabel = (c.suggested_trim && c.suggested_trim.length === 2)
+          ? `Trim ${Number(c.suggested_trim[0]).toFixed(1)}s–${Number(c.suggested_trim[1]).toFixed(1)}s`
+          : "";
+        const payload = encodeURIComponent(JSON.stringify(c));
+
+        let mediaPreviewHtml = "";
+        if (c.preview_video_url) {
+          mediaPreviewHtml = `
+            <div class="relative w-44 h-28 rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 flex-shrink-0 group"
+                 onmouseenter="const v=this.querySelector('video'); if(v){v.play().catch(()=>{});}"
+                 onmouseleave="const v=this.querySelector('video'); if(v){v.pause();}">
+              <video src="${escapeHtml(c.preview_video_url)}" poster="${escapeHtml(c.thumbnail || '')}" muted loop playsinline preload="metadata" class="w-full h-full object-cover"></video>
+              <span class="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/75 text-[9px] font-mono text-zinc-200 pointer-events-none">▶ Hover Scrub</span>
+              <div class="safe-zone-overlay ${showSafe ? '' : 'hidden'} absolute inset-0 pointer-events-none">
+                <div class="h-[18%] w-full border-b border-dashed border-sky-400/80 bg-sky-500/10 text-[8px] text-sky-200 px-1">HEADROOM 18%</div>
+                <div class="h-[60%] w-full"></div>
+                <div class="h-[22%] w-full border-t border-dashed border-amber-400/80 bg-amber-500/15 text-[8px] text-amber-200 px-1">RSVP CAPTION 22%</div>
+              </div>
+            </div>
+          `;
+        } else if (frames.length >= 2) {
+          mediaPreviewHtml = `
+            <div class="relative w-48 h-28 rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 flex-shrink-0 grid grid-cols-3 gap-0.5">
+              ${frames.slice(0, 3).map((fu, fi) => `
+                <div class="relative h-full">
+                  <img src="${escapeHtml(fu)}" loading="lazy" class="w-full h-full object-cover">
+                  <span class="absolute bottom-0.5 left-0.5 bg-black/70 text-[8px] font-mono px-1 rounded text-zinc-300">F${fi + 1}</span>
+                </div>
+              `).join("")}
+              <div class="safe-zone-overlay ${showSafe ? '' : 'hidden'} absolute inset-0 pointer-events-none">
+                <div class="h-[18%] w-full border-b border-dashed border-sky-400/80 bg-sky-500/10"></div>
+                <div class="h-[60%] w-full"></div>
+                <div class="h-[22%] w-full border-t border-dashed border-amber-400/80 bg-amber-500/15"></div>
+              </div>
+            </div>
+          `;
+        } else if (c.thumbnail) {
+          mediaPreviewHtml = `
+            <div class="relative w-36 h-24 rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 flex-shrink-0">
+              <img src="${escapeHtml(c.thumbnail)}" loading="lazy" class="w-full h-full object-cover">
+              <div class="safe-zone-overlay ${showSafe ? '' : 'hidden'} absolute inset-0 pointer-events-none">
+                <div class="h-[18%] w-full border-b border-dashed border-sky-400/80 bg-sky-500/10"></div>
+                <div class="h-[60%] w-full"></div>
+                <div class="h-[22%] w-full border-t border-dashed border-amber-400/80 bg-amber-500/15"></div>
+              </div>
+            </div>
+          `;
+        }
+
+        const tierLabel = c.query_tier ? `<span class="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-mono text-[10px]">${escapeHtml(c.query_tier)}</span>` : "";
+        const visionTag = c.vision_evaluated ? `<span class="px-1.5 py-0.5 rounded bg-fuchsia-500/20 text-fuchsia-300 font-mono text-[10px]">👁 Vision Verified</span>` : "";
+
+        return `
+          <div class="bg-zinc-900/85 border border-zinc-800 hover:border-zinc-700 rounded-xl p-4 space-y-2.5 transition">
+            <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300 font-semibold uppercase">${escapeHtml(c.platform)}</span>
+                <span class="px-2 py-0.5 rounded border font-mono ${riskCls}">${escapeHtml(c.risk_level)} • ${escapeHtml(c.license)}</span>
+                ${tierLabel}
+                ${visionTag}
+                <span class="text-zinc-400 font-mono text-[10px]">${escapeHtml(dimLabel)} ${durLabel ? '• ' + escapeHtml(durLabel) : ''}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full border font-mono font-bold text-[11px] ${statusCls}">${escapeHtml(c.ready_status || 'REVIEW')} • ${sc}%</span>
+              </div>
+            </div>
+
+            <div class="flex gap-3.5">
+              ${mediaPreviewHtml}
+              <div class="min-w-0 flex-1 space-y-1.5">
+                <a href="${escapeHtml(c.page_url || c.url)}" target="_blank" class="text-xs font-semibold text-zinc-100 hover:text-indigo-400 line-clamp-2">${escapeHtml(c.title)}</a>
+                <div class="text-[11px] text-zinc-400 line-clamp-2">${escapeHtml(c.vision_summary || c.snippet || "")}</div>
+                <div class="flex flex-wrap items-center gap-2 text-[10px] font-mono text-zinc-400 pt-0.5">
+                  <span class="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800">Aksi ${bd.semantic ?? sc}%</span>
+                  <span class="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800">Clean ${bd.clean_headroom ?? '-'}%</span>
+                  <span class="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800">Framing ${bd.framing_res ?? '-'}%</span>
+                  <span class="px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800">YPP ${bd.ypp_safety ?? '-'}%</span>
+                  ${trimLabel ? `<span class="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-300">✂ ${escapeHtml(trimLabel)}</span>` : ""}
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-zinc-800/60">
+              <span class="text-[10px] font-mono text-zinc-500 truncate max-w-[240px]">Kreator: ${escapeHtml(c.creator || "-")} • CropX ${(Number(c.crop_x_norm || 0.5) * 100).toFixed(0)}%</span>
+              <div class="flex items-center gap-2">
+                ${c.page_url || !c.url.startsWith("vault://") ? `<a href="${escapeHtml(c.page_url || c.url)}" target="_blank" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-[11px]">Sumber</a>` : ""}
+                <button onclick="saveCandidate('${payload}')" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-indigo-300 rounded-lg text-[11px]">+ Keranjang${activeBeatIndex ? ' (U' + activeBeatIndex + ')' : ''}</button>
+                <button onclick="downloadCandidate('${payload}', this)" class="px-3.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-semibold">✂ Unduh ke Assets</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
     }
 
     async function runUnifiedSearch() {
@@ -589,53 +1113,99 @@
       const providers = Array.from(document.querySelectorAll(".prov-cb:checked")).map(el => el.value);
       const ccOnly = document.getElementById("ccOnlyToggle").checked;
       const rawMode = document.getElementById("rawModeToggle").checked;
+      const minScore = Number(document.getElementById("minReadyScoreSelect").value || 0);
+      const epId = document.getElementById("sourcingPackageSelect").value || "";
 
       const box = document.getElementById("searchResultsBox");
-      box.innerHTML = `<div class="p-10 text-center text-xs text-zinc-400 animate-pulse">Mencari di ${providers.join(", ")}...</div>`;
+      box.innerHTML = `<div class="p-10 text-center text-xs text-zinc-400 animate-pulse">Mencari "${escapeHtml(q)}" di ${providers.join(", ")}...</div>`;
       try {
         const d = await (await fetch("/api/sourcing/unified-search", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: q, providers, limit: 15, cc_only: ccOnly, raw_mode: rawMode })
+          body: JSON.stringify({
+            query: q, providers, limit: 18, cc_only: ccOnly, raw_mode: rawMode,
+            negative_terms: activeNegativeTerms, episode_id: epId, channel_id: activeChannel
+          })
         })).json();
-        const items = d.results || [];
-        if (!items.length) {
-          box.innerHTML = `<div class="p-10 text-center text-xs text-zinc-500">Tidak ada kandidat ditemukan. Coba ubah kata kunci atau matikan filter CC-only.</div>`;
-          return;
-        }
-        box.innerHTML = items.map((c, i) => {
-          const riskCls = c.risk_level === "LOW" ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
-            : c.risk_level === "MEDIUM" ? "bg-amber-500/15 text-amber-300 border-amber-500/30"
-            : "bg-rose-500/15 text-rose-300 border-rose-500/30";
-          const payload = encodeURIComponent(JSON.stringify(c));
-          return `
-            <div class="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4 space-y-2.5">
-              <div class="flex items-center justify-between gap-2 text-[11px]">
-                <div class="flex items-center gap-2">
-                  <span class="px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300 font-semibold uppercase">${escapeHtml(c.platform)}</span>
-                  <span class="px-2 py-0.5 rounded border font-mono ${riskCls}">${escapeHtml(c.risk_level)} • ${escapeHtml(c.license)}</span>
-                  <span class="text-zinc-400 font-mono">${escapeHtml(c.creator || "")}</span>
-                </div>
-                <span class="font-mono text-zinc-500">Skor ${Math.round(c.score)}</span>
-              </div>
-              <div class="flex gap-3">
-                ${c.thumbnail ? `<img src="${escapeHtml(c.thumbnail)}" class="w-24 h-16 rounded-lg object-cover border border-zinc-800 flex-shrink-0">` : ""}
-                <div class="min-w-0 flex-1">
-                  <a href="${escapeHtml(c.page_url || c.url)}" target="_blank" class="text-xs font-semibold text-zinc-100 hover:text-indigo-400 line-clamp-2">${escapeHtml(c.title)}</a>
-                  <div class="text-[11px] text-zinc-500 truncate mt-0.5">${escapeHtml(c.url)}</div>
-                  <p class="text-[11px] text-zinc-400 mt-1 line-clamp-2">${escapeHtml(c.snippet || "")}</p>
-                </div>
-              </div>
-              <div class="flex items-center justify-end gap-2 pt-2 border-t border-zinc-800/60">
-                <a href="${escapeHtml(c.page_url || c.url)}" target="_blank" class="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-[11px]">Buka Sumber</a>
-                <button onclick="saveCandidate('${payload}')" class="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-indigo-300 rounded-lg text-[11px]">+ Simpan</button>
-                <button onclick="downloadCandidate('${payload}', this)" class="px-3.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] font-semibold">Unduh ke Assets</button>
-              </div>
-            </div>
-          `;
-        }).join("");
+        const all = d.results || [];
+        const accepted = all.filter(c => c.ready_status !== "REJECTED" && (c.score || 0) >= minScore);
+        const rejected = all.filter(c => c.ready_status === "REJECTED" || (c.score || 0) < minScore);
+        renderSearchResults(accepted, rejected);
       } catch (e) {
         box.innerHTML = `<div class="p-6 text-xs text-rose-400">Error: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    async function runSmartRoutedSearch() {
+      if (!currentPlan) await extractKeywords();
+      let qSource = (currentPlan && currentPlan.queries) ? currentPlan.queries : {};
+      if (activeBeatIndex && currentPlan && currentPlan.beats) {
+        const b = currentPlan.beats.find(x => x.beat_index === activeBeatIndex);
+        if (b && b.queries) qSource = b.queries;
+      }
+      const providers = Array.from(document.querySelectorAll(".prov-cb:checked")).map(el => el.value);
+      const ccOnly = document.getElementById("ccOnlyToggle").checked;
+      const rawMode = document.getElementById("rawModeToggle").checked;
+      const minScore = Number(document.getElementById("minReadyScoreSelect").value || 58);
+      const epId = document.getElementById("sourcingPackageSelect").value || "";
+      const fallbackQ = document.getElementById("searchQueryInput").value.trim();
+
+      const box = document.getElementById("searchResultsBox");
+      box.innerHTML = `<div class="p-10 text-center text-xs text-indigo-300 animate-pulse">⚡ Menjalankan Smart 3-Tier Visual Routing (Kinematic Stock + UGC + Vault) &amp; Negative Gate...</div>`;
+      try {
+        const d = await (await fetch("/api/sourcing/smart-search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conceptual_queries: qSource.conceptual_stock || [],
+            literal_queries: qSource.literal_ugc || [],
+            metaphorical_queries: qSource.metaphorical_broll || [],
+            fallback_query: fallbackQ,
+            providers,
+            negative_terms: activeNegativeTerms,
+            cc_only: ccOnly,
+            raw_mode: rawMode,
+            min_ready_score: minScore,
+            scenario: getActiveScenarioText(),
+            episode_id: epId,
+            channel_id: activeChannel,
+            limit: 16
+          })
+        })).json();
+        renderSearchResults(d.results || [], d.rejected || []);
+      } catch (e) {
+        box.innerHTML = `<div class="p-6 text-xs text-rose-400">Error Smart Search: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    async function runVisionJudgeTop5() {
+      if (!currentSearchResults.length) return showToast("Jalankan pencarian klip terlebih dahulu.");
+      const btn = document.getElementById("btnVisionBatch");
+      const epId = document.getElementById("sourcingPackageSelect").value || "";
+      btn.disabled = true;
+      btn.textContent = "👁 Mengevaluasi 3-Frame...";
+      try {
+        const d = await (await fetch("/api/sourcing/vision-batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            candidates: currentSearchResults,
+            scenario: getActiveScenarioText(),
+            negative_terms: activeNegativeTerms,
+            episode_id: epId,
+            channel_id: activeChannel,
+            max_eval: 5
+          })
+        })).json();
+        if (d.success) {
+          renderSearchResults(d.results || [], d.rejected || []);
+          showToast(`Vision Judge selesai: ${d.count} lolos, ${d.rejected_count} ditolak.`);
+        }
+      } catch (e) {
+        showToast("Vision error: " + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "👁 Vision Judge Top 5";
       }
     }
 
@@ -643,8 +1213,9 @@
       const pkg = document.getElementById("sourcingPackageSelect").value;
       if (!pkg) return showToast("Pilih Target Episode di kolom kiri dulu sebelum mengunduh.");
       const c = JSON.parse(decodeURIComponent(encoded));
+      const useAutoTrim = document.getElementById("autoTrimToggle").checked;
       btn.disabled = true;
-      btn.textContent = "Mengunduh...";
+      btn.textContent = useAutoTrim ? "Auto-Trim..." : "Mengunduh...";
       try {
         const d = await (await fetch("/api/sourcing/download", {
           method: "POST",
@@ -652,21 +1223,31 @@
           body: JSON.stringify({
             url: c.url, package_name: pkg, channel_id: activeChannel,
             title: c.title, platform: c.platform, creator: c.creator,
-            license: c.license, license_url: c.license_url, page_url: c.page_url
+            license: c.license, license_url: c.license_url, page_url: c.page_url,
+            auto_trim: useAutoTrim,
+            beat_index: activeBeatIndex || c._boundBeat || null,
+            scenario: getActiveScenarioText(),
+            crop_x_norm: c.crop_x_norm || 0.50,
+            local_path: c.local_path || ""
           })
         })).json();
         if (d.success) {
-          btn.textContent = "Tersimpan";
-          showToast(`Berhasil diunduh ke ${pkg}/assets/${d.filename}`);
+          if (activeBeatIndex) {
+            filledBeats.add(activeBeatIndex);
+            renderBeatsList();
+          }
+          const tw = (d.trim_info && d.trim_info.trim_window) ? ` [${d.trim_info.trim_window[0]}s-${d.trim_info.trim_window[1]}s]` : "";
+          btn.textContent = "✓ Tersimpan";
+          showToast(`Tersimpan di ${pkg}/assets/${d.filename}${tw}`);
           syncBoard(true);
         } else {
           btn.disabled = false;
-          btn.textContent = "Unduh ke Assets";
+          btn.textContent = "✂ Unduh ke Assets";
           showToast("Gagal unduh: " + d.error);
         }
       } catch (e) {
         btn.disabled = false;
-        btn.textContent = "Unduh ke Assets";
+        btn.textContent = "✂ Unduh ke Assets";
         showToast("Error: " + e.message);
       }
     }
@@ -674,21 +1255,97 @@
     function saveCandidate(encoded) {
       const c = JSON.parse(decodeURIComponent(encoded));
       if (savedClips.some(x => x.url === c.url)) return showToast("Sudah ada di keranjang.");
+      c._boundBeat = activeBeatIndex || (savedClips.length + 1);
       savedClips.push(c);
+      if (activeBeatIndex) {
+        filledBeats.add(activeBeatIndex);
+        renderBeatsList();
+      }
+      renderSavedBasket();
+    }
+
+    function renderSavedBasket() {
       document.getElementById("savedCount").textContent = savedClips.length;
-      document.getElementById("savedList").innerHTML = savedClips.map((x, idx) => `
-        <div class="flex items-center justify-between bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5">
-          <span class="truncate text-zinc-200 max-w-[200px]">${idx + 1}. ${escapeHtml(x.title)}</span>
-          <span class="text-[10px] font-mono text-zinc-500">${escapeHtml(x.platform)}</span>
-        </div>
-      `).join("");
+      if (!savedClips.length) {
+        document.getElementById("savedList").innerHTML = "Belum ada klip disimpan.";
+        return;
+      }
+      document.getElementById("savedList").innerHTML = savedClips.map((x, idx) => {
+        const tw = (x.suggested_trim && x.suggested_trim.length === 2)
+          ? `${Number(x.suggested_trim[0]).toFixed(1)}-${Number(x.suggested_trim[1]).toFixed(1)}s`
+          : "auto";
+        return `
+          <div class="flex items-center justify-between gap-2 bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5">
+            <div class="truncate text-zinc-200 max-w-[205px]">
+              <span class="font-mono text-indigo-400 mr-1">[U${x._boundBeat || (idx + 1)}]</span>${escapeHtml(x.title)}
+            </div>
+            <div class="flex items-center gap-1.5 text-[10px] font-mono text-zinc-400">
+              <span class="text-amber-300">${escapeHtml(tw)}</span>
+              <button onclick="savedClips.splice(${idx},1);renderSavedBasket();" class="text-rose-400 hover:text-white">&times;</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function downloadAllBasket() {
+      const pkg = document.getElementById("sourcingPackageSelect").value;
+      if (!pkg) return showToast("Pilih Target Episode dulu.");
+      if (!savedClips.length) return showToast("Keranjang masih kosong.");
+      const btn = document.getElementById("btnBatchBasket");
+      const useAutoTrim = document.getElementById("autoTrimToggle").checked;
+      btn.disabled = true;
+      let okCount = 0;
+      for (let i = 0; i < savedClips.length; i++) {
+        const c = savedClips[i];
+        btn.textContent = `${i + 1}/${savedClips.length}...`;
+        try {
+          const d = await (await fetch("/api/sourcing/download", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              url: c.url, package_name: pkg, channel_id: activeChannel,
+              title: c.title, platform: c.platform, creator: c.creator,
+              license: c.license, license_url: c.license_url, page_url: c.page_url,
+              auto_trim: useAutoTrim,
+              beat_index: c._boundBeat || (i + 1),
+              scenario: getActiveScenarioText(),
+              crop_x_norm: c.crop_x_norm || 0.50,
+              local_path: c.local_path || ""
+            })
+          })).json();
+          if (d.success) {
+            okCount++;
+            if (d.trim_info && d.trim_info.trim_window) c.suggested_trim = d.trim_info.trim_window;
+            filledBeats.add(c._boundBeat || (i + 1));
+          }
+        } catch (_) {}
+      }
+      btn.disabled = false;
+      btn.textContent = "Unduh Semua";
+      renderBeatsList();
+      renderSavedBasket();
+      syncBoard(true);
+      showToast(`Selesai: ${okCount}/${savedClips.length} klip diunduh & dikunci ke Golden Moments.`);
+    }
+
+    function fmtMmSs(sec) {
+      const s = Math.max(0, Number(sec) || 0);
+      const m = Math.floor(s / 60);
+      const r = (s % 60).toFixed(1).padStart(4, "0");
+      return `${String(m).padStart(2, "0")}:${r}`;
     }
 
     function copySourcesTable() {
       if (!savedClips.length) return showToast("Keranjang masih kosong.");
-      const lines = savedClips.map((c, i) => `| ${i + 1} | Beat ${i + 1} | ${c.url} | ${c.creator || '-'} | 00:00-00:03 | ${c.license} | crop + zoom + speed 1.05x |`);
+      const lines = savedClips.map((c, i) => {
+        const tr = (c.suggested_trim && c.suggested_trim.length === 2)
+          ? `${fmtMmSs(c.suggested_trim[0])}-${fmtMmSs(c.suggested_trim[1])}`
+          : "auto-peak";
+        return `| ${i + 1} | Beat U${c._boundBeat || (i + 1)} | ${c.page_url || c.url} | ${c.creator || '-'} | ${tr} | ${c.license} | crop_9_16 + zoom + grade |`;
+      });
       navigator.clipboard.writeText(lines.join("\n"));
-      showToast("Tabel sources.md disalin ke clipboard.");
+      showToast("Tabel sources.md (dengan rentang Auto-Trim) disalin ke clipboard.");
     }
 
     async function loadEditorDetail(runAutoqc = false) {
@@ -760,10 +1417,43 @@
       })).json();
       if (d.success) {
         showToast(`Job ${jobType} untuk ${pkg} masuk antrean (${d.job_id})`);
-        refreshJobs();
+        await refreshJobs();
+        const pop = document.getElementById("jobNotifPopover");
+        if (pop && pop.classList.contains("hidden")) {
+          unreadJobNotifs += 1;
+        }
       } else {
         showToast("Gagal enqueue: " + (d.detail || d.error));
       }
+    }
+
+    function toggleJobNotifPopover(ev) {
+      if (ev) ev.stopPropagation();
+      const pop = document.getElementById("jobNotifPopover");
+      if (!pop) return;
+      const opening = pop.classList.contains("hidden");
+      pop.classList.toggle("hidden", !opening);
+      if (opening) {
+        unreadJobNotifs = 0;
+        refreshJobs();
+      }
+    }
+
+    function closeJobNotifPopover() {
+      const pop = document.getElementById("jobNotifPopover");
+      if (pop) pop.classList.add("hidden");
+    }
+
+    function openJobEpisodeFromNotif(channelId, episodeId) {
+      if (channelId && channelId !== activeChannel) {
+        const chSel = document.getElementById("channelSelect");
+        if (chSel && Array.from(chSel.options).some(o => o.value === channelId)) {
+          chSel.value = channelId;
+          activeChannel = channelId;
+        }
+      }
+      closeJobNotifPopover();
+      openEpisodeInEditor(episodeId);
     }
 
     async function runCreditsNow() {
@@ -780,34 +1470,103 @@
       } catch (e) {}
     }
 
+    function buildJobCardHtml(j, clickable = false) {
+      const pct = Math.max(0, Math.min(100, Number(j.progress_pct || (j.status === "succeeded" ? 100 : 0))));
+      const cls = j.status === "succeeded" ? "text-emerald-400 border-emerald-500/30"
+        : j.status === "failed" ? "text-rose-400 border-rose-500/30"
+        : "text-amber-300 border-amber-500/30";
+      const barCls = j.status === "succeeded" ? "bg-emerald-500"
+        : j.status === "failed" ? "bg-rose-500"
+        : "bg-indigo-500";
+      const clickAttr = clickable
+        ? `onclick="openJobEpisodeFromNotif('${escapeHtml(j.channel_id)}','${escapeHtml(j.episode_id)}')" title="Klik untuk buka di Editor, VO & QC"`
+        : "";
+      const hoverCls = clickable ? "cursor-pointer hover:bg-zinc-900/90 transition" : "";
+      return `
+        <div ${clickAttr} class="bg-zinc-950 border ${cls} ${hoverCls} rounded-xl p-2.5 space-y-1.5">
+          <div class="flex items-center justify-between font-mono text-[10px]">
+            <span class="uppercase font-bold">${escapeHtml(j.job_type)} • ${escapeHtml(j.status)}</span>
+            <span class="font-bold text-white">${pct}%</span>
+          </div>
+          <div class="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden">
+            <div class="${barCls} h-full transition-all duration-300" style="width: ${pct}%"></div>
+          </div>
+          <div class="text-zinc-200 font-medium truncate">${escapeHtml(j.channel_id)}/${escapeHtml(j.episode_id)}</div>
+          <div class="text-[11px] text-zinc-400 truncate">${escapeHtml(j.error || j.progress_msg || "")}</div>
+        </div>
+      `;
+    }
+
+    function updateJobNotificationHeader(jobs) {
+      const active = jobs.filter(j => j.status === "running" || j.status === "queued");
+      const failed = jobs.filter(j => j.status === "failed");
+      const badge = document.getElementById("jobNotifBadge");
+      const mini = document.getElementById("jobNotifMiniText");
+      const btn = document.getElementById("btnJobNotif");
+      const summary = document.getElementById("jobNotifSummaryPill");
+
+      // Detect status transitions to notify user even on other tabs
+      const hadHistory = Object.keys(lastJobStates).length > 0;
+      const popOpen = !document.getElementById("jobNotifPopover")?.classList.contains("hidden");
+      jobs.forEach(j => {
+        const prev = lastJobStates[j.job_id];
+        if (hadHistory && prev && (prev === "running" || prev === "queued") && (j.status === "succeeded" || j.status === "failed")) {
+          if (!popOpen) unreadJobNotifs += 1;
+          showToast(j.status === "succeeded"
+            ? `✓ ${j.job_type} ${j.episode_id} selesai (100%)`
+            : `✕ ${j.job_type} ${j.episode_id} gagal`);
+        }
+        lastJobStates[j.job_id] = j.status;
+      });
+
+      if (active.length > 0) {
+        const lead = active[0];
+        const pct = Math.max(0, Math.min(100, Number(lead.progress_pct || 0)));
+        if (mini) mini.textContent = `${lead.job_type} ${pct}%`;
+        if (badge) {
+          badge.textContent = String(active.length);
+          badge.className = "min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-mono font-bold flex items-center justify-center bg-indigo-500 text-white animate-pulse";
+        }
+        if (btn) btn.className = "relative text-xs bg-indigo-950/50 hover:bg-indigo-900/50 text-indigo-100 px-2.5 py-1.5 rounded-lg border border-indigo-500/50 flex items-center gap-1.5 transition";
+        if (summary) {
+          summary.textContent = `${active.length} berjalan`;
+          summary.className = "text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300";
+        }
+      } else {
+        if (mini) mini.textContent = "Jobs";
+        if (btn) btn.className = "relative text-xs bg-zinc-900 hover:bg-zinc-800 text-zinc-200 px-2.5 py-1.5 rounded-lg border border-zinc-700 flex items-center gap-1.5 transition";
+        if (unreadJobNotifs > 0 && badge) {
+          badge.textContent = String(unreadJobNotifs);
+          const hasRecentFail = failed.length > 0 && jobs[0]?.status === "failed";
+          badge.className = `min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-mono font-bold flex items-center justify-center ${hasRecentFail ? "bg-rose-500" : "bg-emerald-500"} text-white`;
+        } else if (badge) {
+          badge.className = "hidden";
+        }
+        if (summary) {
+          if (!jobs.length) {
+            summary.textContent = "Kosong";
+            summary.className = "text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400";
+          } else {
+            const latest = jobs[0];
+            summary.textContent = latest.status === "failed" ? "Ada error" : `${jobs.length} riwayat`;
+            summary.className = `text-[10px] font-mono px-2 py-0.5 rounded-full ${latest.status === "failed" ? "bg-rose-500/20 text-rose-300" : "bg-emerald-500/15 text-emerald-300"}`;
+          }
+        }
+      }
+    }
+
     function renderJobsList(jobs) {
-      const box = document.getElementById("jobsList");
-      if (!jobs.length) {
-        box.innerHTML = `<p class="text-zinc-500 italic text-center py-6">Belum ada job dijalankan.</p>`;
+      updateJobNotificationHeader(jobs || []);
+      const emptyHtml = `<p class="text-zinc-500 italic text-center py-6">Belum ada job dijalankan.</p>`;
+      const boardBox = document.getElementById("jobsList");
+      const notifBox = document.getElementById("jobNotifList");
+      if (!jobs || !jobs.length) {
+        if (boardBox) boardBox.innerHTML = emptyHtml;
+        if (notifBox) notifBox.innerHTML = emptyHtml;
         return;
       }
-      box.innerHTML = jobs.map(j => {
-        const pct = Math.max(0, Math.min(100, Number(j.progress_pct || (j.status === "succeeded" ? 100 : 0))));
-        const cls = j.status === "succeeded" ? "text-emerald-400 border-emerald-500/30"
-          : j.status === "failed" ? "text-rose-400 border-rose-500/30"
-          : "text-amber-300 border-amber-500/30";
-        const barCls = j.status === "succeeded" ? "bg-emerald-500"
-          : j.status === "failed" ? "bg-rose-500"
-          : "bg-indigo-500";
-        return `
-          <div class="bg-zinc-950 border ${cls} rounded-xl p-2.5 space-y-1.5">
-            <div class="flex items-center justify-between font-mono text-[10px]">
-              <span class="uppercase font-bold">${escapeHtml(j.job_type)} • ${escapeHtml(j.status)}</span>
-              <span class="font-bold text-white">${pct}%</span>
-            </div>
-            <div class="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden">
-              <div class="${barCls} h-full transition-all duration-300" style="width: ${pct}%"></div>
-            </div>
-            <div class="text-zinc-200 font-medium truncate">${escapeHtml(j.channel_id)}/${escapeHtml(j.episode_id)}</div>
-            <div class="text-[11px] text-zinc-400 truncate">${escapeHtml(j.error || j.progress_msg || "")}</div>
-          </div>
-        `;
-      }).join("");
+      if (boardBox) boardBox.innerHTML = jobs.map(j => buildJobCardHtml(j, false)).join("");
+      if (notifBox) notifBox.innerHTML = jobs.map(j => buildJobCardHtml(j, true)).join("");
     }
 
     function startJobPolling() {
@@ -938,6 +1697,220 @@
         await loadChannels();
       } else {
         showToast("Gagal provision: " + d.error);
+      }
+    }
+
+    // ---------------- Custom AI Provider, Connection Test & Model Picker ----------------
+    let aiPresetsCache = [];
+    let aiDiscoveredModels = [];
+
+    async function openAiSettingsModal() {
+      document.getElementById("aiSettingsModal").classList.remove("hidden");
+      document.getElementById("aiTestResultBox").classList.add("hidden");
+      document.getElementById("aiApiKeyInput").value = "";
+      document.getElementById("aiClearKeyChk").checked = false;
+      try {
+        const d = await (await fetch("/api/settings/ai")).json();
+        if (!d.success || !d.settings) return;
+        const s = d.settings;
+        aiPresetsCache = s.presets || [];
+        const pSel = document.getElementById("aiPresetSelect");
+        pSel.innerHTML = aiPresetsCache.map(p =>
+          `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`
+        ).join("");
+        pSel.value = aiPresetsCache.some(p => p.id === s.provider_preset) ? s.provider_preset : "custom";
+
+        document.getElementById("aiProviderNameInput").value = s.provider_name || "";
+        document.getElementById("aiBaseUrlInput").value = s.ai_base_url || "";
+        document.getElementById("aiTextModelInput").value = s.ai_text_model || "";
+        document.getElementById("aiVisionModelInput").value = s.ai_vision_model || "";
+        document.getElementById("aiAudioModelInput").value = s.ai_audio_model || "";
+        document.getElementById("aiAutoFallbackChk").checked = s.auto_fallback !== false;
+
+        const keyBadge = document.getElementById("aiSavedKeyBadge");
+        keyBadge.textContent = s.has_api_key ? `Tersimpan: ${s.api_key_masked}` : "Belum ada API key";
+        keyBadge.className = "text-[10px] font-mono " + (s.has_api_key ? "text-emerald-400" : "text-amber-400");
+
+        const resBadge = document.getElementById("aiModalResolvedBadge");
+        resBadge.textContent = `Aktif: ${(s.resolved_text_model || "-").split("/").pop()} / ${(s.resolved_vision_model || "-").split("/").pop()}`;
+
+        await fetchAiModelsList(true);
+      } catch (e) {
+        showToast("Gagal memuat pengaturan AI: " + e.message);
+      }
+    }
+
+    function closeAiSettingsModal() {
+      document.getElementById("aiSettingsModal").classList.add("hidden");
+    }
+
+    function toggleAiKeyVisibility() {
+      const inp = document.getElementById("aiApiKeyInput");
+      const btn = document.getElementById("btnToggleAiKey");
+      const show = inp.type === "password";
+      inp.type = show ? "text" : "password";
+      btn.textContent = show ? "Sembunyi" : "Lihat";
+    }
+
+    function onAiPresetChange() {
+      const pid = document.getElementById("aiPresetSelect").value;
+      const preset = aiPresetsCache.find(p => p.id === pid);
+      if (!preset) return;
+      document.getElementById("aiProviderNameInput").value = preset.name || "";
+      if (preset.base_url) document.getElementById("aiBaseUrlInput").value = preset.base_url;
+      if (preset.default_text) document.getElementById("aiTextModelInput").value = preset.default_text;
+      if (preset.default_vision) document.getElementById("aiVisionModelInput").value = preset.default_vision;
+      if (preset.default_audio) document.getElementById("aiAudioModelInput").value = preset.default_audio;
+      document.getElementById("aiTestResultBox").classList.add("hidden");
+    }
+
+    function populateAiModelDropdowns(models) {
+      aiDiscoveredModels = models || [];
+      document.getElementById("aiModelsCountBadge").textContent = `${aiDiscoveredModels.length} model tersedia`;
+      ["Text", "Vision", "Audio"].forEach(role => {
+        const sel = document.getElementById(`ai${role}ModelSelect`);
+        const inp = document.getElementById(`ai${role}ModelInput`);
+        const curVal = (inp.value || "").trim();
+        const opts = ['<option value="">-- Pilih dari daftar model --</option>'];
+        if (curVal && !aiDiscoveredModels.includes(curVal)) {
+          opts.push(`<option value="${escapeHtml(curVal)}">${escapeHtml(curVal)} (kustom)</option>`);
+        }
+        aiDiscoveredModels.forEach(m => {
+          opts.push(`<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`);
+        });
+        sel.innerHTML = opts.join("");
+        sel.value = curVal;
+      });
+    }
+
+    function syncModelSelectToInput(role) {
+      const sel = document.getElementById(`ai${role}ModelSelect`);
+      const inp = document.getElementById(`ai${role}ModelInput`);
+      if (sel.value) inp.value = sel.value;
+    }
+
+    async function fetchAiModelsList(silent = false) {
+      const btn = document.getElementById("btnFetchModels");
+      const base_url = document.getElementById("aiBaseUrlInput").value.trim();
+      const api_key = document.getElementById("aiApiKeyInput").value.trim();
+      btn.disabled = true;
+      btn.textContent = "Memuat model...";
+      try {
+        const d = await (await fetch("/api/settings/ai/models", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ai_base_url: base_url, ai_api_key: api_key || null })
+        })).json();
+        populateAiModelDropdowns(d.models || []);
+        if (!silent) {
+          if (d.success) {
+            showToast(`Berhasil memuat ${d.models.length} model (${d.latency_ms}ms).`);
+          } else {
+            showToast("Gagal ambil model: " + (d.error || "Endpoint tidak merespons"));
+          }
+        }
+      } catch (e) {
+        if (!silent) showToast("Error ambil model: " + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "↻ Ambil Daftar Model";
+      }
+    }
+
+    async function runAiConnectionTest() {
+      const btn = document.getElementById("btnTestAiConn");
+      const box = document.getElementById("aiTestResultBox");
+      const base_url = document.getElementById("aiBaseUrlInput").value.trim();
+      const api_key = document.getElementById("aiApiKeyInput").value.trim();
+      const model = document.getElementById("aiTextModelInput").value.trim()
+        || document.getElementById("aiVisionModelInput").value.trim();
+
+      btn.disabled = true;
+      btn.textContent = "Menguji koneksi...";
+      box.className = "rounded-lg px-3 py-2 text-[11px] font-mono border border-zinc-700 bg-zinc-900 text-zinc-300";
+      box.textContent = `Menghubungi ${base_url || "(default)"} dan menguji model ${model || "(auto)"}...`;
+      box.classList.remove("hidden");
+
+      try {
+        const d = await (await fetch("/api/settings/ai/test", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ai_base_url: base_url,
+            ai_api_key: api_key || null,
+            model,
+            run_chat_ping: true
+          })
+        })).json();
+
+        if (d.models && d.models.length) populateAiModelDropdowns(d.models);
+
+        const chat = d.chat || {};
+        if (d.success) {
+          box.className = "rounded-lg px-3 py-2 text-[11px] font-mono border border-emerald-500/40 bg-emerald-950/40 text-emerald-200 space-y-1";
+          box.innerHTML = `
+            <div><strong>✓ KONEKSI BERHASIL</strong> • /models: ${d.models_count} model (${d.models_latency_ms}ms)</div>
+            <div>Model uji: <span class="text-white">${escapeHtml(chat.model || model)}</span> • Chat ping: ${chat.latency_ms}ms • Balasan: "${escapeHtml(chat.reply || "OK")}"</div>
+          `;
+        } else {
+          box.className = "rounded-lg px-3 py-2 text-[11px] font-mono border border-rose-500/40 bg-rose-950/40 text-rose-200 space-y-1";
+          const mStatus = d.models_ok
+            ? `/models OK (${d.models_count} model, ${d.models_latency_ms}ms)`
+            : `/models GAGAL: ${d.models_error || "unreachable"}`;
+          const cStatus = chat.tested
+            ? (chat.ok ? `Chat OK (${chat.latency_ms}ms)` : `Chat GAGAL [${chat.model}]: ${chat.error}`)
+            : "Chat ping dilewati (model belum dipilih)";
+          box.innerHTML = `
+            <div><strong>✕ KONEKSI BERMASALAH</strong></div>
+            <div>${escapeHtml(mStatus)}</div>
+            <div class="break-all">${escapeHtml(cStatus)}</div>
+          `;
+        }
+      } catch (e) {
+        box.className = "rounded-lg px-3 py-2 text-[11px] font-mono border border-rose-500/40 bg-rose-950/40 text-rose-200";
+        box.textContent = "✕ Error jaringan: " + e.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "⚡ Test Koneksi";
+      }
+    }
+
+    async function saveAiProviderConfig() {
+      const btn = document.getElementById("btnSaveAiSettings");
+      const payload = {
+        provider_preset: document.getElementById("aiPresetSelect").value,
+        provider_name: document.getElementById("aiProviderNameInput").value.trim(),
+        ai_base_url: document.getElementById("aiBaseUrlInput").value.trim(),
+        ai_api_key: document.getElementById("aiApiKeyInput").value.trim() || null,
+        clear_api_key: document.getElementById("aiClearKeyChk").checked,
+        ai_text_model: document.getElementById("aiTextModelInput").value.trim(),
+        ai_vision_model: document.getElementById("aiVisionModelInput").value.trim(),
+        ai_audio_model: document.getElementById("aiAudioModelInput").value.trim(),
+        auto_fallback: document.getElementById("aiAutoFallbackChk").checked
+      };
+      if (!payload.ai_base_url) return showToast("Base URL tidak boleh kosong.");
+      btn.disabled = true;
+      btn.textContent = "Menyimpan...";
+      try {
+        const res = await fetch("/api/settings/ai", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const d = await res.json();
+        if (!res.ok || !d.success) {
+          showToast("Gagal simpan: " + (d.detail || d.error || res.status));
+        } else {
+          const s = d.settings;
+          showToast(`AI Provider disimpan (${s.provider_name} • ${s.resolved_text_model}).`);
+          await loadHealth();
+          closeAiSettingsModal();
+        }
+      } catch (e) {
+        showToast("Error simpan: " + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Simpan & Terapkan";
       }
     }
 

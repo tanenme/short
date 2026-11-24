@@ -36,11 +36,11 @@ class TestStudioPhase4(unittest.TestCase):
 
             jid = db.create_job("C1-fakta", "009-kucing-ek-cicak", "render")
             db.update_job(jid, status="running", progress_msg="Rendering...")
-            db.update_job(jid, status="succeeded", progress_msg="Done", result={"ok": True})
+            db.update_job(jid, status="succeeded", progress_msg="Done", result={"ok": True, "blur_mean": float("nan")})
             job = db.get_job(jid)
             self.assertIsNotNone(job)
             self.assertEqual(job["status"], "succeeded")
-            self.assertEqual(job["result"], {"ok": True})
+            self.assertEqual(job["result"], {"ok": True, "blur_mean": None})
 
             # Analytics table accepts metric snapshots cleanly
             db.record_metrics("C1-fakta", "009-kucing-ek-cicak", views=12500, subs_gained=42, avg_view_pct=104.5)
@@ -91,6 +91,52 @@ class TestStudioPhase4(unittest.TestCase):
         r_jobs = client.get("/api/jobs")
         self.assertEqual(r_jobs.status_code, 200)
         self.assertTrue(r_jobs.json()["success"])
+
+        r_ai = client.get("/api/settings/ai")
+        self.assertEqual(r_ai.status_code, 200)
+        ai_data = r_ai.json()
+        self.assertTrue(ai_data["success"])
+        s = ai_data["settings"]
+        self.assertIn("ai_base_url", s)
+        self.assertIn("presets", s)
+        self.assertGreaterEqual(len(s["presets"]), 8)
+        # Never leak raw API key back to client
+        self.assertNotIn("ai_api_key", s)
+
+    def test_ai_provider_settings_persistence_and_masking(self) -> None:
+        from core.config import get_ai_provider_settings, load_config, save_ai_provider_settings
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "_sistem" / "channels").mkdir(parents=True)
+            cfg = load_config(root_dir=root)
+            saved = save_ai_provider_settings(
+                {
+                    "provider_preset": "custom",
+                    "provider_name": "Test Custom Gateway",
+                    "ai_base_url": "https://example.invalid/v1/",
+                    "ai_api_key": "sk-test-secret-9876",
+                    "ai_text_model": "custom-text-v1",
+                    "ai_vision_model": "custom-vision-v1",
+                    "ai_audio_model": "custom-audio-v1",
+                    "auto_fallback": False,
+                },
+                config=cfg,
+            )
+            self.assertTrue((root / "_sistem" / "state" / "ai_provider.json").exists())
+            # Reload from temp root and verify values loaded & key masked
+            reloaded = load_config(root_dir=root, force_reload=True)
+            self.assertEqual(reloaded.ai_provider_name, "Test Custom Gateway")
+            self.assertEqual(reloaded.ai_base_url, "https://example.invalid/v1")
+            self.assertEqual(reloaded.ai_api_key, "sk-test-secret-9876")
+            self.assertEqual(reloaded.ai_text_model, "custom-text-v1")
+            self.assertFalse(reloaded.ai_auto_fallback)
+            pub = get_ai_provider_settings(reloaded)
+            self.assertTrue(pub["has_api_key"])
+            self.assertEqual(pub["api_key_masked"], "sk-t...9876")
+            self.assertNotIn("ai_api_key", pub)
+            # Cleanly restore global cached config back to real workspace
+            load_config(force_reload=True)
 
 
 if __name__ == "__main__":
