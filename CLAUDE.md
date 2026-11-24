@@ -25,7 +25,7 @@ E:\YT\short\
 │   ├── sourcing\                 # Unified sourcing, licensing, FFmpeg autoqc, YPP preflight gate
 │   ├── analytics\                # Growth analytics, Kill/Scale 30-day engine, multi-channel scaler
 │   ├── teardown\                 # Forensic 8-dimensi reverse-engineering video & channel referensi
-│   ├── editor-engine\            # Engine render v3.4 (60fps, Zero-Gap WAV Sync, 80ms caption lead, Squooshify 3D white, vector Heart CTA, zoom/flash transitions, BGM -8dB post-hook, SFX -3dB + CTA bell)
+│   ├── editor-engine\            # Engine render v3.5 (60fps, Frame-0 radial blur, gamified 3-2-1 / Vector Heart CTA, Adaptive Proof Pacing, Zero-Gap -32dB WAV Sync, BGM -8dB post-hook, SFX -3dB)
 │   ├── doksli-web\               # FastAPI + Web UI kurasi Exa & Vision Pro
 │   ├── tools\dokli.py            # CLI sourcing CC/Commons/iNaturalist/YT + autoqc + CREDITS.md
 │   ├── tests\test_core.py        # Unit test fondasi core & validator
@@ -65,8 +65,11 @@ python _sistem/studio.py credits C1-fakta 009-kucing-ek-cicak
 # Cari klip terpadu (Wikimedia CC, iNaturalist, Pexels, YouTube, TikTok, Reddit)
 python _sistem/studio.py source-search "cat chattering" --cc-only --limit 8
 
-# Render video Shorts v3 (FFmpeg cinematic + QC contact sheet / CapCut Draft)
+# Render video Shorts v3.5 (FFmpeg cinematic + QC contact sheet / CapCut Draft)
 python _sistem/studio.py render C1-fakta 009-kucing-ek-cicak --mode render --strict-gate
+
+# Pindai Golden Moment v2.3 (4-Signal FFmpeg + Action-Triplet Vision + Cross-Clip Rescue + 0.25s Onset)
+python _sistem/studio.py golden-moments C1-fakta 008-anjing-tendang-tanah --vision --force
 
 # Jalankan Enterprise Production Studio Dashboard (http://127.0.0.1:8000)
 python _sistem/studio.py serve

@@ -219,8 +219,9 @@ def cmd_render(args: argparse.Namespace) -> int:
             enable_cta_overlay=not args.no_cta_overlay,
             make_qc_sheet=True,
             enforce_preflight=args.strict_gate,
+            cta_style_override=getattr(args, "cta_style", None),
         )
-        print(f"[+] Render MP4 v3 selesai: {mp4}")
+        print(f"[+] Render MP4 v3.5 selesai: {mp4}")
     return 0
 
 
@@ -498,6 +499,44 @@ def cmd_sfx_download(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_golden_moments(args: argparse.Namespace) -> int:
+    engine_dir = SISTEM_DIR / "editor-engine"
+    if str(engine_dir) not in sys.path:
+        sys.path.insert(0, str(engine_dir))
+    import builder
+    from moment_finder import compute_scene_golden_moments
+
+    cfg = get_config()
+    ctx = builder._load_episode_context(args.episode, args.channel)
+    moments = compute_scene_golden_moments(
+        ctx["assets_dir"],
+        ctx["scenes"],
+        ctx["clip_mapping"],
+        cfg=cfg,
+        force_rescan=args.force,
+        use_vision=args.vision,
+    )
+    print(f"\n=== GOLDEN MOMENTS v2.3 ({args.channel}/{args.episode}) [vision={args.vision}] ===")
+    print(f"{'SC':>2} {'START':>6} {'SHIFT':>6} {'MODE':<21} {'VIS':>5} {'CLIP':<24} ALASAN")
+    print("-" * 116)
+    for idx in sorted(moments):
+        m = moments[idx]
+        vis = m.get("vision") or {}
+        ref = m.get("refinement") or {}
+        v_sc = f"{vis.get('semantic_score', '-')}/10" if vis else "-"
+        sh = float(ref.get("shift_s", 0.0))
+        sh_s = f"{sh:+.2f}s" if abs(sh) >= 0.01 else " 0.00s"
+        reason = vis.get("reason", "") if vis else f"cuts={m.get('signals', {}).get('internal_cuts', 0)}"
+        if m.get("rescued_from"):
+            reason = f"[RESCUED] {reason}"
+        print(
+            f"{idx:>2} {m['start_s']:>5.2f}s {sh_s:>6} {str(m.get('mode', ''))[:20]:<21} "
+            f"{v_sc:>5} {str(m.get('filename', ''))[:23]:<24} {reason[:42]}"
+        )
+    print(f"\n[+] Disimpan ke: {ctx['assets_dir'] / 'golden_moments.json'}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description="Enterprise YouTube Shorts Content Studio CLI")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -527,9 +566,17 @@ def build_parser() -> argparse.ArgumentParser:
     p_ren.add_argument("episode", help="Slug episode (mis. 009-kucing-ek-cicak)")
     p_ren.add_argument("--mode", default="render", choices=["render", "capcut", "both"])
     p_ren.add_argument("--no-transitions", action="store_true", help="Matikan xfade antar klip")
-    p_ren.add_argument("--no-cta-overlay", action="store_true", help="Matikan green-screen CTA overlay")
+    p_ren.add_argument("--no-cta-overlay", action="store_true", help="Matikan CTA overlay")
+    p_ren.add_argument("--cta-style", choices=["heart_pill", "gamified_321"], default=None, help="Override gaya CTA (heart_pill vs gamified_321 untuk A/B test)")
     p_ren.add_argument("--strict-gate", action="store_true", help="Blokir render jika gagal YPP Pre-Flight Gate")
     p_ren.set_defaults(func=cmd_render)
+
+    p_gm = sub.add_parser("golden-moments", help="Pindai Golden Moment v2 (4-signal FFmpeg + optional Multimodal Vision Reranker)")
+    p_gm.add_argument("channel", help="ID channel (mis. C1-fakta)")
+    p_gm.add_argument("episode", help="Slug episode (mis. 008-anjing-tendang-tanah)")
+    p_gm.add_argument("--vision", action="store_true", help="Aktifkan Stage-2 Multimodal Vision Filmstrip Reranker")
+    p_gm.add_argument("--force", action="store_true", help="Pindai ulang meski golden_moments.json sudah ada")
+    p_gm.set_defaults(func=cmd_golden_moments)
 
     p_pf = sub.add_parser("preflight", help="Jalankan YPP Pre-Flight Safety Gate (script + lisensi + rotasi + render)")
     p_pf.add_argument("channel", nargs="?", default="C1-fakta")

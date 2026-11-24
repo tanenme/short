@@ -1,0 +1,96 @@
+{
+  "channel_id": "C1-fakta",
+  "episode_id": "012-ayam-kepala-stabil",
+  "checked_at": "2026-11-24T08:04:40",
+  "stage_verdict": "BLOCKED",
+  "can_render": false,
+  "can_publish": false,
+  "score": 66,
+  "checks": [
+    {
+      "code": "DOCS_COMPLETE",
+      "category": "structure",
+      "severity": "PASS",
+      "message": "Dokumen inti lengkap (naskah, brief-edit, sources, paket-upload)."
+    },
+    {
+      "code": "SCRIPT_WORD_RANGE",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Jumlah kata 47 kata (~21.53s @ 131 kpm) masuk sweet spot."
+    },
+    {
+      "code": "AUDIO_TAGS",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Audio tags Eleven v4 lengkap (6 tag)."
+    },
+    {
+      "code": "SCRIPT_DIGITS",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Tidak ada angka digit mentah di teks VO."
+    },
+    {
+      "code": "CTA_PLACEMENT",
+      "category": "script",
+      "severity": "PASS",
+      "message": "CTA tunggal berada di posisi kalimat #3/6."
+    },
+    {
+      "code": "SENTENCE_BREATH",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Semua kalimat ringkas (<= 12 kata/kalimat)."
+    },
+    {
+      "code": "FACT_SOURCES",
+      "category": "factcheck",
+      "severity": "PASS",
+      "message": "Tercatat 2 URL sumber fakta tertulis (min 2)."
+    },
+    {
+      "code": "SCENE_PACING",
+      "category": "ypp",
+      "severity": "PASS",
+      "message": "10 adegan di brief-edit, semua <= 5.0s."
+    },
+    {
+      "code": "VO_READY",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "VO tersedia di assets: ElevenLabs_2026-11-07T02_23_17_Putri Maharani - Neutral and WItty_pvc_s50_sim75_v4.mp3."
+    },
+    {
+      "code": "CLIPS_COUNT",
+      "category": "assets",
+      "severity": "WARN",
+      "message": "Baru ada 0 klip video (disarankan 5-10 klip beragam)."
+    },
+    {
+      "code": "USABLE_CLIPS_LOW",
+      "category": "assets",
+      "severity": "FAIL",
+      "message": "Hanya 0 klip bersih siap pakai (minimal 3 klip untuk render aman YPP)."
+    },
+    {
+      "code": "RENDER_PENDING",
+      "category": "render",
+      "severity": "WARN",
+      "message": "Video final belum di-render oleh Editor Engine v3."
+    }
+  ],
+  "creator_rotation": {
+    "episode_id": "012-ayam-kepala-stabil",
+    "unique_creators": 0,
+    "creators": {},
+    "intra_episode_repeats": {},
+    "cross_episode_overlaps_7d": {}
+  },
+  "license_summary": {
+    "LOW": 0,
+    "MEDIUM": 0,
+    "HIGH": 0,
+    "BLOCKED": 0
+  }
+}

@@ -34,6 +34,7 @@ for p in (str(SISTEM_DIR), str(ENGINE_DIR)):
         sys.path.insert(0, p)
 
 from aligner import (
+    apply_adaptive_proof_pacing,
     detect_cta_window,
     extract_dynamic_highlights,
     strip_audio_tags,
@@ -682,6 +683,7 @@ def render_ffmpeg_direct(
     make_qc_sheet: bool = True,
     enforce_preflight: bool = False,
     progress_cb=None,
+    cta_style_override: Optional[str] = None,
 ) -> str:
     def _prog(pct: int, msg: str) -> None:
         if progress_cb:
@@ -761,9 +763,15 @@ def render_ffmpeg_direct(
             scenes = synchronize_scenes_fuzzy(scenes, words, vo_duration)
             cta_window = detect_cta_window(scenes, words)
 
-    # 1. Locate Golden Moments (audio peak for hook ek-ek, motion peak for fast action like running gecko)
-    _prog(22, "Memindai Golden Moments tiap adegan...")
+    # 1. Locate Golden Moments + apply Squooshify Adaptive Proof Shot Pacing (holds uninterrupted proof shots 3.0-4.4s)
+    _prog(22, "Memindai Golden Moments & menerapkan Adaptive Proof Shot Pacing...")
     golden_moments = compute_scene_golden_moments(assets_dir, scenes, clip_mapping, CFG)
+    if getattr(profile.visual, "adaptive_proof_pacing", True):
+        scenes = apply_adaptive_proof_pacing(scenes, golden_moments, clip_mapping, max_proof_s=4.4)
+    if cta_style_override in ("heart_pill", "gamified_321"):
+        profile = profile.model_copy(
+            update={"visual": profile.visual.model_copy(update={"cta_style": cta_style_override})}
+        )
 
     # Render each scene with anti-reused transforms & dynamic zoom-punch at its exact Golden Moment
     t_style = getattr(profile.visual, "transition_style", "squooshify_v33")
@@ -900,8 +908,15 @@ def render_ffmpeg_direct(
         hook_audio_idx = next_idx
         next_idx += 1
 
-    # Precision SFX cues (pass filename + sfx_dir + cta_window for subscribe bell sync)
-    sfx_entries = compute_sfx_entries(scenes, sfx_dir, highlights, cta_window=cta_window if enable_cta_overlay else None)
+    # Precision SFX cues (pass filename + sfx_dir + cta_window + cta_style for subscribe bell or 3-2-1 countdown)
+    active_cta_style = getattr(profile.visual, "cta_style", "heart_pill")
+    sfx_entries = compute_sfx_entries(
+        scenes,
+        sfx_dir,
+        highlights,
+        cta_window=cta_window if enable_cta_overlay else None,
+        cta_style=active_cta_style,
+    )
     sfx_inputs = []
     for trigger_s, sfx_p, gain in sfx_entries:
         cmd_inputs.extend(["-i", str(sfx_p)])
@@ -950,8 +965,9 @@ def render_ffmpeg_direct(
             bgm_drop_win = (ws, ws + 0.45)
             break
 
-    # Start BGM cleanly AFTER the opening hook scene
+    # Start BGM cleanly AFTER the opening hook scene (+ mute BGM during 3-2-1 gamified countdown)
     hook_end_s = float(scenes[0]["end_s"]) if scenes else 0.0
+    bgm_mute_win = cta_window if (enable_cta_overlay and active_cta_style == "gamified_321" and cta_window) else None
 
     audio_fg = build_audio_filtergraph(
         vo_input_idx=vo_idx,
@@ -963,6 +979,7 @@ def render_ffmpeg_direct(
         hook_audio_start_s=hook_audio_start_s,
         bgm_drop_window=bgm_drop_win,
         bgm_start_s=hook_end_s,
+        bgm_mute_window=bgm_mute_win,
     )
 
     full_filter = ";".join(video_filters) + ";" + audio_fg
@@ -1013,7 +1030,7 @@ def render_ffmpeg_direct(
 
     final_info = probe_media_info(out_p, CFG)
     report = {
-        "engine_version": "3.4.0",
+        "engine_version": "3.5.0",
         "channel_id": profile.channel_id,
         "package_name": package_name,
         "output_file": str(out_p),
@@ -1023,6 +1040,9 @@ def render_ffmpeg_direct(
         "height": final_info["height"],
         "highlights": sorted(highlights),
         "cta_window": cta_window,
+        "cta_style": active_cta_style,
+        "opening_radial_blur": bool(getattr(profile.visual, "opening_radial_blur", True)),
+        "adaptive_proof_pacing": bool(getattr(profile.visual, "adaptive_proof_pacing", True)),
         "cta_overlay_used": cta_overlay_path.name if cta_overlay_path else None,
         "hook_audio_used": hook_audio_idx is not None,
         "bgm_used": bgm_file.name if bgm_file else None,

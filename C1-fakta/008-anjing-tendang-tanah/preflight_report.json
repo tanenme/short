@@ -1,7 +1,7 @@
 {
   "channel_id": "C1-fakta",
   "episode_id": "008-anjing-tendang-tanah",
-  "checked_at": "2026-11-24T02:15:09",
+  "checked_at": "2026-11-24T09:00:30",
   "stage_verdict": "READY_TO_PUBLISH",
   "can_render": true,
   "can_publish": true,
@@ -95,7 +95,7 @@
       "code": "RENDER_VERIFIED",
       "category": "render",
       "severity": "PASS",
-      "message": "Render v3.4.0 terverifikasi (15.883s, 10 adegan, >=2 transform/klip)."
+      "message": "Render v3.5.0 terverifikasi (15.879s, 10 adegan, >=2 transform/klip)."
     }
   ],
   "creator_rotation": {

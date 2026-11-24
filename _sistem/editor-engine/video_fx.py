@@ -175,9 +175,15 @@ def render_cinematic_segment(
         start_trim = 0.0
 
     # Smooth animated zoom via per-frame scale (jitter-free compared to integer zoompan on video)
-    z0, z1 = (z_min, z_max) if zoom_in else (z_max, z_min)
+    # Scene 1 gets slightly punchier hook energy when adaptive_proof_pacing is enabled
+    if scene_idx == 1 and getattr(vis, "adaptive_proof_pacing", True):
+        z0, z1 = max(z_min, 1.08), max(z_max, 1.15)
+    else:
+        z0, z1 = (z_min, z_max) if zoom_in else (z_max, z_min)
     dur_safe = max(0.5, target_dur)
     zoom_expr = f"{z0:.4f}+({z1 - z0:.4f})*min(t/{dur_safe:.3f}\\,1)"
+
+    use_opening_blur = (scene_idx == 1) and bool(getattr(vis, "opening_radial_blur", True)) and (target_dur >= 0.5)
 
     is_horizontal_or_square = info["width"] > 0 and info["height"] > 0 and info["width"] >= info["height"]
     use_blur_canvas = getattr(vis, "framing_mode", "auto_blur_canvas") == "auto_blur_canvas" and is_horizontal_or_square
@@ -268,29 +274,77 @@ def render_cinematic_segment(
     )
     transforms.append("color_grade")
 
-    cmd = [
-        cfg.ffmpeg_cmd(),
-        "-y",
-        "-ss",
-        f"{start_trim:.3f}",
-        *input_flags,
-        "-i",
-        str(clip_path),
-        "-t",
-        f"{target_dur:.3f}",
-        "-vf",
-        ",".join(vf_parts),
-        "-an",
-        "-c:v",
-        "libx264",
-        "-preset",
-        "fast",
-        "-crf",
-        "19",
-        "-pix_fmt",
-        "yuv420p",
-        str(seg_out),
-    ]
+    if use_opening_blur:
+        # Squooshify 5/5 DNA: single-stream Frame-0 directional zoom-blur snap-in (0.00-0.28s, zero double-image ghost!)
+        open_zoom = f"(1.34-0.34*min(t/0.28\\,1))*({zoom_expr})"
+        vf_open = [
+            f"scale={W}:{H}:force_original_aspect_ratio=increase",
+            f"crop={W}:{H}",
+            f"scale=w='trunc(iw*({open_zoom})/2)*2':h='trunc(ih*({open_zoom})/2)*2':eval=frame",
+            f"crop={W}:{H}:(iw-{W})/2:(ih-{H})/2",
+            "avgblur=sizeX=24:sizeY=8:enable='between(t,0,0.12)'",
+            "avgblur=sizeX=10:sizeY=4:enable='between(t,0.12,0.22)'",
+        ]
+        if allow_flip and (scene_idx % 3 == 2):
+            vf_open.append("hflip")
+        if speed != 1.0:
+            vf_open.append(f"setpts=PTS/{speed:.3f}")
+        vf_open.extend(
+            [
+                "eq=contrast=1.06:saturation=1.08:brightness=0.01",
+                f"fps={FPS}",
+                "setsar=1",
+                "format=yuv420p",
+            ]
+        )
+        transforms.append("opening_radial_zoom_blur")
+        cmd = [
+            cfg.ffmpeg_cmd(),
+            "-y",
+            "-ss",
+            f"{start_trim:.3f}",
+            *input_flags,
+            "-i",
+            str(clip_path),
+            "-t",
+            f"{target_dur:.3f}",
+            "-vf",
+            ",".join(vf_open),
+            "-an",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "fast",
+            "-crf",
+            "19",
+            "-pix_fmt",
+            "yuv420p",
+            str(seg_out),
+        ]
+    else:
+        cmd = [
+            cfg.ffmpeg_cmd(),
+            "-y",
+            "-ss",
+            f"{start_trim:.3f}",
+            *input_flags,
+            "-i",
+            str(clip_path),
+            "-t",
+            f"{target_dur:.3f}",
+            "-vf",
+            ",".join(vf_parts),
+            "-an",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "fast",
+            "-crf",
+            "19",
+            "-pix_fmt",
+            "yuv420p",
+            str(seg_out),
+        ]
     subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return {
         "transforms": transforms,

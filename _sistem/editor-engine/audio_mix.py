@@ -154,8 +154,9 @@ def compute_sfx_entries(
     sfx_dir: Path,
     highlights: Set[str],
     cta_window: Optional[Tuple[float, float]] = None,
+    cta_style: str = "heart_pill",
 ) -> List[Tuple[float, Path, float]]:
-    """Compute dense, rotating, auto-calibrated micro-SFX + crisp subscribe CTA bell."""
+    """Compute dense, rotating, auto-calibrated micro-SFX + subscribe CTA bell or 3-2-1 countdown SFX."""
     catalog = load_soundboard_catalog(sfx_dir)
     candidates: List[Tuple[float, Path, float, int]] = []  # (time, path, gain, priority)
     cue_words = {"subscribe", "bukan", "salah"} | {h.lower() for h in highlights if len(h) >= 4}
@@ -185,8 +186,25 @@ def compute_sfx_entries(
         selected.append((0.0, op, _gain_for(op)))
         used_counts[op.name] = 1
 
-    # 0b. Mandatory CTA Subscribe Bell synced to spoken "subscribe" word (plus UI click on red-heart beat)
-    if sfx_dir.exists():
+    # 0b. CTA Audio Choreography: Gamified 3-2-1 Countdown (pop-pop-ding + sub-boom) OR Heart+Subscribe Bell
+    if sfx_dir.exists() and cta_style == "gamified_321" and cta_window is not None:
+        cta_s, cta_e = float(cta_window[0]), float(cta_window[1])
+        dur = max(0.9, cta_e - cta_s)
+        p1_end = cta_s + dur * 0.36
+        step_d = max(0.22, (cta_e - p1_end) / 3.0)
+        cue_plan = [
+            (cta_s + 0.04, "ui_click"),
+            (p1_end, "pop_accent"),
+            (p1_end + step_d, "pop_accent"),
+            (p1_end + 2 * step_d, "ding_chime"),
+            (cta_e + 0.02, "impact_boom"),
+        ]
+        for ct, role in cue_plan:
+            sp = _pick_role(role, used_counts)
+            if sp is not None:
+                selected.append((round(ct, 3), sp, _gain_for(sp)))
+                used_counts[sp.name] = used_counts.get(sp.name, 0) + 1
+    elif sfx_dir.exists():
         sub_bell = _pick_role("ding_chime", used_counts)
         sub_t = None
         for sc in scenes:
@@ -295,8 +313,9 @@ def build_audio_filtergraph(
     hook_audio_start_s: float = 0.0,
     bgm_drop_window: Optional[Tuple[float, float]] = None,
     bgm_start_s: float = 0.0,
+    bgm_mute_window: Optional[Tuple[float, float]] = None,
 ) -> str:
-    """Build broadcast-clean v3.4 FFmpeg audio graph: Presence EQ + post-hook BGM + calibrated SFX + hot LUFS."""
+    """Build broadcast-clean v3.5 FFmpeg audio graph: Presence EQ + post-hook BGM + optional 3-2-1 mute + SFX -3dB."""
     parts: List[str] = []
 
     # 1. Clean Crispy Foreground VO
@@ -313,7 +332,7 @@ def build_audio_filtergraph(
 
     mix_labels = ["[vo_mix]"]
 
-    # 2. Balanced audible BGM (~14 dB below VO) starting AFTER the opening hook scene
+    # 2. Balanced audible BGM starting AFTER the opening hook scene (+ optional 3-2-1 countdown mute)
     if bgm_input_idx is not None:
         bgm_st = max(0.0, float(bgm_start_s))
         bgm_play_dur = max(0.5, vo_duration - bgm_st)
@@ -322,7 +341,11 @@ def build_audio_filtergraph(
         if bgm_drop_window is not None:
             ds, de = bgm_drop_window
             if de > ds + 0.15:
-                drop_op = f",volume=enable='between(t,{ds:.3f},{de:.3f})':volume=0.35"
+                drop_op += f",volume=enable='between(t,{ds:.3f},{de:.3f})':volume=0.35"
+        if bgm_mute_window is not None:
+            ms, me = bgm_mute_window
+            if me > ms + 0.25:
+                drop_op += f",volume=enable='between(t,{ms:.3f},{me:.3f})':volume=0.05"
 
         delay_ms = int(round(bgm_st * 1000))
         delay_chain = f"adelay={delay_ms}|{delay_ms}," if delay_ms > 0 else ""

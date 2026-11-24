@@ -1,0 +1,122 @@
+{
+  "channel_id": "C1-fakta",
+  "episode_id": "002-axolotl",
+  "checked_at": "2026-11-24T08:53:44",
+  "stage_verdict": "BLOCKED",
+  "can_render": false,
+  "can_publish": false,
+  "score": 60,
+  "checks": [
+    {
+      "code": "DOCS_COMPLETE",
+      "category": "structure",
+      "severity": "PASS",
+      "message": "Dokumen inti lengkap (naskah, brief-edit, sources, paket-upload)."
+    },
+    {
+      "code": "SCRIPT_TOO_LONG",
+      "category": "script",
+      "severity": "FAIL",
+      "message": "Jumlah kata 79 melebihi batas keras 60 kata (~36.18s)."
+    },
+    {
+      "code": "AUDIO_TAGS",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Audio tags Eleven v4 lengkap (3 tag)."
+    },
+    {
+      "code": "SCRIPT_DIGITS",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Tidak ada angka digit mentah di teks VO."
+    },
+    {
+      "code": "CTA_PLACEMENT",
+      "category": "script",
+      "severity": "PASS",
+      "message": "CTA tunggal berada di posisi kalimat #11/13."
+    },
+    {
+      "code": "SENTENCE_BREATH",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Semua kalimat ringkas (<= 12 kata/kalimat)."
+    },
+    {
+      "code": "FACT_SOURCES",
+      "category": "factcheck",
+      "severity": "PASS",
+      "message": "Tercatat 3 URL sumber fakta tertulis (min 2)."
+    },
+    {
+      "code": "BRIEF_SCENES_EMPTY",
+      "category": "structure",
+      "severity": "WARN",
+      "message": "Tabel shot-list di brief-edit.md belum terbaca/kosong."
+    },
+    {
+      "code": "VO_READY",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "VO tersedia di assets: ElevenLabs_2026-11-03T14_59_00_Putra_pvc_sp110_s45_sb70_se50_b_m2.mp3."
+    },
+    {
+      "code": "CLIPS_COUNT",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "Tersedia 8 klip video di folder aset."
+    },
+    {
+      "code": "LICENSE_AUDIT",
+      "category": "ypp",
+      "severity": "WARN",
+      "message": "Lisensi klip: LOW=0, MEDIUM=0, HIGH(ToS/transform)=8, BLOCKED=0."
+    },
+    {
+      "code": "USABLE_CLIPS_READY",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "8 klip bersih lulus filter kebersihan (>=70)."
+    },
+    {
+      "code": "CREATOR_ROTATION_OK",
+      "category": "ypp",
+      "severity": "PASS",
+      "message": "Rotasi kreator bersih (7 kreator unik, 0 overlap 7 hari)."
+    },
+    {
+      "code": "AUTOQC_VIDEO_OK",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "AutoQC FFmpeg lulus (7 OK, 1 WARN dari 8 klip)."
+    },
+    {
+      "code": "RENDER_PENDING",
+      "category": "render",
+      "severity": "WARN",
+      "message": "Video final belum di-render oleh Editor Engine v3."
+    }
+  ],
+  "creator_rotation": {
+    "episode_id": "002-axolotl",
+    "unique_creators": 7,
+    "creators": {
+      "@akvaryum_toplulugu": 1,
+      "@anatomyunseen1": 1,
+      "@axolotl.zucht.bre": 1,
+      "@gertrudegiggles": 1,
+      "@harvard": 1,
+      "@icalofish": 1,
+      "@zgreenscreen": 1
+    },
+    "intra_episode_repeats": {},
+    "cross_episode_overlaps_7d": {}
+  },
+  "license_summary": {
+    "LOW": 0,
+    "MEDIUM": 0,
+    "HIGH": 8,
+    "BLOCKED": 0
+  }
+}

@@ -70,6 +70,9 @@ class VisualStyle(BaseModel):
     transition_style: Literal["squooshify_v33", "xfade_classic", "hard_cut"] = "squooshify_v33"
     bottom_readability_grad: bool = False
     vector_heart_cta: bool = True
+    opening_radial_blur: bool = True
+    cta_style: Literal["heart_pill", "gamified_321"] = "heart_pill"
+    adaptive_proof_pacing: bool = True
     vo_zero_gap: bool = True
     vo_tempo_boost: float = 1.07
     vo_silence_db: float = -32.0

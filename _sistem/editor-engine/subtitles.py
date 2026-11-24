@@ -179,6 +179,10 @@ def generate_ass_subtitles(
         f"0,0,0,0,100,100,0,0,1,8,6,5,0,0,0,1",
         f"Style: CtaHeartRed,Arial,40,&H00381EFF&,&H000000FF&,&H00FFFFFF&,&H90000000&,"
         f"0,0,0,0,100,100,0,0,1,8,6,5,0,0,0,1",
+        f"Style: CtaCountRed,{visual.font_name},230,&H00261CE8&,&H000000FF&,&H00101010&,&HA0000000&,"
+        f"-1,0,0,0,100,100,0,0,1,14,10,5,0,0,0,1",
+        f"Style: CtaCountWhite,{visual.font_name},230,&H00FFFFFF&,&H000000FF&,&H00B03018&,&HA0000000&,"
+        f"-1,0,0,0,100,100,0,0,1,14,10,5,0,0,0,1",
         "",
         "[Events]",
         "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
@@ -241,35 +245,60 @@ def generate_ass_subtitles(
             anim = "{\\fad(120,120)\\fscx92\\fscy92\\t(0,110,\\fscx100\\fscy100)}"
             lines.append(f"Dialogue: 1,{t_start},{t_end},Callout,,0,0,0,,{anim}{stext.upper()}")
 
-    # Layer 3: Squooshify v3.3 2-Beat Center-Screen Interactive CTA (Vector Heart White -> Red + Pills)
+    # Layer 3: Interactive Center-Screen CTA ("heart_pill" OR Squooshify "gamified_321" 3-2-1 countdown!)
     if cta_window is not None:
         cta_s, cta_e = cta_window
         dur = max(0.9, cta_e - cta_s)
-        mid_t = cta_s + dur * 0.52
-        end_t = cta_e
         cx = visual.width // 2
         cy_pill = int(visual.height * 0.56)
         cy_heart = int(visual.height * 0.39)
-        bounce1 = f"{{\\pos({cx},{cy_pill})\\fad(60,80)\\fscx80\\fscy80\\t(0,75,\\fscx110\\fscy110)\\t(75,140,\\fscx100\\fscy100)}}"
-        bounce2 = f"{{\\pos({cx},{cy_pill})\\fad(60,100)\\fscx80\\fscy80\\t(0,75,\\fscx110\\fscy110)\\t(75,140,\\fscx100\\fscy100)}}"
-        lines.append(
-            f"Dialogue: 3,{fmt_ass_time(cta_s)},{fmt_ass_time(mid_t)},CtaBadge,,0,0,0,,{bounce1}SUBSCRIBE  +  LIKE"
-        )
-        subj_up = _escape_ass(subject_label or "IMUT").upper()
-        lines.append(
-            f"Dialogue: 3,{fmt_ass_time(mid_t)},{fmt_ass_time(end_t)},CtaSticker,,0,0,0,,{bounce2}+1 {subj_up} LIKE!"
-        )
-        if getattr(visual, "vector_heart_cta", True):
-            # Crisp symmetric ASS cubic-bezier heart vector (zero green-screen artifacts, 60fps smooth!)
-            heart_path = "m 0 32 b 0 0 -55 -20 -80 15 b -105 50 -75 95 0 155 b 75 95 105 50 80 15 b 55 -20 0 0 0 32"
-            h_anim1 = f"{{\\an5\\pos({cx},{cy_heart})\\fad(60,40)\\fscx72\\fscy72\\t(0,90,\\fscx108\\fscy108)\\t(90,170,\\fscx100\\fscy100)\\p1}}{heart_path}{{\\p0}}"
-            h_anim2 = f"{{\\an5\\pos({cx},{cy_heart})\\fad(40,120)\\fscx92\\fscy92\\t(0,75,\\fscx128\\fscy128)\\t(75,160,\\fscx108\\fscy108)\\p1}}{heart_path}{{\\p0}}"
+        cta_mode = getattr(visual, "cta_style", "heart_pill")
+        heart_path = "m 0 32 b 0 0 -55 -20 -80 15 b -105 50 -75 95 0 155 b 75 95 105 50 80 15 b 55 -20 0 0 0 32"
+
+        if cta_mode == "gamified_321":
+            # Squooshify 3/5 Viral DNA: Like+Subscribe Pill -> Giant 3D Countdown 3 -> 2 -> 1
+            p1_end = cta_s + dur * 0.36
+            step_d = max(0.22, (cta_e - p1_end) / 3.0)
+            bounce_p = f"{{\\pos({cx},{cy_pill})\\fad(50,60)\\fscx80\\fscy80\\t(0,65,\\fscx110\\fscy110)\\t(65,130,\\fscx100\\fscy100)}}"
             lines.append(
-                f"Dialogue: 4,{fmt_ass_time(cta_s)},{fmt_ass_time(mid_t)},CtaHeartWhite,,0,0,0,,{h_anim1}"
+                f"Dialogue: 3,{fmt_ass_time(cta_s)},{fmt_ass_time(p1_end)},CtaBadge,,0,0,0,,{bounce_p}LIKE  +  SUBSCRIBE"
             )
+            h_anim = f"{{\\an5\\pos({cx},{cy_heart})\\fad(50,50)\\fscx72\\fscy72\\t(0,80,\\fscx110\\fscy110)\\t(80,150,\\fscx100\\fscy100)\\p1}}{heart_path}{{\\p0}}"
             lines.append(
-                f"Dialogue: 4,{fmt_ass_time(mid_t)},{fmt_ass_time(end_t)},CtaHeartRed,,0,0,0,,{h_anim2}"
+                f"Dialogue: 4,{fmt_ass_time(cta_s)},{fmt_ass_time(p1_end)},CtaHeartWhite,,0,0,0,,{h_anim}"
             )
+            cy_num = int(visual.height * 0.46)
+            for idx_n, (num_txt, sty) in enumerate([("3", "CtaCountRed"), ("2", "CtaCountWhite"), ("1", "CtaCountRed")]):
+                ns = p1_end + idx_n * step_d
+                ne = p1_end + (idx_n + 1) * step_d
+                num_anim = (
+                    f"{{\\an5\\pos({cx},{cy_num})\\fad(25,35)"
+                    f"\\fscx58\\fscy58\\t(0,65,\\fscx124\\fscy124)\\t(65,140,\\fscx100\\fscy100)}}"
+                )
+                lines.append(
+                    f"Dialogue: 4,{fmt_ass_time(ns)},{fmt_ass_time(ne)},{sty},,0,0,0,,{num_anim}{num_txt}"
+                )
+        else:
+            mid_t = cta_s + dur * 0.52
+            end_t = cta_e
+            bounce1 = f"{{\\pos({cx},{cy_pill})\\fad(60,80)\\fscx80\\fscy80\\t(0,75,\\fscx110\\fscy110)\\t(75,140,\\fscx100\\fscy100)}}"
+            bounce2 = f"{{\\pos({cx},{cy_pill})\\fad(60,100)\\fscx80\\fscy80\\t(0,75,\\fscx110\\fscy110)\\t(75,140,\\fscx100\\fscy100)}}"
+            lines.append(
+                f"Dialogue: 3,{fmt_ass_time(cta_s)},{fmt_ass_time(mid_t)},CtaBadge,,0,0,0,,{bounce1}SUBSCRIBE  +  LIKE"
+            )
+            subj_up = _escape_ass(subject_label or "IMUT").upper()
+            lines.append(
+                f"Dialogue: 3,{fmt_ass_time(mid_t)},{fmt_ass_time(end_t)},CtaSticker,,0,0,0,,{bounce2}+1 {subj_up} LIKE!"
+            )
+            if getattr(visual, "vector_heart_cta", True):
+                h_anim1 = f"{{\\an5\\pos({cx},{cy_heart})\\fad(60,40)\\fscx72\\fscy72\\t(0,90,\\fscx108\\fscy108)\\t(90,170,\\fscx100\\fscy100)\\p1}}{heart_path}{{\\p0}}"
+                h_anim2 = f"{{\\an5\\pos({cx},{cy_heart})\\fad(40,120)\\fscx92\\fscy92\\t(0,75,\\fscx128\\fscy128)\\t(75,160,\\fscx108\\fscy108)\\p1}}{heart_path}{{\\p0}}"
+                lines.append(
+                    f"Dialogue: 4,{fmt_ass_time(cta_s)},{fmt_ass_time(mid_t)},CtaHeartWhite,,0,0,0,,{h_anim1}"
+                )
+                lines.append(
+                    f"Dialogue: 4,{fmt_ass_time(mid_t)},{fmt_ass_time(end_t)},CtaHeartRed,,0,0,0,,{h_anim2}"
+                )
 
     output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return output_path

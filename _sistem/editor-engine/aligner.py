@@ -183,3 +183,53 @@ def detect_cta_window(scenes: List[dict], words: List[dict]) -> Optional[Tuple[f
     if cta_scene is not None:
         return (round(float(cta_scene["start_s"]) + 0.15, 3), round(float(cta_scene["end_s"]) - 0.10, 3))
     return None
+
+
+def apply_adaptive_proof_pacing(
+    scenes: List[dict],
+    golden_moments: dict,
+    clip_mapping: dict,
+    max_proof_s: float = 4.4,
+) -> List[dict]:
+    """Squooshify 5/5 DNA: keep Hook crisp & fast, hold physical proof shots uninterrupted (3.0-4.4s).
+
+    Merges adjacent body/mechanism scenes that share the same clip filename (up to max_proof_s <= 4.4s,
+    safely within YPP's 5.0s max source clip rule) so physical evidence breathes without a jump-cut.
+    """
+    if len(scenes) < 5:
+        return scenes
+
+    def _clip_name_for(sc: dict) -> str:
+        gm = golden_moments.get(sc["index"])
+        if gm and gm.get("filename"):
+            return str(gm["filename"])
+        cp = clip_mapping.get(sc["index"])
+        return cp.name if cp is not None else ""
+
+    merged: List[dict] = []
+    i = 0
+    while i < len(scenes):
+        cur = dict(scenes[i])
+        cur_name = _clip_name_for(cur)
+        # Only merge inside body/mechanism act (after CTA scene #3 and before final payoff scene)
+        if (
+            cur.get("index", 0) >= 4
+            and i + 1 < len(scenes) - 1
+            and cur_name
+            and _clip_name_for(scenes[i + 1]) == cur_name
+        ):
+            nxt = scenes[i + 1]
+            comb_dur = round(float(nxt["end_s"]) - float(cur["start_s"]), 3)
+            if comb_dur <= max_proof_s:
+                cur["end_s"] = nxt["end_s"]
+                cur["duration_s"] = comb_dur
+                cur["vo"] = (cur.get("vo", "") + " " + nxt.get("vo", "")).strip()
+                cur["words"] = list(cur.get("words", [])) + list(nxt.get("words", []))
+                cur["sfx"] = (cur.get("sfx", "") + " / " + nxt.get("sfx", "")).strip(" /")
+                cur["is_proof_shot"] = True
+                merged.append(cur)
+                i += 2
+                continue
+        merged.append(cur)
+        i += 1
+    return merged

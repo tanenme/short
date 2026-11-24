@@ -1,0 +1,80 @@
+{
+  "channel_id": "C1-fakta",
+  "episode_id": "011-bebek-tidur-melek",
+  "total_clips": 5,
+  "ok_count": 5,
+  "warn_count": 0,
+  "fail_count": 0,
+  "items": [
+    {
+      "filename": "@ducks_in_space_7031631170119077166_hd.mp4",
+      "duration_s": 10.27,
+      "width": 1080,
+      "height": 1920,
+      "is_vertical": true,
+      "blur_mean": 6.23,
+      "yavg": 151.44,
+      "ydif": 4.024,
+      "satavg": 9.11,
+      "verdict": "OK",
+      "flags": [],
+      "warnings": []
+    },
+    {
+      "filename": "@funny_ducklings_7682959693215583502_hd.mp4",
+      "duration_s": 80.23,
+      "width": 1080,
+      "height": 1920,
+      "is_vertical": true,
+      "blur_mean": 5.98,
+      "yavg": 130.92,
+      "ydif": 14.347,
+      "satavg": 16.46,
+      "verdict": "OK",
+      "flags": [],
+      "warnings": []
+    },
+    {
+      "filename": "@monalogue_7594548763725761815_hd.mp4",
+      "duration_s": 15.07,
+      "width": 1080,
+      "height": 1920,
+      "is_vertical": true,
+      "blur_mean": 3.8,
+      "yavg": 114.5,
+      "ydif": 22.53,
+      "satavg": 16.18,
+      "verdict": "OK",
+      "flags": [],
+      "warnings": []
+    },
+    {
+      "filename": "@motherthemountain_7009749574155914497_hd.mp4",
+      "duration_s": 16.18,
+      "width": 720,
+      "height": 1280,
+      "is_vertical": true,
+      "blur_mean": 6.84,
+      "yavg": 139.01,
+      "ydif": 18.606,
+      "satavg": 20.23,
+      "verdict": "OK",
+      "flags": [],
+      "warnings": []
+    },
+    {
+      "filename": "@theduckies00_7563721683941477687_hd.mp4",
+      "duration_s": 6.41,
+      "width": 720,
+      "height": 1280,
+      "is_vertical": true,
+      "blur_mean": 3.72,
+      "yavg": 114.86,
+      "ydif": 11.131,
+      "satavg": 7.8,
+      "verdict": "OK",
+      "flags": [],
+      "warnings": []
+    }
+  ]
+}

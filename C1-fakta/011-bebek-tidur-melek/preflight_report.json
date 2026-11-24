@@ -1,7 +1,7 @@
 {
   "channel_id": "C1-fakta",
   "episode_id": "011-bebek-tidur-melek",
-  "checked_at": "2026-11-23T23:23:50",
+  "checked_at": "2026-11-24T02:20:30",
   "stage_verdict": "READY_TO_PUBLISH",
   "can_render": true,
   "can_publish": true,
@@ -86,10 +86,16 @@
       "message": "Rotasi kreator bersih (5 kreator unik, 0 overlap 7 hari)."
     },
     {
+      "code": "AUTOQC_VIDEO_OK",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "AutoQC FFmpeg lulus (5 OK, 0 WARN dari 5 klip)."
+    },
+    {
       "code": "RENDER_VERIFIED",
       "category": "render",
       "severity": "PASS",
-      "message": "Render v3.0.0 terverifikasi (18.6s, 10 adegan, >=2 transform/klip)."
+      "message": "Render v3.4.0 terverifikasi (15.517s, 10 adegan, >=2 transform/klip)."
     }
   ],
   "creator_rotation": {
