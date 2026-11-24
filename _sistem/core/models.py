@@ -67,11 +67,11 @@ class VisualStyle(BaseModel):
     include_top_callouts: bool = False
     cta_bg_blur: bool = True
     vo_presence_eq: bool = True
-    transition_style: Literal["squooshify_v33", "xfade_classic", "hard_cut"] = "squooshify_v33"
+    transition_style: Literal["squooshify_v37", "squooshify_v33", "xfade_classic", "hard_cut"] = "squooshify_v37"
     bottom_readability_grad: bool = False
     vector_heart_cta: bool = True
     opening_radial_blur: bool = True
-    cta_style: Literal["heart_pill", "gamified_321"] = "heart_pill"
+    cta_style: Literal["heart_pill", "gamified_321", "reward_pop"] = "heart_pill"
     adaptive_proof_pacing: bool = True
     intra_unit_split: bool = True
     selective_speed_up: bool = True
@@ -80,6 +80,14 @@ class VisualStyle(BaseModel):
     vo_tempo_boost: float = 1.07
     vo_silence_db: float = -32.0
     vo_min_silence_s: float = 0.10
+    cut_on_word_lock: bool = True
+    word_onset_lead_s: float = 0.033
+    max_flash_transitions: int = 1
+    vo_pivot_pause_s: float = 0.26
+    bgm_vacuum_max_events: int = 2
+    protect_payoff_hold: bool = True
+    suppress_rsvp_on_overlay: bool = True
+    clip_safety_margin_s: float = 0.10
 
 
 class YppSafetyRules(BaseModel):

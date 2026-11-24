@@ -221,7 +221,7 @@ def cmd_render(args: argparse.Namespace) -> int:
             enforce_preflight=args.strict_gate,
             cta_style_override=getattr(args, "cta_style", None),
         )
-        print(f"[+] Render MP4 v3.6 selesai: {mp4}")
+        print(f"[+] Render MP4 v3.7 selesai: {mp4}")
     return 0
 
 
@@ -568,7 +568,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_ren.add_argument("--mode", default="render", choices=["render", "capcut", "both"])
     p_ren.add_argument("--no-transitions", action="store_true", help="Matikan xfade antar klip")
     p_ren.add_argument("--no-cta-overlay", action="store_true", help="Matikan CTA overlay")
-    p_ren.add_argument("--cta-style", choices=["heart_pill", "gamified_321"], default=None, help="Override gaya CTA (heart_pill vs gamified_321 untuk A/B test)")
+    p_ren.add_argument("--cta-style", choices=["heart_pill", "gamified_321", "reward_pop"], default=None, help="Override gaya CTA (heart_pill, gamified_321, atau reward_pop untuk A/B test)")
     p_ren.add_argument("--strict-gate", action="store_true", help="Blokir render jika gagal YPP Pre-Flight Gate")
     p_ren.set_defaults(func=cmd_render)
 

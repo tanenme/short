@@ -63,9 +63,13 @@ def synchronize_scenes_fuzzy(
     words: List[dict],
     total_duration: float,
     min_scene_dur: float = 0.8,
+    cut_on_word_lock: bool = False,
+    word_onset_lead_s: float = 0.033,
 ) -> List[dict]:
     """Align scene VO lines to ASR word timestamps via sequence matching (drift-resistant).
 
+    When `cut_on_word_lock=True` (v3.7 Forensic Mode), inter-unit boundaries snap 1 frame (33ms)
+    before the first spoken word onset of the incoming unit instead of drifting into pause midpoints.
     Guarantees a continuous, monotonic timeline covering [0.0, total_duration].
     """
     if not scenes:
@@ -137,8 +141,13 @@ def synchronize_scenes_fuzzy(
         else:
             next_sc = scenes[i + 1]
             if sc["words"] and next_sc.get("words"):
-                mid = (sc["words"][-1]["end"] + next_sc["words"][0]["start"]) / 2.0
-                sc["end_s"] = max(sc["start_s"] + min_scene_dur, min(total_duration - min_scene_dur, mid))
+                prev_end = float(sc["words"][-1]["end"])
+                next_start = float(next_sc["words"][0]["start"])
+                if cut_on_word_lock and next_start >= prev_end:
+                    target_cut = max(prev_end, next_start - max(0.0, float(word_onset_lead_s)))
+                else:
+                    target_cut = (prev_end + next_start) / 2.0
+                sc["end_s"] = max(sc["start_s"] + min_scene_dur, min(total_duration - min_scene_dur, target_cut))
             elif sc["words"]:
                 # Current has words, next is silent payoff/outro: reserve proportional tail
                 rem_brief = max(0.8, next_sc.get("brief_end_s", 0.0) - next_sc.get("brief_start_s", 0.0))
@@ -249,11 +258,85 @@ def classify_scene_role(scene: dict, pos_idx: int, total_scenes: int, cta_window
         ov = max(0.0, min(en, cta_window[1]) - max(st, cta_window[0]))
         if ov >= 0.4 * max(0.1, en - st):
             return "cta"
-    if pos_idx >= total_scenes - 1:
+    vo_low = str(scene.get("vo", "")).strip().lower()
+    if pos_idx >= total_scenes - 1 or (
+        pos_idx >= max(2, total_scenes - 2) and vo_low.startswith(("makanya", "itulah", "jadinya"))
+    ):
         return "payoff"
     if any(k in blob for k in ("kabur", "lari", "tendang", "garuk", "dorong", "menerkam", "cabut", "potong", "geser", "bergetar", "bergerak")):
         return "process"
     return "balanced"
+
+
+def detect_bgm_vacuum_windows(
+    words: List[dict],
+    scenes: List[dict],
+    hook_end_s: float = 0.0,
+    cta_window: Optional[Tuple[float, float]] = None,
+    max_events: int = 2,
+) -> List[Tuple[float, float]]:
+    """v3.7 Acoustic Vacuum Reset: detect up to `max_events` pre-pivot BGM mute windows (~0.38s @ -28dB).
+
+    Window 1 targets the early counter-myth pivot ("bukan", "salah", "ternyata", "padahal").
+    Window 2 targets the final payoff pivot ("makanya", "itulah", "jadinya") separated by >= 3.2s.
+    """
+    if max_events <= 0 or not words:
+        return []
+
+    twist_tokens = {"bukan", "salah", "ternyata", "padahal", "impossible", "anehnya"}
+    payoff_tokens = {"makanya", "itulah", "jadinya", "faktanya", "akhirnya"}
+
+    def _overlaps_cta(ws: float, we: float) -> bool:
+        if cta_window is None:
+            return False
+        return min(we, float(cta_window[1])) > max(ws, float(cta_window[0]))
+
+    windows: List[Tuple[float, float]] = []
+
+    # 1. Early counter-myth / twist pivot vacuum
+    for w in words:
+        tok = normalize_token(w.get("word", ""))
+        wst = float(w.get("start", 0.0))
+        if wst < max(1.0, hook_end_s - 0.15):
+            continue
+        if tok in twist_tokens:
+            vs = round(max(hook_end_s, wst - 0.28), 3)
+            ve = round(max(vs + 0.36, wst + 0.14), 3)
+            if not _overlaps_cta(vs, ve):
+                windows.append((vs, ve))
+                break
+
+    if len(windows) >= max_events:
+        return windows
+
+    # 2. Late pre-payoff vacuum ("Makanya...")
+    min_second_st = max(8.0, (windows[0][1] + 3.2) if windows else (hook_end_s + 4.5))
+    payoff_cand: Optional[Tuple[float, float]] = None
+    for w in words:
+        tok = normalize_token(w.get("word", ""))
+        wst = float(w.get("start", 0.0))
+        if wst < min_second_st:
+            continue
+        if tok in payoff_tokens:
+            vs = round(max(min_second_st - 0.3, wst - 0.28), 3)
+            ve = round(max(vs + 0.36, wst + 0.12), 3)
+            if not _overlaps_cta(vs, ve):
+                payoff_cand = (vs, ve)
+                break
+
+    if payoff_cand is None and scenes:
+        last_sc = scenes[-1]
+        lst = float(last_sc.get("start_s", 0.0))
+        if lst >= min_second_st:
+            vs = round(max(0.0, lst - 0.26), 3)
+            ve = round(lst + 0.12, 3)
+            if not _overlaps_cta(vs, ve):
+                payoff_cand = (vs, ve)
+
+    if payoff_cand is not None:
+        windows.append(payoff_cand)
+
+    return windows[:max_events]
 
 
 def apply_intra_unit_clip_splitting(
@@ -262,11 +345,15 @@ def apply_intra_unit_clip_splitting(
     min_unit_split_s: float = 2.30,
     min_subclip_s: float = 0.85,
     cut_word_offset_s: float = -0.05,
+    protect_payoff_hold: bool = False,
+    golden_moments: Optional[dict] = None,
+    max_payoff_hold_s: float = 4.80,
 ) -> List[dict]:
-    """Squooshify v3.6 Intra-Unit Clip Splitter:
-    Splits long non-proof, non-CTA narrative units (>= 2.65s) into 2 visual sub-clips snapped to
+    """Squooshify v3.7 Intra-Unit Clip Splitter:
+    Splits long non-proof, non-CTA narrative units (>= 2.30s) into 2 visual sub-clips snapped to
     VO keyword/clause boundaries (word_start - 0.05s), strictly enforcing the >= 0.85s (25f) cognitive floor.
-    Marks `unit_id`, `scene_role`, and `is_intra_unit_cut` for downstream transition & speed control.
+    When `protect_payoff_hold=True`, protects dynamic `payoff` units (<= 4.80s, YPP-compliant) as an
+    unsplit 1.0x multi-beat hold, falling back to splitting if source motion is weak/unverified.
     """
     clause_triggers = {
         "tapi", "bukan", "salah", "saat", "pas", "karena", "sambil", "lihat",
@@ -286,7 +373,19 @@ def apply_intra_unit_clip_splitting(
         dur = float(sc.get("duration_s", float(sc["end_s"]) - float(sc["start_s"])))
         sc_words = list(sc.get("words") or [])
 
-        # Never split proof shots (held 3.0-4.4s @ 1.0x), CTA overlays, or short units (< 2.65s)
+        if role == "payoff" and protect_payoff_hold and dur <= max_payoff_hold_s:
+            gm = (golden_moments or {}).get(sc.get("index"))
+            payoff_dynamic = True
+            if gm is not None:
+                vis_ok = bool((gm.get("vision") or {}).get("motion_verified", False))
+                score_ok = float(gm.get("metric_score", 0.0) or 0.0) >= 55.0
+                payoff_dynamic = vis_ok or score_ok
+            if payoff_dynamic:
+                sc["is_payoff_hold"] = True
+                out.append(sc)
+                continue
+
+        # Never split proof shots (held 3.0-4.4s @ 1.0x), CTA overlays, or short units (< min_unit_split_s)
         if role in ("proof", "cta") or dur < min_unit_split_s or len(sc_words) < 4:
             out.append(sc)
             continue

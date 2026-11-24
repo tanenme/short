@@ -98,19 +98,21 @@ def compute_selective_speed(
     target_dur: float,
     selective_speed: bool = True,
     max_animal_speed: float = 1.35,
+    protect_payoff_hold: bool = True,
 ) -> float:
-    """Squooshify v3.6 Selective Speed-Up by Narrative Role (never uniform speed-up!).
+    """Squooshify v3.7 Selective Speed-Up by Narrative Role (never uniform speed-up!).
 
-    - proof / cta: strictly 1.0x so physical evidence and facial expressions stay 100% natural.
+    - proof / cta / payoff (when protect_payoff_hold=True): strictly 1.0x so physical evidence,
+      animal expressions, and final payoff holds stay 100% natural.
     - process: 1.25x micro speed-up (capped at max_animal_speed <= 1.35x for live animals).
     - hook: 1.12x crisp opening energy.
-    - balanced / payoff: 1.05x subtle fingerprint break.
+    - balanced: 1.05x subtle fingerprint break.
     """
     if not selective_speed:
         return 1.05 if clip_dur >= (target_dur * 1.12 + 0.4) else 1.0
 
     role = (scene_role or "balanced").lower()
-    if role in ("proof", "cta"):
+    if role in ("proof", "cta") or (role == "payoff" and protect_payoff_hold):
         return 1.0
 
     cap = max(1.0, min(1.50, float(max_animal_speed)))
@@ -199,19 +201,21 @@ def render_cinematic_segment(
     info = probe_media_info(clip_path, cfg)
     clip_dur = info["duration"]
 
-    # Squooshify v3.6 Selective Speed-Up (proof & cta strictly 1.0x; process up to 1.25x, capped <= 1.35x)
+    # Squooshify v3.7 Selective Speed-Up (proof, cta & payoff hold strictly 1.0x; process up to 1.25x, capped <= 1.35x)
     speed = compute_selective_speed(
         scene_role=scene_role,
         clip_dur=clip_dur,
         target_dur=target_dur,
         selective_speed=bool(getattr(vis, "selective_speed_up", True)),
         max_animal_speed=float(getattr(vis, "max_animal_speed", 1.35)),
+        protect_payoff_hold=bool(getattr(vis, "protect_payoff_hold", True)),
     )
-    needed_src_dur = target_dur * speed
+    safety_pad_s = max(0.0, float(getattr(vis, "clip_safety_margin_s", 0.10)))
+    needed_src_dur = (target_dur + safety_pad_s) * speed
 
     # Golden Moment trim window (uses exact forced_start_s when available, else smart inner window)
     if forced_start_s is not None and clip_dur > needed_src_dur:
-        start_trim = max(0.0, min(clip_dur - needed_src_dur - 0.05, float(forced_start_s)))
+        start_trim = max(0.0, min(clip_dur - needed_src_dur - 0.02, float(forced_start_s)))
     elif clip_dur > needed_src_dur + 0.6:
         usable = clip_dur - needed_src_dur
         anchor_ratio = [0.30, 0.55, 0.15, 0.72][usage_offset % 4]
@@ -420,6 +424,37 @@ def get_v33_transition_spec(cut_index: int, is_intra_unit: bool = False) -> Tupl
     return ("fade", 0.050)
 
 
+def plan_v37_transitions(scenes: List[dict], max_flash_transitions: int = 1) -> Dict[int, Tuple[str, float]]:
+    """Forensic v3.7 transition planner (Top 10 @Squooshify DNA):
+    - 90-100% of cuts are pure 0-frame hard cuts (zero xfade blur/ghosting, locked dead-on to word onset).
+    - Up to `max_flash_transitions` (default 1, or 0 for pure hard-cut mode) white-flash (`fadewhite`, 0.060s)
+      is budgeted exclusively for the primary reveal boundary (entry into `payoff` or `proof`).
+    """
+    if max_flash_transitions <= 0 or len(scenes) < 2:
+        return {}
+
+    scored_cuts: List[Tuple[int, int]] = []  # (priority, cut_idx)
+    for cut_idx in range(1, len(scenes)):
+        prev_sc = scenes[cut_idx - 1]
+        curr_sc = scenes[cut_idx]
+        if curr_sc.get("is_intra_unit_cut"):
+            continue
+        curr_role = str(curr_sc.get("scene_role", "")).lower()
+        prev_role = str(prev_sc.get("scene_role", "")).lower()
+        if curr_role == "payoff":
+            scored_cuts.append((100, cut_idx))
+        elif curr_role == "proof":
+            scored_cuts.append((85, cut_idx))
+        elif prev_role == "cta" and curr_role != "cta":
+            scored_cuts.append((60, cut_idx))
+
+    scored_cuts.sort(key=lambda x: (-x[0], -x[1]))
+    chosen: Dict[int, Tuple[str, float]] = {}
+    for _, cut_idx in scored_cuts[: max(0, int(max_flash_transitions))]:
+        chosen[cut_idx] = ("fadewhite", 0.060)
+    return chosen
+
+
 def concat_with_transitions(
     segments: List[Path],
     segment_durations: List[float],
@@ -427,10 +462,15 @@ def concat_with_transitions(
     cfg: StudioConfig,
     trans_dur: float = 0.12,
     fps: int = 30,
-    transition_style: str = "squooshify_v33",
+    transition_style: str = "squooshify_v37",
     intra_unit_cut_indices: Optional[set] = None,
+    v37_flash_plan: Optional[Dict[int, Tuple[str, float]]] = None,
 ) -> Path:
-    """Join rendered video segments separating Intra-Unit hard cuts from Inter-Unit zoom/flash transitions."""
+    """Join rendered video segments.
+
+    In `squooshify_v37` mode, consecutive hard-cut segments are joined via lossless-timing `concat`
+    (0.000s overlap = zero cut drift) and `xfade` is applied ONLY at budgeted `v37_flash_plan` cuts.
+    """
     if not segments:
         raise ValueError("No video segments to concatenate.")
     if len(segments) == 1:
@@ -442,27 +482,72 @@ def concat_with_transitions(
     for seg in segments:
         cmd.extend(["-i", str(seg)])
 
-    # Normalize timebase across inputs before xfade
+    # Normalize timebase across inputs
     filters = [f"[{i}:v]settb=AVTB,fps={fps}[v{i}]" for i in range(len(segments))]
-    intra_set = intra_unit_cut_indices or set()
 
-    prev_label = "v0"
-    running_dur = segment_durations[0]
-    for i in range(1, len(segments)):
-        if transition_style == "squooshify_v33":
-            trans_name, raw_td = get_v33_transition_spec(i, is_intra_unit=(i in intra_set))
-            eff_td = min(raw_td, max(0.017, segment_durations[i - 1] * 0.2), max(0.017, segment_durations[i] * 0.2))
-        else:
-            trans_name = XFADE_CYCLE[(i - 1) % len(XFADE_CYCLE)]
-            eff_td = min(trans_dur, max(0.05, segment_durations[i - 1] * 0.25), max(0.05, segment_durations[i] * 0.25))
+    if transition_style == "squooshify_v37":
+        flash_map = v37_flash_plan or {}
+        split_points = sorted(idx for idx in flash_map.keys() if 1 <= idx < len(segments))
 
-        offset = max(0.0, running_dur - eff_td)
-        out_label = f"xf{i}" if i < len(segments) - 1 else "vout"
-        filters.append(
-            f"[{prev_label}][v{i}]xfade=transition={trans_name}:duration={eff_td:.3f}:offset={offset:.3f}[{out_label}]"
-        )
-        prev_label = out_label
-        running_dur = offset + segment_durations[i]
+        # Partition segments into contiguous 0-frame hard-cut groups separated only by flash boundaries
+        groups: List[List[int]] = []
+        start_i = 0
+        for sp in split_points:
+            groups.append(list(range(start_i, sp)))
+            start_i = sp
+        groups.append(list(range(start_i, len(segments))))
+
+        group_labels: List[str] = []
+        group_durs: List[float] = []
+        for g_idx, idxs in enumerate(groups):
+            g_dur = sum(float(segment_durations[k]) for k in idxs)
+            group_durs.append(g_dur)
+            if len(idxs) == 1:
+                if len(groups) == 1:
+                    filters.append(f"[v{idxs[0]}]null[vout]")
+                    group_labels.append("vout")
+                else:
+                    group_labels.append(f"v{idxs[0]}")
+            else:
+                out_lbl = "vout" if len(groups) == 1 else f"grp{g_idx}"
+                in_tags = "".join(f"[v{k}]" for k in idxs)
+                norm_tail = f",settb=AVTB,fps={fps}" if len(groups) > 1 else ""
+                filters.append(f"{in_tags}concat=n={len(idxs)}:v=1:a=0{norm_tail}[{out_lbl}]")
+                group_labels.append(out_lbl)
+
+        if len(groups) > 1:
+            prev_label = group_labels[0]
+            running_dur = group_durs[0]
+            for p_idx in range(1, len(groups)):
+                cut_idx = split_points[p_idx - 1]
+                trans_name, raw_td = flash_map.get(cut_idx, ("fadewhite", 0.060))
+                eff_td = min(raw_td, max(0.017, group_durs[p_idx - 1] * 0.2), max(0.017, group_durs[p_idx] * 0.2))
+                offset = max(0.0, running_dur - eff_td)
+                out_label = f"xf{p_idx}" if p_idx < len(groups) - 1 else "vout"
+                filters.append(
+                    f"[{prev_label}][{group_labels[p_idx]}]xfade=transition={trans_name}:duration={eff_td:.3f}:offset={offset:.3f}[{out_label}]"
+                )
+                prev_label = out_label
+                running_dur = offset + group_durs[p_idx]
+    else:
+        intra_set = intra_unit_cut_indices or set()
+        prev_label = "v0"
+        running_dur = segment_durations[0]
+        for i in range(1, len(segments)):
+            if transition_style == "squooshify_v33":
+                trans_name, raw_td = get_v33_transition_spec(i, is_intra_unit=(i in intra_set))
+                eff_td = min(raw_td, max(0.017, segment_durations[i - 1] * 0.2), max(0.017, segment_durations[i] * 0.2))
+            else:
+                trans_name = XFADE_CYCLE[(i - 1) % len(XFADE_CYCLE)]
+                eff_td = min(trans_dur, max(0.05, segment_durations[i - 1] * 0.25), max(0.05, segment_durations[i] * 0.25))
+
+            offset = max(0.0, running_dur - eff_td)
+            out_label = f"xf{i}" if i < len(segments) - 1 else "vout"
+            filters.append(
+                f"[{prev_label}][v{i}]xfade=transition={trans_name}:duration={eff_td:.3f}:offset={offset:.3f}[{out_label}]"
+            )
+            prev_label = out_label
+            running_dur = offset + segment_durations[i]
 
     cmd.extend(
         [

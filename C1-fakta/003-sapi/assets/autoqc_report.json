@@ -1,0 +1,52 @@
+{
+  "channel_id": "C1-fakta",
+  "episode_id": "003-sapi",
+  "total_clips": 3,
+  "ok_count": 3,
+  "warn_count": 0,
+  "fail_count": 0,
+  "items": [
+    {
+      "filename": "2-november-2026-1920-ytshorts.savetube.me.mp4",
+      "duration_s": 180.09,
+      "width": 1080,
+      "height": 1920,
+      "is_vertical": true,
+      "blur_mean": 4.8,
+      "yavg": 140.7,
+      "ydif": 27.674,
+      "satavg": 14.62,
+      "verdict": "OK",
+      "flags": [],
+      "warnings": []
+    },
+    {
+      "filename": "@pidjar.id_7703575920040316167_hd.mp4",
+      "duration_s": 10.2,
+      "width": 1024,
+      "height": 576,
+      "is_vertical": false,
+      "blur_mean": 4.7,
+      "yavg": 107.27,
+      "ydif": 1.206,
+      "satavg": 8.86,
+      "verdict": "OK",
+      "flags": [],
+      "warnings": []
+    },
+    {
+      "filename": "@taitetai.kid_7467796425913421099_hd.mp4",
+      "duration_s": 11.31,
+      "width": 720,
+      "height": 1280,
+      "is_vertical": true,
+      "blur_mean": 8.39,
+      "yavg": 99.42,
+      "ydif": 16.67,
+      "satavg": 15.16,
+      "verdict": "OK",
+      "flags": [],
+      "warnings": []
+    }
+  ]
+}

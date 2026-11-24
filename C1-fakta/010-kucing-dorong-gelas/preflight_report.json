@@ -1,7 +1,7 @@
 {
   "channel_id": "C1-fakta",
   "episode_id": "010-kucing-dorong-gelas",
-  "checked_at": "2026-11-24T08:03:11",
+  "checked_at": "2026-11-24T14:29:42",
   "stage_verdict": "READY_TO_PUBLISH",
   "can_render": true,
   "can_publish": true,
@@ -95,7 +95,7 @@
       "code": "RENDER_VERIFIED",
       "category": "render",
       "severity": "PASS",
-      "message": "Render v3.5.0 terverifikasi (18.633s, 10 adegan, >=2 transform/klip)."
+      "message": "Render v3.6.0 terverifikasi (18.633s, 12 adegan, >=2 transform/klip)."
     }
   ],
   "creator_rotation": {

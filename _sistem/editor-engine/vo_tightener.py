@@ -11,6 +11,7 @@ from core.config import StudioConfig
 
 _RE_SIL_START = re.compile(r"silence_start:\s*([0-9]+(?:\.[0-9]+)?)")
 _RE_SIL_END = re.compile(r"silence_end:\s*([0-9]+(?:\.[0-9]+)?)")
+PIVOT_PAUSE_TOKENS = {"ternyata", "bukan", "salah", "makanya", "anehnya", "faktanya", "padahal"}
 
 
 def parse_silencedetect_output(stderr_text: str, total_dur_s: float) -> List[Tuple[float, float]]:
@@ -33,12 +34,35 @@ def parse_silencedetect_output(stderr_text: str, total_dur_s: float) -> List[Tup
     return intervals
 
 
+def _is_pre_pivot_silence(s_st: float, s_en: float, words: List[dict] | None) -> bool:
+    """Return True if the first spoken word right after silence [s_st, s_en] is a rhetorical pivot token."""
+    if not words:
+        return False
+    for w in words:
+        wst = float(w.get("start", 0.0))
+        if wst < s_st - 0.08:
+            continue
+        if wst <= s_en + 0.35:
+            tok = re.sub(r"[^\w]", "", (w.get("word") or "").lower()).strip()
+            return tok in PIVOT_PAUSE_TOKENS
+        break
+    return False
+
+
 def build_speech_segments(
     total_dur_s: float,
     silences: List[Tuple[float, float]],
     edge_pad_s: float = 0.025,
+    words: List[dict] | None = None,
+    pivot_pause_s: float = 0.0,
+    max_pivot_pauses: int = 2,
 ) -> List[Tuple[float, float]]:
-    """Invert silence intervals into kept speech intervals with soft consonant-protection padding."""
+    """Invert silence intervals into kept speech intervals with soft consonant-protection padding.
+
+    v3.7 Selective Rhetorical Pause Preservation: when `pivot_pause_s > 0` and `words` are supplied,
+    preserves up to `max_pivot_pauses` rhetorical silences (`pivot_pause_s`) right before pivot tokens
+    ("ternyata", "bukan", "makanya") so payoff/twist sentences land after an intentional acoustic vacuum.
+    """
     if total_dur_s <= 0.0:
         return []
     if not silences:
@@ -46,6 +70,7 @@ def build_speech_segments(
 
     # Build trim regions (strictly inside each silence pocket so edges keep edge_pad_s of breath/consonants)
     cut_regions: List[Tuple[float, float]] = []
+    pivots_preserved = 0
     for s_st, s_en in sorted(silences):
         s_st = max(0.0, s_st)
         s_en = min(total_dur_s, s_en)
@@ -60,8 +85,16 @@ def build_speech_segments(
             if total_dur_s - cut_start > 0.02:
                 cut_regions.append((cut_start, total_dur_s))
         else:
+            keep_right = edge_pad_s
+            if (
+                pivot_pause_s > (2.0 * edge_pad_s)
+                and pivots_preserved < max_pivot_pauses
+                and _is_pre_pivot_silence(s_st, s_en, words)
+            ):
+                keep_right = max(edge_pad_s, float(pivot_pause_s) - edge_pad_s)
+                pivots_preserved += 1
             c_st = s_st + edge_pad_s
-            c_en = s_en - edge_pad_s
+            c_en = s_en - keep_right
             if c_en - c_st >= 0.02:
                 cut_regions.append((c_st, c_en))
 
@@ -119,10 +152,11 @@ def tighten_vo_and_alignment(
     max_pause_s: float = 0.10,
     tempo_boost: float = 1.07,
     silence_db: float = -32.0,
+    pivot_pause_s: float = 0.26,
 ) -> Tuple[Path, List[dict], float]:
     """Detect and cut real acoustic silence pockets (< silence_db) from raw VO and remap all word timestamps.
 
-    Works consistently even when silences are hidden inside word spans or when words_alignment is empty.
+    Preserves up to 2 rhetorical pre-pivot pauses (`pivot_pause_s`) before twist/payoff words.
     Returns (tightened_vo_path, shifted_words, new_duration_s).
     """
     if not vo_file.exists():
@@ -150,7 +184,15 @@ def tighten_vo_and_alignment(
         timeout=60,
     )
     silences = parse_silencedetect_output(r_sil.stderr, orig_dur)
-    kept_segments = build_speech_segments(orig_dur, silences, edge_pad_s=0.025)
+    raw_pivot_s = float(pivot_pause_s) * max(1.0, float(tempo_boost)) if pivot_pause_s > 0.0 else 0.0
+    kept_segments = build_speech_segments(
+        orig_dur,
+        silences,
+        edge_pad_s=0.025,
+        words=words,
+        pivot_pause_s=raw_pivot_s,
+        max_pivot_pauses=2,
+    )
 
     # 2. Build FFmpeg filter_complex to splice kept speech segments + apply energetic tempo_boost
     filter_parts: List[str] = []

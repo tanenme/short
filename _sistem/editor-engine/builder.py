@@ -1,17 +1,13 @@
 """
-Enterprise Autonomous Video Editor Engine for YouTube Shorts (v3.0)
+Enterprise Autonomous Video Editor Engine for YouTube Shorts (v3.7)
 
-Upgrades over v2.0:
+Upgrades through v3.7 (@Squooshify Top-10 Forensic DNA):
 1. Multi-channel aware (reads ChannelProfile from _sistem/channels/*.toml)
-2. Fuzzy sequence word-to-scene alignment (drift-resistant, hyphen-safe)
-3. Dynamic highlight & SFX trigger extraction (zero hardcoded episode words)
-4. Hard cleanliness filter (blocks dirty/UI-heavy clips from cleanliness_report.json)
-5. Multi-frame Vision sampling (25%/50%/75%) when mapping uncached clips
-6. Cinematic FFmpeg render: dynamic zoom-punch, alternating hflip, speed shift,
-   cohesive color grade + vignette, xfade transitions, Ken Burns photo support,
-   safe-zone kinetic ASS captions + callout banners, green-screen Subscribe CTA
-   chromakey overlay, 0.5s authentic hook audio, sidechain BGM ducking, and
-   -14 LUFS YouTube broadcast loudness mastering.
+2. Word-Onset Hard-Cut Aligner (1-frame lead before spoken word onset) + Intra-Unit VO-Keyword Split
+3. Pure 0.000s Hard-Cut Concat + Single-Reveal Flash Budget (max 1 fadewhite on Payoff/Proof reveal)
+4. Pre-Pivot Acoustic & Visual Vacuum (0.26s rhetorical pause + -28 dB BGM drop + RSVP blanking)
+5. Protected 1.0x Payoff/Proof Hold (<= 4.80s YPP-safe) + Mid-Shot Foley Re-Anchor + Round-Robin Slice Rotation
+6. 3-Beat Reward Pop CTA ("SUBSCRIBE + LIKE" -> "+1 {SUBJEK} LIKE!" -> "BONUS {SUBJEK} IMUT!") & -10.8 LUFS Mix
 """
 
 from __future__ import annotations
@@ -37,8 +33,10 @@ from aligner import (
     apply_adaptive_proof_pacing,
     apply_intra_unit_clip_splitting,
     classify_scene_role,
+    detect_bgm_vacuum_windows,
     detect_cta_window,
     extract_dynamic_highlights,
+    normalize_token,
     strip_audio_tags,
     synchronize_scenes_fuzzy,
 )
@@ -64,6 +62,7 @@ from video_fx import (
     generate_qc_contact_sheet,
     get_cleanliness_map,
     get_v33_transition_spec,
+    plan_v37_transitions,
     probe_media_info,
     render_cinematic_segment,
 )
@@ -347,7 +346,13 @@ def _load_episode_context(package_name: str, channel_id: Optional[str] = None):
     clean_clips, _ = filter_clean_clips(assets_dir, all_media, profile.ypp.min_cleanliness_score)
     words = align_voiceover_words(assets_dir, vo_file)
     clip_mapping = match_scenes_to_clips(assets_dir, raw_scenes, all_media, profile)
-    scenes = synchronize_scenes_fuzzy(raw_scenes, words, vo_duration)
+    scenes = synchronize_scenes_fuzzy(
+        raw_scenes,
+        words,
+        vo_duration,
+        cut_on_word_lock=bool(getattr(profile.visual, "cut_on_word_lock", True)),
+        word_onset_lead_s=float(getattr(profile.visual, "word_onset_lead_s", 0.033)),
+    )
     highlights = extract_dynamic_highlights(scenes, naskah_vo_only)
     cta_window = detect_cta_window(scenes, words)
 
@@ -746,11 +751,14 @@ def render_ffmpeg_direct(
         shutil.rmtree(temp_dir, ignore_errors=True)
     temp_dir.mkdir(exist_ok=True)
 
-    # 0. Acoustic Zero-Gap VO Tightening (cuts real silence < vo_silence_db on raw VO & remaps word timings!)
+    # 0. Acoustic Zero-Gap VO Tightening + v3.7 Selective Rhetorical Pause Preservation (< vo_silence_db)
     vo_silence_db = float(getattr(profile.visual, "vo_silence_db", -32.0))
     vo_min_silence_s = float(getattr(profile.visual, "vo_min_silence_s", 0.10))
+    vo_pivot_pause_s = float(getattr(profile.visual, "vo_pivot_pause_s", 0.26))
+    use_word_lock = bool(getattr(profile.visual, "cut_on_word_lock", True))
+    word_lead_s = float(getattr(profile.visual, "word_onset_lead_s", 0.033))
     if getattr(profile.visual, "vo_zero_gap", True) and vo_file.exists():
-        _prog(18, f"Memotong kantong hening VO (< {vo_silence_db:.1f} dB) & sinkronisasi WAV...")
+        _prog(18, f"Memotong kantong hening VO (< {vo_silence_db:.1f} dB) & menjaga jeda retoris v3.7...")
         tight_vo_path = temp_dir / "_vo_tightened.wav"
         vo_file, words, vo_duration = tighten_vo_and_alignment(
             vo_file=vo_file,
@@ -760,37 +768,59 @@ def render_ffmpeg_direct(
             max_pause_s=vo_min_silence_s,
             tempo_boost=float(getattr(profile.visual, "vo_tempo_boost", 1.07)),
             silence_db=vo_silence_db,
+            pivot_pause_s=vo_pivot_pause_s,
         )
         if words:
-            scenes = synchronize_scenes_fuzzy(scenes, words, vo_duration)
+            scenes = synchronize_scenes_fuzzy(
+                scenes,
+                words,
+                vo_duration,
+                cut_on_word_lock=use_word_lock,
+                word_onset_lead_s=word_lead_s,
+            )
             cta_window = detect_cta_window(scenes, words)
 
-    # 1. Locate Golden Moments + Adaptive Proof Shot Pacing + v3.6 Intra-Unit VO-Keyword Clip Splitting
-    _prog(22, "Memindai Golden Moments, Proof Pacing & Intra-Unit Splitting...")
+    # 1. Locate Golden Moments + Adaptive Proof Shot Pacing + v3.7 Protected Payoff Hold & Intra-Unit Split
+    _prog(22, "Memindai Golden Moments, Proof/Payoff Hold 1.0x & Intra-Unit Splitting...")
     golden_moments = compute_scene_golden_moments(assets_dir, scenes, clip_mapping, CFG)
     if getattr(profile.visual, "adaptive_proof_pacing", True):
         scenes = apply_adaptive_proof_pacing(scenes, golden_moments, clip_mapping, max_proof_s=4.4)
     # Drop any 0-duration ghost tail scene produced after acoustic tightening
     scenes = [sc for sc in scenes if (float(sc["end_s"]) - float(sc["start_s"])) >= 0.20]
+    protect_payoff = bool(getattr(profile.visual, "protect_payoff_hold", True))
     if getattr(profile.visual, "intra_unit_split", True):
-        scenes = apply_intra_unit_clip_splitting(scenes, cta_window=cta_window)
+        scenes = apply_intra_unit_clip_splitting(
+            scenes,
+            cta_window=cta_window,
+            protect_payoff_hold=protect_payoff,
+            golden_moments=golden_moments,
+            max_payoff_hold_s=min(4.80, float(profile.ypp.max_source_clip_s) - 0.20),
+        )
     else:
         for pos, sc in enumerate(scenes):
             sc.setdefault("unit_id", f"U{pos + 1}")
             sc.setdefault("scene_role", classify_scene_role(sc, pos, len(scenes), cta_window))
             sc.setdefault("is_intra_unit_cut", False)
 
-    if cta_style_override in ("heart_pill", "gamified_321"):
+    if cta_style_override in ("heart_pill", "gamified_321", "reward_pop"):
         profile = profile.model_copy(
             update={"visual": profile.visual.model_copy(update={"cta_style": cta_style_override})}
         )
 
-    # Render each visual clip with role-based selective speed-up & anti-repeat sub-clip selection
-    t_style = getattr(profile.visual, "transition_style", "squooshify_v33")
+    # Render each visual clip with role-based selective speed-up, single-flash budget & round-robin slice anti-collision
+    t_style = getattr(profile.visual, "transition_style", "squooshify_v37")
+    max_flashes = int(getattr(profile.visual, "max_flash_transitions", 1))
+    v37_flash_plan = (
+        plan_v37_transitions(scenes, max_flash_transitions=max_flashes)
+        if (enable_transitions and t_style == "squooshify_v37")
+        else {}
+    )
+    tail_safety_s = max(0.0, float(getattr(profile.visual, "clip_safety_margin_s", 0.10)))
     intra_unit_cut_indices = {idx for idx, sc in enumerate(scenes) if sc.get("is_intra_unit_cut")}
     processed_segments: List[Path] = []
     segment_durations: List[float] = []
     usage_counts: Dict[str, int] = {}
+    claimed_clip_windows: Dict[str, List[ tuple[float, float] ]] = {}
     scene_render_log = []
     hook_clip_path: Optional[Path] = None
     hook_clip_has_audio = False
@@ -826,19 +856,39 @@ def render_ffmpeg_direct(
             crop_x_norm = float(sub2_info.get("crop_x_norm", crop_x_norm))
             gm_mode = str(sub2_info.get("mode", gm_mode))
 
+        # v3.7 Round-Robin Source Slice Anti-Collision when reusing the same file in non-adjacent scenes
+        prev_wins = claimed_clip_windows.get(clip_path.name, [])
+        est_win_dur = max(1.0, float(sc["duration_s"]))
+        if forced_st is not None and prev_wins:
+            has_collision = any(
+                min(float(forced_st) + est_win_dur, pen) - max(float(forced_st), pst) >= 0.40 * est_win_dur
+                for pst, pen in prev_wins
+            )
+            if has_collision:
+                alt_picked = None
+                for cand in ((gm or {}).get("signals") or {}).get("top_candidates", []):
+                    cst = float(cand.get("start_s", 0.0))
+                    if all(min(cst + est_win_dur, pen) - max(cst, pst) < 0.25 * est_win_dur for pst, pen in prev_wins):
+                        alt_picked = cst
+                        break
+                forced_st = alt_picked  # None falls back to quadrant rotation via usage_offset
+                gm_mode = f"{gm_mode}_rotated"
+
         u_idx = usage_counts.get(clip_path.name, 0)
         usage_counts[clip_path.name] = u_idx + 1
 
-        # Exact overlap compensation per cut (separating intra-unit hard cuts from inter-unit transitions!)
+        # Exact overlap compensation per cut (0.000s drift on v3.7 pure hard cuts!)
         if enable_transitions and i < len(scenes) - 1:
-            if t_style == "squooshify_v33":
+            if t_style == "squooshify_v37":
+                cut_pad = v37_flash_plan[i + 1][1] if (i + 1) in v37_flash_plan else 0.0
+            elif t_style == "squooshify_v33":
                 _, cut_pad = get_v33_transition_spec(i + 1, is_intra_unit=((i + 1) in intra_unit_cut_indices))
             elif t_style == "hard_cut":
                 cut_pad = 0.0
             else:
                 cut_pad = 0.12
         else:
-            cut_pad = 0.0
+            cut_pad = tail_safety_s if i == len(scenes) - 1 else 0.0
         seg_dur = float(sc["duration_s"]) + cut_pad
         c_status = str(clean_meta.get(clip_path.name, {}).get("status", "BERSIH")).upper()
         allow_flip = (c_status == "BERSIH") and bool(gm.get("allow_flip", True) if gm else True)
@@ -859,6 +909,8 @@ def render_ffmpeg_direct(
             scene_role=sc_role,
             crop_x_norm=crop_x_norm,
         )
+        act_st = float(seg_info.get("start_trim", 0.0))
+        claimed_clip_windows.setdefault(clip_path.name, []).append((act_st, act_st + seg_dur * float(seg_info.get("speed", 1.0))))
         processed_segments.append(seg_out)
         segment_durations.append(seg_dur)
         scene_render_log.append(
@@ -867,6 +919,7 @@ def render_ffmpeg_direct(
                 "unit_id": sc.get("unit_id", f"U{i + 1}"),
                 "scene_role": sc_role,
                 "is_intra_unit_cut": bool(sc.get("is_intra_unit_cut", False)),
+                "is_payoff_hold": bool(sc.get("is_payoff_hold", False)),
                 "split_trigger_word": sc.get("split_trigger_word", ""),
                 "start_s": sc["start_s"],
                 "end_s": sc["end_s"],
@@ -881,8 +934,8 @@ def render_ffmpeg_direct(
             hook_clip_has_audio = bool(seg_info.get("has_audio", False))
             hook_audio_start_s = float(seg_info.get("start_trim", 0.0))
 
-    # 2. Join segments separating Intra-Unit hard cuts from Inter-Unit zoom/flash transitions
-    _prog(74, "Menggabungkan transisi v3.6 (intra-unit hard cut + inter-unit zoom/flash)...")
+    # 2. Join segments (v3.7 0-frame hard cuts + single budgeted reveal flash)
+    _prog(74, f"Menggabungkan klip ({t_style}, flash={len(v37_flash_plan)})...")
     joined_video = temp_dir / "joined_video.mp4"
     if enable_transitions and len(processed_segments) > 1 and t_style != "hard_cut":
         concat_with_transitions(
@@ -894,6 +947,7 @@ def render_ffmpeg_direct(
             fps=profile.visual.fps,
             transition_style=t_style,
             intra_unit_cut_indices=intra_unit_cut_indices,
+            v37_flash_plan=v37_flash_plan,
         )
     else:
         concat_list = temp_dir / "concat_list.txt"
@@ -904,7 +958,27 @@ def render_ffmpeg_direct(
             stderr=subprocess.DEVNULL,
         )
 
-    # 3. Generate multi-layer ASS kinetic subtitles + callout banners + Squooshify 2-Beat CTA Sticker
+    # 3. Compute v3.7 Pre-Pivot Acoustic & Visual Vacuum Windows + Generate ASS Subtitles
+    hook_end_s = float(scenes[0]["end_s"]) if scenes else 0.0
+    bgm_vacuum_wins = detect_bgm_vacuum_windows(
+        words=words,
+        scenes=scenes,
+        hook_end_s=hook_end_s,
+        cta_window=cta_window if enable_cta_overlay else None,
+        max_events=int(getattr(profile.visual, "bgm_vacuum_max_events", 2)),
+    )
+    # Suppress RSVP word bridging inside intentional rhetorical pre-pivot silence pockets (>= 0.16s)
+    rsvp_blank_wins: List[tuple[float, float]] = []
+    if bool(getattr(profile.visual, "suppress_rsvp_on_overlay", True)) and len(words) >= 2:
+        pivot_set = {"ternyata", "bukan", "salah", "makanya", "anehnya", "faktanya", "padahal"}
+        lead_vis = max(0.0, float(getattr(profile.visual, "caption_lead_s", 0.08)))
+        for wi in range(1, len(words)):
+            wtok = normalize_token(words[wi].get("word", ""))
+            prev_en = float(words[wi - 1]["end"]) - lead_vis
+            curr_st = float(words[wi]["start"]) - lead_vis
+            if wtok in pivot_set and (curr_st - prev_en) >= 0.14:
+                rsvp_blank_wins.append((round(prev_en + 0.01, 3), round(curr_st - 0.01, 3)))
+
     ass_file = temp_dir / "captions.ass"
     subj_guess = next((s for s in profile.focus_subjects if s.lower() in package_name.lower()), "KUCING")
     generate_ass_subtitles(
@@ -916,6 +990,7 @@ def render_ffmpeg_direct(
         include_callouts=getattr(profile.visual, "include_top_callouts", False),
         cta_window=cta_window if enable_cta_overlay else None,
         subject_label=subj_guess,
+        suppress_rsvp_windows=rsvp_blank_wins,
     )
 
     # 4. Prepare FFmpeg inputs for final composite & broadcast audio mastering
@@ -956,7 +1031,7 @@ def render_ffmpeg_direct(
         hook_audio_idx = next_idx
         next_idx += 1
 
-    # Precision SFX cues (pass filename + sfx_dir + cta_window + cta_style for subscribe bell or 3-2-1 countdown)
+    # Precision SFX cues (pass filename + sfx_dir + cta_window + cta_style + v3.7 reward/vacuum/foley cues)
     active_cta_style = getattr(profile.visual, "cta_style", "heart_pill")
     sfx_entries = compute_sfx_entries(
         scenes,
@@ -964,6 +1039,8 @@ def render_ffmpeg_direct(
         highlights,
         cta_window=cta_window if enable_cta_overlay else None,
         cta_style=active_cta_style,
+        subject_label=subj_guess,
+        bgm_vacuum_windows=bgm_vacuum_wins,
     )
     sfx_inputs = []
     for trigger_s, sfx_p, gain in sfx_entries:
@@ -1004,17 +1081,7 @@ def render_ffmpeg_direct(
     else:
         video_filters.append(f"{base_v_label}subtitles=captions.ass[vout]")
 
-    # Detect dramatic myth-twist BGM micro-drop window (~0.45s at "bukan"/"salah")
-    bgm_drop_win = None
-    for w in words:
-        tok = "".join(ch for ch in (w.get("word") or "").lower() if ch.isalnum())
-        if tok in ("bukan", "salah", "impossible"):
-            ws = max(0.0, float(w["start"]) - 0.10)
-            bgm_drop_win = (ws, ws + 0.45)
-            break
-
-    # Start BGM cleanly AFTER the opening hook scene (+ mute BGM during 3-2-1 gamified countdown)
-    hook_end_s = float(scenes[0]["end_s"]) if scenes else 0.0
+    # Start BGM cleanly AFTER the opening hook scene (+ v3.7 pre-pivot -28dB vacuum windows + optional 3-2-1 mute)
     bgm_mute_win = cta_window if (enable_cta_overlay and active_cta_style == "gamified_321" and cta_window) else None
 
     audio_fg = build_audio_filtergraph(
@@ -1025,9 +1092,10 @@ def render_ffmpeg_direct(
         hook_audio_input_idx=hook_audio_idx,
         sfx_inputs=sfx_inputs,
         hook_audio_start_s=hook_audio_start_s,
-        bgm_drop_window=bgm_drop_win,
+        bgm_drop_window=None,
         bgm_start_s=hook_end_s,
         bgm_mute_window=bgm_mute_win,
+        bgm_vacuum_windows=bgm_vacuum_wins,
     )
 
     full_filter = ";".join(video_filters) + ";" + audio_fg
@@ -1078,24 +1146,32 @@ def render_ffmpeg_direct(
 
     final_info = probe_media_info(out_p, CFG)
 
-    # Compute Bagian-4 Empirical Pacing & Sync Validation Metrics
+    # Compute Bagian-4 & v3.7 Forensic Pacing & Sync Validation Metrics
     unit_ids = {s.get("unit_id") for s in scene_render_log}
     valid_clips = [s for s in scene_render_log if s.get("dur_f30", 0) > 0]
     avg_f30 = round(sum(s["dur_f30"] for s in valid_clips) / max(1, len(valid_clips)), 1)
     proof_f30 = [s["dur_f30"] for s in valid_clips if s.get("scene_role") == "proof"]
+    payoff_clips = [s for s in valid_clips if s.get("scene_role") == "payoff"]
     cut_starts = [float(s["start_s"]) for s in valid_clips[1:]]
     aligned_cuts = sum(
         1 for ct in cut_starts
         if words and min(abs(ct - float(w["start"])) for w in words) <= 0.13
     )
+    last_word_st = float(words[-1]["start"]) if words else 0.0
+    voiced_cut_starts = [ct for ct in cut_starts if not words or ct <= last_word_st + 0.08]
+    tight_onset_cuts = sum(
+        1 for ct in voiced_cut_starts
+        if words and any(-0.060 <= (ct - float(w["start"])) <= 0.065 for w in words)
+    )
     pct_vo_aligned = round((aligned_cuts / max(1, len(cut_starts))) * 100.0, 1) if cut_starts else 100.0
+    pct_tight_onset = round((tight_onset_cuts / max(1, len(voiced_cut_starts))) * 100.0, 1) if voiced_cut_starts else 100.0
     speed_dist = {
         "normal_1_0x": sum(1 for s in valid_clips if float(s.get("speed", 1.0)) <= 1.01),
         "micro_speed_up": sum(1 for s in valid_clips if float(s.get("speed", 1.0)) > 1.01),
     }
 
     report = {
-        "engine_version": "3.6.0",
+        "engine_version": "3.7.0",
         "channel_id": profile.channel_id,
         "package_name": package_name,
         "output_file": str(out_p),
@@ -1106,6 +1182,7 @@ def render_ffmpeg_direct(
         "highlights": sorted(highlights),
         "cta_window": cta_window,
         "cta_style": active_cta_style,
+        "transition_style": t_style,
         "opening_radial_blur": bool(getattr(profile.visual, "opening_radial_blur", True)),
         "adaptive_proof_pacing": bool(getattr(profile.visual, "adaptive_proof_pacing", True)),
         "intra_unit_split": bool(getattr(profile.visual, "intra_unit_split", True)),
@@ -1118,7 +1195,27 @@ def render_ffmpeg_direct(
             "avg_clip_frames_30fps": avg_f30,
             "proof_shot_frames_30fps": proof_f30,
             "pct_cuts_aligned_to_vo_keyword": pct_vo_aligned,
+            "pct_cuts_locked_2frame_onset": pct_tight_onset,
             "speed_distribution": speed_dist,
+        },
+        "v37_forensic_metrics": {
+            "cut_on_word_lock": use_word_lock,
+            "word_onset_2frame_lock_pct": pct_tight_onset,
+            "flash_transitions_count": len(v37_flash_plan),
+            "flash_cut_indices": sorted(v37_flash_plan.keys()),
+            "bgm_vacuum_windows": bgm_vacuum_wins,
+            "rsvp_blank_windows": rsvp_blank_wins,
+            "vo_pivot_pause_s": vo_pivot_pause_s,
+            "payoff_protected_1x": bool(
+                payoff_clips
+                and all(
+                    float(pc.get("speed", 1.0)) <= 1.01 and not pc.get("is_intra_unit_cut", False)
+                    for pc in payoff_clips
+                )
+            ),
+            "payoff_duration_s": round(
+                sum(float(s["end_s"]) - float(s["start_s"]) for s in payoff_clips), 3
+            ),
         },
         "cta_overlay_used": cta_overlay_path.name if cta_overlay_path else None,
         "hook_audio_used": hook_audio_idx is not None,

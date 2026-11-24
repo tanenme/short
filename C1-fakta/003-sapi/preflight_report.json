@@ -1,0 +1,117 @@
+{
+  "channel_id": "C1-fakta",
+  "episode_id": "003-sapi",
+  "checked_at": "2026-11-24T14:27:41",
+  "stage_verdict": "BLOCKED",
+  "can_render": false,
+  "can_publish": false,
+  "score": 48,
+  "checks": [
+    {
+      "code": "DOCS_COMPLETE",
+      "category": "structure",
+      "severity": "PASS",
+      "message": "Dokumen inti lengkap (naskah, brief-edit, sources, paket-upload)."
+    },
+    {
+      "code": "SCRIPT_TOO_LONG",
+      "category": "script",
+      "severity": "FAIL",
+      "message": "Jumlah kata 187 melebihi batas keras 60 kata (~85.65s)."
+    },
+    {
+      "code": "AUDIO_TAGS",
+      "category": "script",
+      "severity": "PASS",
+      "message": "Audio tags Eleven v4 lengkap (5 tag)."
+    },
+    {
+      "code": "SCRIPT_DIGITS",
+      "category": "script",
+      "severity": "WARN",
+      "message": "Ada angka digit ['4', '1', '2', '4', '1'] di VO — eja jadi kata agar pelafalan ElevenLabs natural."
+    },
+    {
+      "code": "CTA_PLACEMENT",
+      "category": "script",
+      "severity": "PASS",
+      "message": "CTA tunggal berada di posisi kalimat #21/30."
+    },
+    {
+      "code": "SENTENCE_BREATH",
+      "category": "script",
+      "severity": "WARN",
+      "message": "Ada 5 kalimat > 12 kata (maks 21 kata)."
+    },
+    {
+      "code": "FACT_SOURCES",
+      "category": "factcheck",
+      "severity": "PASS",
+      "message": "Tercatat 3 URL sumber fakta tertulis (min 2)."
+    },
+    {
+      "code": "SCENE_PACING",
+      "category": "ypp",
+      "severity": "PASS",
+      "message": "10 adegan di brief-edit, semua <= 5.0s."
+    },
+    {
+      "code": "VO_READY",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "VO tersedia di assets: ElevenLabs_2026-11-04T06_15_23_Senandika - Young, Confident and Clear_pvc_sp108_s45_sb70_v4.mp3."
+    },
+    {
+      "code": "CLIPS_COUNT",
+      "category": "assets",
+      "severity": "WARN",
+      "message": "Baru ada 3 klip video (disarankan 5-10 klip beragam)."
+    },
+    {
+      "code": "LICENSE_AUDIT",
+      "category": "ypp",
+      "severity": "WARN",
+      "message": "Lisensi klip: LOW=0, MEDIUM=0, HIGH(ToS/transform)=3, BLOCKED=0."
+    },
+    {
+      "code": "USABLE_CLIPS_READY",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "3 klip bersih lulus filter kebersihan (>=70)."
+    },
+    {
+      "code": "CREATOR_ROTATION_OK",
+      "category": "ypp",
+      "severity": "PASS",
+      "message": "Rotasi kreator bersih (2 kreator unik, 0 overlap 7 hari)."
+    },
+    {
+      "code": "AUTOQC_VIDEO_OK",
+      "category": "assets",
+      "severity": "PASS",
+      "message": "AutoQC FFmpeg lulus (3 OK, 0 WARN dari 3 klip)."
+    },
+    {
+      "code": "RENDER_PENDING",
+      "category": "render",
+      "severity": "WARN",
+      "message": "Video final belum di-render oleh Editor Engine v3."
+    }
+  ],
+  "creator_rotation": {
+    "episode_id": "003-sapi",
+    "unique_creators": 2,
+    "creators": {
+      "@pidjar.id": 1,
+      "@taitetai.kid": 1
+    },
+    "intra_episode_repeats": {},
+    "cross_episode_overlaps_7d": {}
+  },
+  "license_summary": {
+    "LOW": 0,
+    "MEDIUM": 0,
+    "HIGH": 3,
+    "BLOCKED": 0
+  }
+}

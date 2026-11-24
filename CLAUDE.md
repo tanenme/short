@@ -25,7 +25,7 @@ E:\YT\short\
 │   ├── sourcing\                 # Unified sourcing, licensing, FFmpeg autoqc, YPP preflight gate
 │   ├── analytics\                # Growth analytics, Kill/Scale 30-day engine, multi-channel scaler
 │   ├── teardown\                 # Forensic 8-dimensi reverse-engineering video & channel referensi
-│   ├── editor-engine\            # Engine render v3.6 (60fps, Intra-Unit VO-Keyword Split, Selective Speed-Up 1.0x Proof/CTA & 1.25x Process, Frame-0 blur, GM v2.4, Zero-Gap -32dB WAV Sync)
+│   ├── editor-engine\            # Engine render v3.7 (60fps, Onset-Locked Hard Cuts + Single-Flash, Pre-Pivot BGM Vacuum & RSVP Blank, 1.0x Payoff Hold & Reward Pop CTA, GM v2.4)
 │   ├── doksli-web\               # FastAPI + Web UI kurasi Exa & Vision Pro
 │   ├── tools\dokli.py            # CLI sourcing CC/Commons/iNaturalist/YT + autoqc + CREDITS.md
 │   ├── tests\test_core.py        # Unit test fondasi core & validator
@@ -65,7 +65,7 @@ python _sistem/studio.py credits C1-fakta 009-kucing-ek-cicak
 # Cari klip terpadu (Wikimedia CC, iNaturalist, Pexels, YouTube, TikTok, Reddit)
 python _sistem/studio.py source-search "cat chattering" --cc-only --limit 8
 
-# Render video Shorts v3.6 (FFmpeg cinematic + QC contact sheet / CapCut Draft)
+# Render video Shorts v3.7 (FFmpeg cinematic + QC contact sheet / CapCut Draft)
 python _sistem/studio.py render C1-fakta 009-kucing-ek-cicak --mode render --strict-gate
 
 # Pindai Golden Moment v2.4 (Per-Shot Semantic Index + Synonym/Triplet Vision + Subject Crop_X + Peak-to-Word Lock)

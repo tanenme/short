@@ -1,7 +1,7 @@
 {
   "channel_id": "C1-fakta",
   "episode_id": "011-bebek-tidur-melek",
-  "checked_at": "2026-11-24T11:22:24",
+  "checked_at": "2026-11-24T14:30:14",
   "stage_verdict": "READY_TO_PUBLISH",
   "can_render": true,
   "can_publish": true,
@@ -95,7 +95,7 @@
       "code": "RENDER_VERIFIED",
       "category": "render",
       "severity": "PASS",
-      "message": "Render v3.4.0 terverifikasi (15.517s, 10 adegan, >=2 transform/klip)."
+      "message": "Render v3.6.0 terverifikasi (15.517s, 11 adegan, >=2 transform/klip)."
     }
   ],
   "creator_rotation": {

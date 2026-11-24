@@ -17,6 +17,7 @@ for p in (str(SISTEM_DIR), str(EDITOR_DIR)):
 from aligner import (
     apply_adaptive_proof_pacing,
     apply_intra_unit_clip_splitting,
+    detect_bgm_vacuum_windows,
     detect_cta_window,
     extract_dynamic_highlights,
     synchronize_scenes_fuzzy,
@@ -31,7 +32,12 @@ from moment_finder import (
     split_clip_into_shots,
 )
 from subtitles import generate_ass_subtitles, hex_to_ass_bgr
-from video_fx import compute_selective_speed, filter_clean_clips, get_v33_transition_spec
+from video_fx import (
+    compute_selective_speed,
+    filter_clean_clips,
+    get_v33_transition_spec,
+    plan_v37_transitions,
+)
 from vo_tightener import build_speech_segments, parse_silencedetect_output, remap_timestamp
 
 
@@ -428,6 +434,164 @@ class TestEditorEngineV3(unittest.TestCase):
         self.assertEqual(sub2_res["start_s"], 6.5)
         self.assertEqual(sub2_res["crop_x_norm"], 0.62)
         self.assertEqual(sub2_res["mode"], "v24_subclip2_action")
+
+    def test_v37_word_onset_cut_lock_and_single_flash_budget(self) -> None:
+        scenes = [
+            {"index": 1, "brief_start_s": 0.0, "brief_end_s": 2.5, "vo": "Kenapa kucing lihat cicak?"},
+            {"index": 2, "brief_start_s": 2.5, "brief_end_s": 5.0, "vo": "Makanya mulutnya bunyi cepat!"},
+        ]
+        words = [
+            {"word": "Kenapa", "start": 0.05, "end": 0.4},
+            {"word": "kucing", "start": 0.45, "end": 0.9},
+            {"word": "lihat", "start": 0.95, "end": 1.4},
+            {"word": "cicak", "start": 1.45, "end": 2.20},
+            # Intentional 0.50s rhetorical pause [2.20 .. 2.70] before "Makanya"
+            {"word": "Makanya", "start": 2.70, "end": 3.15},
+            {"word": "mulutnya", "start": 3.20, "end": 3.65},
+            {"word": "bunyi", "start": 3.70, "end": 4.10},
+            {"word": "cepat", "start": 4.15, "end": 4.70},
+        ]
+        locked = synchronize_scenes_fuzzy(
+            scenes, words, total_duration=5.0, cut_on_word_lock=True, word_onset_lead_s=0.033
+        )
+        # Cut MUST lock 1 frame (0.033s) before "Makanya" (2.70 - 0.033 = 2.667s), NOT midpoint 2.45s!
+        self.assertAlmostEqual(locked[0]["end_s"], 2.667, places=3)
+        self.assertAlmostEqual(locked[1]["start_s"], 2.667, places=3)
+
+        # Single-Reveal Flash Budget: max 1 fadewhite on payoff entry, ignoring intra-unit cuts
+        plan_scenes = [
+            {"index": 1, "scene_role": "hook", "is_intra_unit_cut": False},
+            {"index": 2, "scene_role": "process", "is_intra_unit_cut": False},
+            {"index": 2, "scene_role": "process", "is_intra_unit_cut": True},
+            {"index": 3, "scene_role": "proof", "is_intra_unit_cut": False},
+            {"index": 4, "scene_role": "payoff", "is_intra_unit_cut": False},
+        ]
+        flash_plan = plan_v37_transitions(plan_scenes, max_flash_transitions=1)
+        self.assertEqual(len(flash_plan), 1)
+        self.assertIn(4, flash_plan)
+        self.assertEqual(flash_plan[4], ("fadewhite", 0.060))
+
+    def test_v37_rhetorical_pause_bgm_vacuum_and_rsvp_blanking(self) -> None:
+        # 1. Selective rhetorical pause preservation before "ternyata" while splicing regular pauses
+        silences = [(1.00, 1.60), (3.00, 3.60)]
+        words = [
+            {"word": "biasa", "start": 1.62, "end": 2.00},
+            {"word": "Ternyata", "start": 3.62, "end": 4.10},
+        ]
+        kept = build_speech_segments(5.0, silences, edge_pad_s=0.025, words=words, pivot_pause_s=0.26)
+        # First silence [1.00, 1.60] before non-pivot "biasa" gets cut tightly (0.025s pad each side -> gap 0.55s cut)
+        self.assertAlmostEqual(kept[1][0], 1.575, places=3)
+        # Second silence [3.00, 3.60] before pivot "Ternyata" preserves ~0.26s pause (starts at 3.60 - 0.235 = 3.365)
+        self.assertAlmostEqual(kept[2][0], 3.365, places=3)
+
+        # 2. Pre-pivot BGM vacuum windows (-28 dB -> volume=0.04) avoiding CTA window
+        vac_words = [
+            {"word": "Orang", "start": 2.2, "end": 2.5},
+            {"word": "salah", "start": 3.1, "end": 3.5},
+            {"word": "subscribe", "start": 5.5, "end": 6.2},
+            {"word": "Makanya", "start": 14.2, "end": 14.7},
+        ]
+        vac_wins = detect_bgm_vacuum_windows(
+            vac_words, [], hook_end_s=2.0, cta_window=(5.2, 6.8), max_events=2
+        )
+        self.assertEqual(len(vac_wins), 2)
+        self.assertAlmostEqual(vac_wins[0][0], 2.82, places=2)
+        self.assertAlmostEqual(vac_wins[1][0], 13.92, places=2)
+
+        fg_vac = build_audio_filtergraph(
+            vo_input_idx=1,
+            vo_duration=18.0,
+            profile=self.c1,
+            bgm_input_idx=2,
+            hook_audio_input_idx=None,
+            sfx_inputs=[],
+            bgm_start_s=2.0,
+            bgm_vacuum_windows=vac_wins,
+        )
+        self.assertIn("volume=0.04", fg_vac)
+
+        # 3. Zero RSVP double-text overlap during gamified_321 countdown digits
+        with tempfile.TemporaryDirectory() as tmp:
+            ass_p = Path(tmp) / "blank_321.ass"
+            vis_321 = self.c1.visual.model_copy(
+                update={"cta_style": "gamified_321", "suppress_rsvp_on_overlay": True}
+            )
+            rsvp_words = [
+                {"word": "KLIK", "start": 5.10, "end": 5.45},
+                {"word": "TIGA", "start": 6.10, "end": 6.45},
+                {"word": "DUA", "start": 6.50, "end": 6.85},
+                {"word": "SATU", "start": 6.90, "end": 7.20},
+                {"word": "TERNYATA", "start": 7.60, "end": 8.10},
+            ]
+            generate_ass_subtitles(
+                rsvp_words, [], set(), vis_321, ass_p, cta_window=(5.0, 7.3), subject_label="kucing"
+            )
+            txt = ass_p.read_text(encoding="utf-8")
+            # Countdown words inside [p1_end..cta_e] MUST be suppressed on Layer 2 while KLIK & TERNYATA survive!
+            self.assertIn("KLIK", txt)
+            self.assertIn("TERNYATA", txt)
+            self.assertNotIn("DUA", txt)
+            self.assertNotIn("SATU", txt)
+
+    def test_v37_protected_payoff_hold_and_reward_pop_cta(self) -> None:
+        # 1. Payoff unit <= 4.80s stays unsplit at 1.0x when Golden Moment motion is verified, splits when weak
+        payoff_words = [
+            {"word": "Makanya", "start": 15.0, "end": 15.5},
+            {"word": "kucing", "start": 15.6, "end": 16.1},
+            {"word": "langsung", "start": 16.5, "end": 17.0},
+            {"word": "lompat", "start": 17.1, "end": 18.7},
+        ]
+        base_scenes = [
+            {"index": 1, "start_s": 0.0, "end_s": 2.0, "duration_s": 2.0, "vo": "Hook?", "words": []},
+            {"index": 2, "start_s": 15.0, "end_s": 18.8, "duration_s": 3.8, "vo": "Makanya kucing langsung lompat", "words": payoff_words},
+        ]
+        held = apply_intra_unit_clip_splitting(
+            [dict(s) for s in base_scenes],
+            protect_payoff_hold=True,
+            golden_moments={2: {"motion_verified": True, "metric_score": 78.0}},
+            max_payoff_hold_s=4.80,
+        )
+        self.assertEqual(len(held), 2)
+        self.assertTrue(held[1].get("is_payoff_hold"))
+        self.assertEqual(compute_selective_speed("payoff", clip_dur=10.0, target_dur=3.8, protect_payoff_hold=True), 1.0)
+
+        fallback_split = apply_intra_unit_clip_splitting(
+            [dict(s) for s in base_scenes],
+            protect_payoff_hold=True,
+            golden_moments={2: {"motion_verified": False, "metric_score": 38.0}},
+            max_payoff_hold_s=4.80,
+        )
+        self.assertEqual(len(fallback_split), 3)
+
+        # 2. 3-Beat Reward Pop CTA (#10 @Squooshify) + Mid-Shot Foley Re-Anchor on held payoff
+        with tempfile.TemporaryDirectory() as tmp:
+            ass_p = Path(tmp) / "reward.ass"
+            vis_rew = self.c1.visual.model_copy(update={"cta_style": "reward_pop"})
+            generate_ass_subtitles(
+                [{"word": "SUBSCRIBE", "start": 5.5, "end": 6.2}],
+                [],
+                {"SUBSCRIBE"},
+                vis_rew,
+                ass_p,
+                cta_window=(5.4, 7.6),
+                subject_label="kucing",
+            )
+            txt = ass_p.read_text(encoding="utf-8")
+            self.assertIn("Style: CtaReward", txt)
+            self.assertIn("+1 KUCING LIKE!", txt)
+            self.assertIn("BONUS KUCING IMUT!", txt)
+
+        sfx_rew = compute_sfx_entries(
+            held,
+            self.cfg.channel_sfx_dir("C1-fakta"),
+            {"MAKANYA"},
+            cta_window=(5.4, 7.6),
+            cta_style="reward_pop",
+            subject_label="kucing",
+            bgm_vacuum_windows=[(14.74, 15.05)],
+        )
+        # Held 3.8s payoff [15.0..18.8] MUST receive a mid-shot foley re-anchor around ~16.98s
+        self.assertTrue(any(16.7 <= t <= 17.3 for t, _, _ in sfx_rew))
 
 
 if __name__ == "__main__":
